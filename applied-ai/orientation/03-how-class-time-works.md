@@ -1,13 +1,7 @@
 ---
 title: How Class Time Works
-order: 2
+order: 3
 ---
-
-## Before Class: Do the Async Material
-
-All initial instruction comes through async material: readings, videos, and exercises. These are your lectures. Complete them before you show up.
-
-I will assume you've had first exposure to everything we're working on. Arriving without the async material done means you won't be able to participate effectively. You'll be trying to absorb new concepts while also trying to work through activities with a partner who's already past that point.
 
 ## In Class: Guided Activities
 
@@ -27,7 +21,7 @@ I'm usually working on future content at the back of the room, and I wander arou
 
 ## How to Get the Most Out of Class
 
-Do the async material. Come in ready. Talk to your partner constantly. Ask each other questions out loud. The lessons have prompts, reflections, and discussion questions throughout to help scaffold this. Take them seriously.
+Do the async material. Come in ready to work. Talk to your partner constantly. Ask each other questions out loud. The lessons have prompts, reflections, and discussion questions throughout to help scaffold this. Take them seriously.
 
 If one of you doesn't understand something, slow down and work through it together before moving on. Teaching is really good for learning. Not understanding something is a huge gift to your partner. It gives them the opportunity to explain it.
 

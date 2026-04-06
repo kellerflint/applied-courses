@@ -1,6 +1,6 @@
 ---
 title: Pair Programming
-order: 3
+order: 4
 ---
 
 ## What It Is
@@ -11,7 +11,7 @@ Both of you stay engaged in the same problem at the same time, so both of you un
 
 ## Swapping Roles
 
-You must swap roles regularly. Swap at least every 25 minutes, set a timer if you need to. Shorter swaps are also fine.
+You must swap roles regularly. Swap at least every 20 minutes, set a timer if you need to. Shorter swaps are also fine.
 
 Swapping often keeps both people sharp and makes sure neither person is just along for the ride. The driver role forces you to translate understanding into action. The navigator role forces you to follow closely enough to catch what's wrong and explain what should come next. You need practice at both.
 

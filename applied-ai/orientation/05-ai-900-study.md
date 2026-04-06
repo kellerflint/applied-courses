@@ -1,17 +1,17 @@
 ---
 title: "AI-900 Study"
-order: 4
+order: 5
 ---
 
-Woven throughout this course is preparation for the AI-900, Microsoft's Azure AI Fundamentals certification. The certification content runs parallel to what we cover in class. Some of it will feel familiar, and some of it goes deeper or covers new ground entirely.
+Woven throughout this course is preparation for the AI-900, Microsoft's Azure AI Fundamentals certification. The certification content runs parallel to what we cover in class. Some of it will feel familiar, and some of it goes deeper or covers new ground entirely. 
 
-This is not a one-week sprint. The AI-900 material is spread across the quarter, aligned with the topics we're working through. The exam itself is scheduled for the later part of the quarter.
+The exam itself will be scheduled for the later part of the quarter. Specific date & time TBD.
 
 ## What is the AI-900?
 
-The AI-900 is an entry-level certification from Microsoft that covers core AI concepts: machine learning, computer vision, natural language processing, and generative AI. You don't need to master advanced theory, but you do need a solid understanding of the main topics and be prepared for the kinds of questions that show up on the exam.
+The AI-900 is an entry-level certification from Microsoft that covers core AI concepts: machine learning, computer vision, natural language processing, and generative AI. You don't need to master advanced theory, but you do need a solid understanding of the core topics.
 
-The certification is a real credential. It signals to employers that you understand how AI works at a practical level, not just that you've heard the buzzwords.
+The certification is a real credential. It can help signal to employers that you understand how AI works at a practical level beyond the buzzwords.
 
 ## Setting Up
 
@@ -38,12 +38,12 @@ Each assignment covers a portion of the AI-900 learning paths.
 
 Your deliverable is a link to your Microsoft Learn profile page. Your profile tracks completion of each learning path.
 
-To find your profile: sign in, click your profile picture or initials in the top right, and select **Profile**. Go to **Achievements > Learning Paths** to see your progress. You should have 5 learning paths marked complete by the end.
+To find your profile: sign in, click your profile picture or initials in the top right, and select **Profile**. Go to **Achievements > Learning Paths** to see your progress. You should have all 5 learning paths marked complete by the end.
 
-For example, here is my profile: [learn.microsoft.com/en-us/users/kellerflint](https://learn.microsoft.com/en-us/users/kellerflint/)
+For example, here is my profile: [learn.microsoft.com/en-us/users/me/achievements?tab=tab-learning-paths#badges-section](https://learn.microsoft.com/en-us/users/me/achievements?tab=tab-learning-paths#badges-section)
 
-Copy the URL of your profile page and submit it on Canvas.
+Copy the URL of your profile page and submit it on Canvas for each of the certification self-study assignments.
 
 ## Time Commitment
 
-The full AI-900 content is substantial. Expect roughly 8-12 hours total across all 5 learning paths. Since it's spread over multiple weeks, that's manageable if you stay on track. Don't let it pile up. Break it into sessions and block time in your schedule.
+The full AI-900 content is substantial. Expect roughly 8-12 hours or so total across all 5 learning paths. Since it's spread over multiple weeks, that's manageable if you stay on track. Don't let it pile up. Break it into sessions and block time in your schedule.
