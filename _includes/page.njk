@@ -1,0 +1,77 @@
+{% extends "base.njk" %}
+
+{% block extraStyles %}
+.page-header {
+  margin-bottom: 2rem;
+}
+.page-header h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+{% endblock %}
+
+{% block topBar %}
+{% set courseUrl = page.url | courseUrl %}
+
+<div class="top-bar">
+  <a class="brand" href="/">Courses</a>
+  <span class="breadcrumb">
+    <span class="sep">/</span>
+    <a href="{{ courseUrl }}">{{ courseTitle }}</a>
+    <span class="sep">/</span>
+    <span class="current">{{ unitTitle }}</span>
+  </span>
+</div>
+
+{% set unitPages = collections.pages | pagesInUnit(page.url) %}
+{% if unitPages.length > 1 %}
+<nav class="unit-nav">
+  {% for p in unitPages %}
+  <a href="{{ p.url }}"{% if p.url == page.url %} class="active"{% endif %}>{{ p.data.title }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block main %}
+{% set coursePages = collections.pages | pagesInCourse(page.url) %}
+{% set currentIdx = -1 %}
+{% for p in coursePages %}
+  {% if p.url == page.url %}{% set currentIdx = loop.index0 %}{% endif %}
+{% endfor %}
+
+<main class="page-wrap">
+  <div class="page-header">
+    <h1>{{ title }}</h1>
+  </div>
+
+  <div class="prose">
+    {{ content | safe }}
+  </div>
+
+  {% if currentIdx >= 0 %}
+  <nav class="page-nav">
+    {% if currentIdx > 0 %}
+      {% set prev = coursePages[currentIdx - 1] %}
+      <a href="{{ prev.url }}" class="prev-link">
+        <span class="nav-label">← Previous</span>
+        <span class="nav-title">{{ prev.data.title }}</span>
+      </a>
+    {% else %}
+      <span></span>
+    {% endif %}
+
+    {% if currentIdx < coursePages.length - 1 %}
+      {% set next = coursePages[currentIdx + 1] %}
+      {% if next.data.unitTitle == unitTitle %}
+        <a href="{{ next.url }}" class="next-link">
+          <span class="nav-label">Next →</span>
+          <span class="nav-title">{{ next.data.title }}</span>
+        </a>
+      {% endif %}
+    {% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

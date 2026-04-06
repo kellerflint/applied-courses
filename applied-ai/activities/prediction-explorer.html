@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prediction Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .scenarios {
+    width: 220px;
+    background: #fff;
+    border-right: 1px solid #e1e4e8;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .scenario-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #1a1a1a;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.1s;
+  }
+  .scenario-btn:hover { background: #f6f8fa; }
+  .scenario-btn.active {
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    font-weight: 600;
+  }
+  .scenario-btn .scene-label { display: block; }
+  .scenario-btn .scene-desc {
+    display: block;
+    font-size: 0.75rem;
+    color: #6a737d;
+    font-weight: 400;
+    margin-top: 0.15rem;
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+
+  .visual-area {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .camera-sim {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .camera-sim .emoji {
+    font-size: 4.5rem;
+    line-height: 1;
+  }
+  .camera-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+  }
+
+  .bars-area {
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .bar-row {
+    margin-bottom: 0.7rem;
+  }
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    font-weight: 500;
+  }
+  .bar-pct {
+    color: #6a737d;
+    font-variant-numeric: tabular-nums;
+  }
+  .bar-track {
+    height: 22px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease, background 0.4s ease;
+  }
+  .bar-fill.high { background: #2563eb; }
+  .bar-fill.mid  { background: #93c5fd; }
+  .bar-fill.low  { background: #dbeafe; }
+
+  .code-area {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .code-area .comment { color: #64748b; }
+  .code-area .string  { color: #7dd3fc; }
+  .code-area .number  { color: #fbbf24; }
+  .code-area .key     { color: #a5b4fc; }
+
+  .note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.82rem;
+    color: #92400e;
+    line-height: 1.5;
+  }
+
+  .sum-note {
+    font-size: 0.78rem;
+    color: #6a737d;
+    margin-top: 0.3rem;
+  }
+
+  @media (max-width: 700px) {
+    .main { flex-direction: column; }
+    .scenarios {
+      width: 100%;
+      display: flex;
+      overflow-x: auto;
+      border-right: none;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .scenario-btn {
+      white-space: nowrap;
+      border-bottom: none;
+      border-right: 1px solid #f0f0f0;
+    }
+    .scenario-btn.active { border-left: none; border-bottom: 3px solid #2563eb; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>Prediction Explorer</strong> &mdash; Click a scenario to see what the model's prediction array looks like.
+</div>
+
+<div class="main">
+  <div class="scenarios" id="scenario-list"></div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+const scenarios = [
+  {
+    name: "Clear thumbs up",
+    desc: "Confident prediction",
+    emoji: "👍",
+    camLabel: "Clear gesture on camera",
+    classes: [
+      { className: "Thumbs Up", probability: 0.94 },
+      { className: "Thumbs Down", probability: 0.03 },
+      { className: "Background", probability: 0.03 },
+    ],
+    note: "The model is very confident. One class dominates at 94%. In your code, topClass would be \"Thumbs Up\" and the probability would easily pass a 0.8 threshold.",
+  },
+  {
+    name: "Uncertain gesture",
+    desc: "Model isn't sure",
+    emoji: "🤏",
+    camLabel: "Ambiguous gesture",
+    classes: [
+      { className: "Thumbs Up", probability: 0.52 },
+      { className: "Thumbs Down", probability: 0.31 },
+      { className: "Background", probability: 0.17 },
+    ],
+    note: "The model leans toward \"Thumbs Up\" but the confidence is low. The probabilities are still spread across all three classes. Notice the threshold check fails at 0.8, so your app wouldn't react to this frame.",
+  },
+  {
+    name: "Empty room",
+    desc: "Background class at work",
+    emoji: "🪑",
+    camLabel: "Empty chair, no person",
+    classes: [
+      { className: "Thumbs Up", probability: 0.05 },
+      { className: "Thumbs Down", probability: 0.07 },
+      { className: "Background", probability: 0.88 },
+    ],
+    note: "The background class absorbs most of the confidence when nothing interesting is on camera. The real classes stay low, so your threshold check keeps the app from triggering on an empty room.",
+  },
+];
+
+const listEl = document.getElementById("scenario-list");
+const contentEl = document.getElementById("content");
+
+function renderScenario(idx) {
+  document.querySelectorAll(".scenario-btn").forEach((b, i) => {
+    b.classList.toggle("active", i === idx);
+  });
+
+  const s = scenarios[idx];
+  const total = s.classes.reduce((sum, c) => sum + c.probability, 0);
+
+  let barsHTML = "";
+  for (const c of s.classes) {
+    const pct = (c.probability * 100).toFixed(0);
+    const level = c.probability > 0.7 ? "high" : c.probability > 0.3 ? "mid" : "low";
+    barsHTML += `
+      <div class="bar-row">
+        <div class="bar-label">
+          <span>${c.className}</span>
+          <span class="bar-pct">${(c.probability * 100).toFixed(1)}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ${level}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }
+  barsHTML += `<div class="sum-note">Total: ${(total * 100).toFixed(1)}% (probabilities always sum to 100%)</div>`;
+
+  // Build code representation
+  let codeLines = `<span class="comment">// prediction array from model.predict()</span>\n[\n`;
+  for (let i = 0; i < s.classes.length; i++) {
+    const c = s.classes[i];
+    const comma = i < s.classes.length - 1 ? "," : "";
+    codeLines += `  { <span class="key">className</span>: <span class="string">"${c.className}"</span>, <span class="key">probability</span>: <span class="number">${c.probability.toFixed(2)}</span> }${comma}\n`;
+  }
+  codeLines += `]`;
+
+  // Find top class
+  let top = s.classes[0];
+  for (const c of s.classes) {
+    if (c.probability > top.probability) top = c;
+  }
+  codeLines += `\n\n<span class="comment">// topClass after your loop:</span>\n`;
+  codeLines += `<span class="key">topClass</span>.className    <span class="comment">→</span> <span class="string">"${top.className}"</span>\n`;
+  codeLines += `<span class="key">topClass</span>.probability  <span class="comment">→</span> <span class="number">${top.probability.toFixed(2)}</span>\n`;
+  codeLines += `\n<span class="comment">// threshold check (probability > 0.8):</span>\n`;
+  codeLines += `<span class="number">${top.probability.toFixed(2)}</span> > <span class="number">0.8</span>  <span class="comment">→</span> <span class="number">${top.probability > 0.8 ? "true  ✓  (app triggers)" : "false  ✗  (app does nothing)"}</span>`;
+
+  contentEl.innerHTML = `
+    <div class="visual-area">
+      <div class="camera-sim">
+        <span class="emoji">${s.emoji}</span>
+        <div class="camera-label">${s.camLabel}</div>
+      </div>
+      <div class="bars-area">${barsHTML}</div>
+    </div>
+    <div class="code-area">${codeLines}</div>
+    <div class="note">${s.note}</div>
+  `;
+}
+
+// Build scenario buttons
+scenarios.forEach((s, i) => {
+  const btn = document.createElement("button");
+  btn.className = "scenario-btn";
+  btn.innerHTML = `<span class="scene-label">${s.name}</span><span class="scene-desc">${s.desc}</span>`;
+  btn.addEventListener("click", () => renderScenario(i));
+  listEl.appendChild(btn);
+});
+
+renderScenario(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+{% extends "base.njk" %}
+
+{% block title %}Courses{% endblock %}
+
+{% block extraStyles %}
+.home-header {
+  margin-bottom: 2.5rem;
+}
+.home-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.home-header p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.course-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s;
+}
+.course-card:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+  color: inherit;
+}
+
+.course-card-body { flex: 1; }
+
+.course-card-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.course-card-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.course-card-arrow {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-left: 1rem;
+}
+{% endblock %}
+
+{% block topBar %}
+<div class="top-bar">
+  <a class="brand" href="/">Courses</a>
+</div>
+{% endblock %}
+
+{% block main %}
+<main class="page-wrap">
+  <div class="home-header">
+    <h1>{{ title }}</h1>
+    {% if description %}<p>{{ description }}</p>{% endif %}
+  </div>
+
+  <div class="course-list">
+    {% for course in collections.courses %}
+    <a class="course-card" href="{{ course.url }}">
+      <div class="course-card-body">
+        <div class="course-card-title">{{ course.data.title }}</div>
+        {% if course.data.description %}
+        <div class="course-card-desc">{{ course.data.description }}</div>
+        {% endif %}
+      </div>
+      <span class="course-card-arrow">→</span>
+    </a>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

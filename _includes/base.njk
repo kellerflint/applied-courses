@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ title }}{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.min.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css" media="(prefers-color-scheme: dark)">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --border: #e1e4e8;
+      --text: #1a1a1a;
+      --text-muted: #6a737d;
+      --link: #0969da;
+      --link-hover: #0550ae;
+      --code-bg: #f0f2f4;
+      --accent: #0969da;
+      --bar-bg: #ffffff;
+      --activity-bg: #f6f8fa;
+      --activity-border: #d1d9e0;
+      --activity-header-bg: #eaeef2;
+      --tag-bg: #dbeafe;
+      --tag-text: #1d4ed8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text-muted: #8b949e;
+        --link: #58a6ff;
+        --link-hover: #79c0ff;
+        --code-bg: #161b22;
+        --accent: #58a6ff;
+        --bar-bg: #161b22;
+        --activity-bg: #161b22;
+        --activity-border: #30363d;
+        --activity-header-bg: #21262d;
+        --tag-bg: #1d3461;
+        --tag-text: #93c5fd;
+      }
+    }
+
+    html { font-size: 18px; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--link); }
+    a:hover { color: var(--link-hover); }
+
+    /* ── Top bar ── */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bar-bg);
+      border-bottom: 1px solid var(--border);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 1.25rem;
+      gap: 0.5rem;
+    }
+
+    .top-bar .brand {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .top-bar .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      overflow: hidden;
+    }
+
+    .top-bar .breadcrumb a {
+      color: var(--text-muted);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .top-bar .breadcrumb a:hover { color: var(--text); }
+
+    .top-bar .breadcrumb .sep { color: var(--border); }
+
+    .top-bar .breadcrumb .current {
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Spacer that pushes unit tabs to fill remaining width */
+    .top-bar .spacer { flex: 1; }
+
+    /* ── Unit tab nav (page layout) ── */
+    .unit-nav {
+      background: var(--bar-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      padding: 0 1.25rem;
+      scrollbar-width: none;
+    }
+    .unit-nav::-webkit-scrollbar { display: none; }
+
+    .unit-nav a {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .unit-nav a:hover { color: var(--text); }
+    .unit-nav a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ── Main content wrapper ── */
+    .page-wrap {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+      flex: 1;
+    }
+
+    /* ── Prose ── */
+    .prose h1, .prose h2, .prose h3, .prose h4 {
+      font-weight: 600;
+      line-height: 1.3;
+      margin-top: 2em;
+      margin-bottom: 0.6em;
+    }
+    .prose h1 { font-size: 1.75rem; margin-top: 0; }
+    .prose h2 { font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35em; }
+    .prose h3 { font-size: 1.05rem; }
+    .prose p { margin-bottom: 1.1em; }
+    .prose a { text-decoration: underline; }
+    .prose ul, .prose ol { margin: 0.6em 0 1em 1.5em; }
+    .prose li { margin-bottom: 0.3em; }
+    .prose code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.875em;
+      background: var(--code-bg);
+      padding: 0.15em 0.35em;
+      border-radius: 4px;
+    }
+    .prose pre {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.1em 1.25em;
+      overflow-x: auto;
+      margin: 1.25em 0;
+    }
+    .prose pre:not([class*="language-"]) { background: var(--code-bg); }
+    .prose pre code { background: none; padding: 0; font-size: 0.875rem; }
+    .prose blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1em;
+      margin: 1.25em 0;
+      color: var(--text-muted);
+    }
+    .prose hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    .prose table { border-collapse: collapse; width: 100%; margin: 1.25em 0; font-size: 0.9rem; }
+    .prose th, .prose td { border: 1px solid var(--border); padding: 0.5em 0.75em; text-align: left; }
+    .prose th { background: var(--surface); font-weight: 600; }
+
+    /* ── Activity embed ── */
+    .activity-embed {
+      margin: 1.75em 0;
+      border: 1px solid var(--activity-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .activity-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 0.9rem;
+      background: var(--activity-header-bg);
+      border-bottom: 1px solid var(--activity-border);
+    }
+    .activity-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+    .activity-fullscreen-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.2rem 0.55rem;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+      font-family: inherit;
+    }
+    .activity-fullscreen-btn:hover { background: var(--code-bg); color: var(--text); }
+    a.activity-title { text-decoration: none; }
+    a.activity-title:hover { text-decoration: underline; color: var(--text); }
+    .activity-embed iframe { width: 100%; border: none; display: block; }
+
+    /* ── Prev / Next nav ── */
+    .page-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .page-nav a {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      text-decoration: none;
+      padding: 0.7rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 48%;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .page-nav a:hover { border-color: var(--accent); background: var(--surface); }
+    .page-nav .nav-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+    .page-nav .nav-title { font-size: 0.92rem; font-weight: 500; color: var(--link); }
+    .page-nav .next-link { text-align: right; margin-left: auto; }
+
+    /* ── Footer ── */
+    .site-footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    {% block extraStyles %}{% endblock %}
+  </style>
+</head>
+<body>
+
+{% block topBar %}{% endblock %}
+
+{% block main %}{% endblock %}
+
+<footer class="site-footer">Software Development Courses</footer>
+
+<script>
+  document.querySelectorAll('a[href^="http"]').forEach(function(a) {
+    if (!a.getAttribute('target')) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Update Cycle</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      padding: 20px;
+      color: #1e293b;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Game panel */
+    .game-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-display {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .score-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-top: -8px;
+    }
+
+    .click-btn {
+      margin-top: 8px;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.08s, background 0.15s;
+      user-select: none;
+    }
+
+    .click-btn:hover { background: #2563eb; }
+    .click-btn:active { transform: scale(0.95); }
+    .click-btn.flash { background: #f59e0b; }
+
+    /* Trace panel */
+    .trace-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+      opacity: 0.35;
+    }
+
+    .step.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      opacity: 1;
+    }
+
+    .step.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+      opacity: 1;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .step.active .step-num {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .step.done .step-num {
+      background: #22c55e;
+      color: white;
+    }
+
+    .step-text {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+
+    .step-title {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .step-detail {
+      color: #64748b;
+      font-family: monospace;
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    .step.active .step-detail,
+    .step.done .step-detail {
+      color: #475569;
+    }
+
+    .reset-note {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="game-panel">
+      <h2>Game</h2>
+      <div class="score-display" id="score">0</div>
+      <div class="score-label">points</div>
+      <button class="click-btn" id="btn" onclick="handleClick()">Click!</button>
+    </div>
+
+    <div class="trace-panel">
+      <h2>What just happened</h2>
+
+      <div class="step" id="step-1">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <div class="step-title">Click event fired</div>
+          <div class="step-detail">btn.addEventListener("click", ...)</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-2">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <div class="step-title">Handler function ran</div>
+          <div class="step-detail">handleClick() called</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <div class="step-title">State updated</div>
+          <div class="step-detail" id="state-detail">score: 0 → 1</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-4">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <div class="step-title">DOM re-rendered</div>
+          <div class="step-detail" id="dom-detail">#score updated to "1"</div>
+        </div>
+      </div>
+
+      <p class="reset-note">Click the button to trace through the cycle</p>
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    let isAnimating = false;
+
+    const steps = [
+      document.getElementById('step-1'),
+      document.getElementById('step-2'),
+      document.getElementById('step-3'),
+      document.getElementById('step-4'),
+    ];
+
+    function resetSteps() {
+      steps.forEach(s => {
+        s.classList.remove('active', 'done');
+      });
+    }
+
+    function activateStep(index) {
+      steps.forEach((s, i) => {
+        if (i < index) s.classList.add('done');
+        else if (i === index) s.classList.add('active');
+        else { s.classList.remove('active', 'done'); }
+      });
+    }
+
+    function handleClick() {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      const prevScore = score;
+      score += 1;
+
+      const btn = document.getElementById('btn');
+
+      // Update dynamic text before animation
+      document.getElementById('state-detail').textContent =
+        `score: ${prevScore} → ${score}`;
+      document.getElementById('dom-detail').textContent =
+        `#score updated to "${score}"`;
+
+      // Step 1: event fired
+      resetSteps();
+      activateStep(0);
+
+      setTimeout(() => {
+        // Step 2: handler ran
+        activateStep(1);
+        btn.classList.add('flash');
+      }, 700);
+
+      setTimeout(() => {
+        // Step 3: state updated
+        activateStep(2);
+        btn.classList.remove('flash');
+      }, 1600);
+
+      setTimeout(() => {
+        // Step 4: DOM updated
+        activateStep(3);
+        document.getElementById('score').textContent = score;
+      }, 2500);
+
+      setTimeout(() => {
+        // All done
+        steps.forEach(s => s.classList.add('done'));
+        steps.forEach(s => s.classList.remove('active'));
+        isAnimating = false;
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "layout": "page.njk",
+  "tags": ["page"],
+  "unitTitle": "Understanding AI",
+  "unitOrder": 1
+}

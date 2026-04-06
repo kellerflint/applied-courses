@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Components as Templates</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e8;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0.85rem 0.9rem;
+      gap: 0.7rem;
+      overflow: hidden;
+    }
+
+    .top-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #444;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 0.65rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .col-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #444;
+      flex-shrink: 0;
+    }
+
+    .code-panel {
+      background: #15151e;
+      border: 1px solid #22223a;
+      border-radius: 7px;
+      padding: 0.75rem 0.9rem;
+      font-family: 'Menlo', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.75rem;
+      line-height: 1.8;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .app-panel,
+    .component-panel {
+      flex: 1;
+    }
+
+    .output-panel {
+      background: #15151e;
+      border: 1px solid #22223a;
+      border-radius: 7px;
+      padding: 0.65rem 0.75rem;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 0;
+    }
+
+    /* Syntax colours */
+    .kw  { color: #c792ea; }
+    .fn  { color: #82aaff; }
+    .tag { color: #f78c6c; }
+    .pr  { color: #ffcb6b; }
+    .str { color: #c3e88d; }
+    .cm  { color: #333358; font-style: italic; }
+
+    .fact-slot {
+      color: #c3e88d;
+      border-radius: 2px;
+      padding: 0 1px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .fact-slot.flash {
+      background: rgba(195, 232, 141, 0.28);
+      color: #fff;
+    }
+
+    /* Each line in the App.jsx panel is a div */
+    .code-line {
+      display: block;
+      white-space: pre;
+    }
+
+    .code-line.usage {
+      animation: slideUp 0.18s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: #1f1f2e;
+      border: 1px solid #2d2d45;
+      border-radius: 5px;
+      padding: 0.45rem 0.7rem;
+      animation: slideUp 0.18s ease;
+    }
+
+    .card-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6060a0;
+      margin-bottom: 0.2rem;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #c4c4d4;
+    }
+
+    .placeholder-msg {
+      color: #2a2a3e;
+      font-size: 0.75rem;
+      text-align: center;
+      margin: auto;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      background: #15151e;
+      border: 1px solid #22223a;
+      border-radius: 6px;
+      color: #e2e2e8;
+      padding: 0.48rem 0.75rem;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: #6050e8; }
+
+    .render-btn {
+      background: #5040d8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.48rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .render-btn:hover    { background: #6655ee; }
+    .render-btn:active   { background: #3f32b0; }
+    .render-btn:disabled { opacity: 0.45; cursor: default; }
+
+    .chips {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .chip-label { font-size: 0.68rem; color: #3a3a55; }
+
+    .chip {
+      background: #18182a;
+      border: 1px solid #22223a;
+      border-radius: 20px;
+      color: #4a4a68;
+      font-size: 0.68rem;
+      padding: 0.18rem 0.55rem;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .chip:hover { color: #8888aa; border-color: #38385a; }
+  </style>
+</head>
+<body>
+
+  <div class="top-label">Components as Templates</div>
+
+  <div class="layout">
+
+    <div class="left-col">
+
+      <div class="col-label">App.jsx</div>
+      <div class="code-panel app-panel" id="appPanel"></div>
+
+      <div class="col-label">FunFactCard.jsx</div>
+      <div class="code-panel component-panel" id="componentPanel"></div>
+
+    </div>
+
+    <div class="right-col">
+      <div class="col-label">Rendered output</div>
+      <div class="output-panel" id="outputPanel">
+        <div class="placeholder-msg" id="emptyMsg">cards appear here</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="input-row">
+    <input type="text" id="factInput" placeholder="Type a fun fact about yourself…" />
+    <button class="render-btn" id="renderBtn" onclick="addCard()">Render →</button>
+  </div>
+
+  <div class="chips">
+    <span class="chip-label">Try:</span>
+    <button class="chip" onclick="use('I have visited over 10 countries')">Visited 10+ countries</button>
+    <button class="chip" onclick="use('My first language was Scratch')">Started with Scratch</button>
+    <button class="chip" onclick="use('I can solve a Rubik\'s cube')">Rubik's cube solver</button>
+    <button class="chip" onclick="use('I type over 80 words per minute')">80+ WPM typist</button>
+    <button class="chip" onclick="use('I have a pet named Pixel')">Pet named Pixel</button>
+  </div>
+
+  <script>
+    // ── Helpers ──────────────────────────────────────────────
+    function span(cls, text) {
+      const el = document.createElement('span');
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    }
+
+    function codeLine(indent, children, extra) {
+      const d = document.createElement('div');
+      d.className = 'code-line' + (extra ? ' ' + extra : '');
+      if (indent) d.appendChild(document.createTextNode(indent));
+      children.forEach(c => {
+        if (typeof c === 'string') d.appendChild(document.createTextNode(c));
+        else d.appendChild(c);
+      });
+      return d;
+    }
+
+    // ── Build static App.jsx lines ────────────────────────────
+    const appPanel = document.getElementById('appPanel');
+
+    appPanel.appendChild(codeLine('', [span('kw','function'), ' ', span('fn','App'), '() {']));
+    appPanel.appendChild(codeLine('  ', [span('kw','return'), ' (']));
+    appPanel.appendChild(codeLine('    ', [span('tag','<div>')]));
+
+    const placeholder = codeLine('      ', [span('cm', '// facts will appear here')]);
+    appPanel.appendChild(placeholder);
+
+    const closingDiv  = codeLine('    ', [span('tag', '</div>')]);
+    const closingParen = codeLine('  ', [')' + ';']);
+    const closingBrace = codeLine('', ['}']);
+    appPanel.appendChild(closingDiv);
+    appPanel.appendChild(closingParen);
+    appPanel.appendChild(closingBrace);
+
+    // ── Build static FunFactCard.jsx lines ───────────────────
+    const compPanel = document.getElementById('componentPanel');
+
+    compPanel.appendChild(codeLine('', [span('kw','function'), ' ', span('fn','FunFactCard'), '({ ', span('pr','fact'), ' }) {']));
+    compPanel.appendChild(codeLine('  ', [span('kw','return'), ' (']));
+    compPanel.appendChild(codeLine('    ', [span('tag','<div>')]));
+    compPanel.appendChild(codeLine('      ', [span('tag','<h2>'), 'Fun Fact', span('tag','</h2>')]));
+
+    const factSlotLine = document.createElement('div');
+    factSlotLine.className = 'code-line';
+    factSlotLine.appendChild(document.createTextNode('      '));
+    factSlotLine.appendChild(span('tag', '<p>'));
+    factSlotLine.appendChild(document.createTextNode('{ '));
+    const factSlot = document.createElement('span');
+    factSlot.id = 'factSlot';
+    factSlot.className = 'fact-slot';
+    factSlot.textContent = 'fact';
+    factSlotLine.appendChild(factSlot);
+    factSlotLine.appendChild(document.createTextNode(' }'));
+    factSlotLine.appendChild(span('tag', '</p>'));
+    compPanel.appendChild(factSlotLine);
+
+    compPanel.appendChild(codeLine('    ', [span('tag','</div>')]));
+    compPanel.appendChild(codeLine('  ', [')' + ';']));
+    compPanel.appendChild(codeLine('', ['}']));
+
+    // ── Interactive logic ─────────────────────────────────────
+    const factInput  = document.getElementById('factInput');
+    const renderBtn  = document.getElementById('renderBtn');
+    const outputPanel = document.getElementById('outputPanel');
+    const emptyMsg   = document.getElementById('emptyMsg');
+
+    function use(text) {
+      factInput.value = text;
+      factInput.focus();
+    }
+
+    function addCard() {
+      const text = factInput.value.trim();
+      if (!text) { factInput.focus(); return; }
+
+      renderBtn.disabled = true;
+
+      const truncated = text.length > 32 ? text.slice(0, 32) + '…' : text;
+      const short = text.length > 22 ? text.slice(0, 22) + '…' : text;
+
+      // Phase 1: usage line appears in App.jsx
+      placeholder.style.display = 'none';
+      const usageLine = document.createElement('div');
+      usageLine.className = 'code-line usage';
+      usageLine.appendChild(document.createTextNode('      '));
+      usageLine.appendChild(span('tag', '<'));
+      usageLine.appendChild(span('fn', 'FunFactCard'));
+      usageLine.appendChild(document.createTextNode(' '));
+      usageLine.appendChild(span('pr', 'fact'));
+      usageLine.appendChild(document.createTextNode('='));
+      usageLine.appendChild(span('str', '"' + truncated + '"'));
+      usageLine.appendChild(document.createTextNode(' '));
+      usageLine.appendChild(span('tag', '/>'));
+      appPanel.insertBefore(usageLine, closingDiv);
+      appPanel.scrollTop = appPanel.scrollHeight;
+
+      // Phase 2: value flashes through {fact} in FunFactCard
+      setTimeout(() => {
+        factSlot.textContent = '"' + short + '"';
+        factSlot.classList.add('flash');
+      }, 350);
+
+      // Phase 3: flash clears, card appears in rendered output
+      setTimeout(() => {
+        factSlot.textContent = 'fact';
+        factSlot.classList.remove('flash');
+
+        emptyMsg.style.display = 'none';
+        const card = document.createElement('div');
+        card.className = 'card';
+        const cardLabel = document.createElement('div');
+        cardLabel.className = 'card-label';
+        cardLabel.textContent = 'Fun Fact';
+        const cardText = document.createElement('p');
+        cardText.textContent = text;
+        card.appendChild(cardLabel);
+        card.appendChild(cardText);
+        outputPanel.appendChild(card);
+        outputPanel.scrollTop = outputPanel.scrollHeight;
+
+        factInput.value = '';
+        factInput.focus();
+        renderBtn.disabled = false;
+      }, 850);
+    }
+
+    factInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addCard();
+    });
+
+    factInput.focus();
+  </script>
+</body>
+</html>

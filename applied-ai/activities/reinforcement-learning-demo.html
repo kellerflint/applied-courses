@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn the Rules: Reinforcement Learning Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #7a7a8e;
+    --accent: #6ee7b7;
+    --accent-dim: rgba(110, 231, 183, 0.12);
+    --wrong: #f87171;
+    --wrong-dim: rgba(248, 113, 113, 0.12);
+    --highlight: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .noise {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1000px; margin: 0 auto; padding: 40px 24px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* INTRO */
+  .intro-header {
+    text-align: center; margin-bottom: 60px;
+  }
+  .intro-header .tag {
+    display: inline-block;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-dim);
+    padding: 6px 16px; border-radius: 2px; margin-bottom: 20px;
+  }
+  .intro-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(36px, 6vw, 56px); font-weight: 700;
+    line-height: 1.1; margin-bottom: 16px;
+    background: linear-gradient(135deg, #e8e8f0 40%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .intro-header p {
+    font-size: 15px; color: var(--text-dim); max-width: 560px; margin: 0 auto; line-height: 1.7;
+  }
+
+  .how-it-works {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;
+  }
+  .how-it-works h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px; font-weight: 600; margin-bottom: 14px;
+  }
+  .how-it-works p {
+    font-size: 13px; color: var(--text-dim); line-height: 1.7; margin-bottom: 10px;
+  }
+  .how-it-works p:last-child { margin-bottom: 0; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 500;
+    padding: 14px 32px; border: none; border-radius: 4px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0f; }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-center { display: flex; justify-content: center; }
+
+  /* GAME HEADER */
+  .game-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .game-header .round-label {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+  }
+  .game-header h2 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600;
+  }
+  .game-stats {
+    display: flex; gap: 24px; font-size: 13px; color: var(--text-dim);
+  }
+  .game-stats .val { color: var(--accent); font-weight: 600; }
+
+  .instructions {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 28px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  .instructions strong { color: var(--text); }
+
+  /* GAME AREA */
+  .game-area {
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .state-display {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .state-label {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim);
+  }
+  .state-shape-wrapper {
+    width: 160px; height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .action-buttons {
+    display: flex; gap: 16px;
+  }
+  .action-btn {
+    width: 100px; height: 64px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px; font-weight: 700;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .action-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(-2px);
+  }
+  .action-btn:active {
+    transform: translateY(0);
+  }
+
+  /* REWARD FLASH */
+  .reward-flash {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px; font-weight: 700;
+    height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.3s;
+  }
+  .reward-flash.positive { color: var(--accent); }
+  .reward-flash.zero { color: var(--text-dim); }
+
+  /* SCORE BAR */
+  .score-bar {
+    display: flex; justify-content: center; gap: 40px; align-items: center;
+    padding: 20px 0; border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .score-item { text-align: center; }
+  .score-item .label {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .score-item .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px; font-weight: 700;
+  }
+  .score-item .value.accent { color: var(--accent); }
+  .score-item .value.highlight { color: var(--highlight); }
+
+  /* ROUND DOTS */
+  .round-dots {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;
+  }
+  .round-dot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--text-dim);
+    transition: all 0.3s;
+  }
+  .round-dot.done-positive {
+    border-color: var(--accent); background: var(--accent-dim); color: var(--accent);
+  }
+  .round-dot.done-zero {
+    border-color: var(--border); background: var(--surface2); color: var(--text-dim);
+  }
+  .round-dot.current {
+    border-color: var(--highlight); color: var(--highlight);
+  }
+
+  /* HISTORY TABLE */
+  .history-wrapper {
+    margin-top: 32px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .history-header {
+    background: var(--surface2); padding: 12px 16px;
+    font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .history-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .history-table th {
+    background: var(--surface); padding: 10px 16px; text-align: left;
+    font-weight: 600; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-dim); border-bottom: 1px solid var(--border);
+  }
+  .history-table td {
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .history-table tr.reward-row { color: var(--accent); }
+  .history-table tr.zero-row { color: var(--text-dim); }
+
+  /* GAME OVER OVERLAY */
+  .game-over-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 32px; text-align: center;
+    margin: 24px auto; max-width: 480px;
+  }
+  .game-over-box h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 600; margin-bottom: 8px;
+  }
+  .game-over-box .final-score {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 48px; font-weight: 700; color: var(--accent);
+    margin: 12px 0;
+  }
+  .game-over-box p {
+    font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 20px;
+  }
+  .game-over-buttons { display: flex; gap: 12px; justify-content: center; }
+
+  /* TAKEAWAY SCREEN */
+  .final-score-display { text-align: center; padding: 40px 0; }
+  .final-score-display .big-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 72px; font-weight: 700; color: var(--accent);
+  }
+  .final-score-display .label { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+  .takeaway {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    padding: 24px 28px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .takeaway h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 16px; margin-bottom: 10px; color: var(--accent);
+  }
+  .takeaway p { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
+
+  .rules-reveal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px; margin: 24px 0;
+  }
+  .rules-reveal h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 16px; margin-bottom: 14px;
+  }
+  .rule-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .rule-row:last-child { border-bottom: none; }
+  .rule-points {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; min-width: 48px; text-align: right;
+  }
+  .rule-points.high { color: var(--accent); }
+  .rule-points.med { color: var(--highlight); }
+  .rule-desc { color: var(--text-dim); }
+  .rule-else { color: var(--text-dim); font-style: italic; }
+
+  @media (max-width: 600px) {
+    .action-btn { width: 80px; height: 56px; font-size: 18px; }
+    .game-stats { gap: 16px; flex-wrap: wrap; }
+    .score-bar { gap: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="container">
+
+  <!-- INTRO -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-header">
+      <div class="tag">Interactive Demo</div>
+      <h1>Learn the Rules</h1>
+      <p>You'll see colored shapes and three buttons. Each combination of shape, color, and action has a hidden point value. Nobody will tell you the rules. You have to figure them out by trying things and observing what happens.</p>
+    </div>
+    <div class="how-it-works">
+      <h3>How it works</h3>
+      <p>Each round, a colored shape appears. You pick one of three actions: <strong>A</strong>, <strong>B</strong>, or <strong>C</strong>. You'll see how many points you earned (or didn't). After 6 rounds, the game resets but your knowledge carries over.</p>
+      <p>Play as many games as you want. Your goal: <strong>maximize your score</strong> by discovering the hidden reward rules through trial and error.</p>
+      <p>There are 9 possible states (3 shapes x 3 colors) and 3 possible actions. Some combinations are worth more than others. Some are worth nothing.</p>
+    </div>
+    <div class="btn-center">
+      <button class="btn btn-primary" onclick="startGame()">Start Playing</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="screen-game">
+    <div class="game-header">
+      <div>
+        <div class="round-label">Reinforcement Learning</div>
+        <h2>Learn the Rules</h2>
+      </div>
+      <div class="game-stats">
+        <div>Game <span class="val" id="game-num">1</span></div>
+        <div>Best <span class="val" id="best-score">0</span></div>
+      </div>
+    </div>
+
+    <div class="instructions">
+      A colored shape will appear. Pick an action. <strong>Observe the reward.</strong> Over multiple games, try to figure out which actions score points for which states.
+    </div>
+
+    <div class="round-dots" id="round-dots"></div>
+
+    <div class="game-area" id="game-active-area">
+      <div class="state-display">
+        <div class="state-label">Current State</div>
+        <div class="state-shape-wrapper">
+          <svg id="state-svg" width="120" height="120" viewBox="0 0 120 120"></svg>
+        </div>
+      </div>
+
+      <div class="reward-flash" id="reward-flash">&nbsp;</div>
+
+      <div class="action-buttons">
+        <button class="action-btn" onclick="makeMove('A')">A</button>
+        <button class="action-btn" onclick="makeMove('B')">B</button>
+        <button class="action-btn" onclick="makeMove('C')">C</button>
+      </div>
+
+      <div class="score-bar">
+        <div class="score-item">
+          <div class="label">This Game</div>
+          <div class="value accent" id="current-score">0</div>
+        </div>
+        <div class="score-item">
+          <div class="label">Rounds Left</div>
+          <div class="value" id="rounds-left" style="color: var(--text)">6</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER (shown inline) -->
+    <div id="game-over-area" style="display:none">
+      <div class="game-over-box">
+        <h3>Game Over</h3>
+        <div class="final-score" id="go-score"></div>
+        <p id="go-message"></p>
+        <div class="game-over-buttons">
+          <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+          <button class="btn btn-secondary" onclick="showTakeaways()">See Takeaways</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="history-wrapper" id="history-wrapper" style="display:none">
+      <div class="history-header">
+        <span>Move History</span>
+        <span id="history-game-label"></span>
+      </div>
+      <table class="history-table">
+        <thead>
+          <tr><th>#</th><th>State</th><th>Action</th><th>Reward</th></tr>
+        </thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAKEAWAYS -->
+  <div class="screen" id="screen-takeaways">
+    <div class="intro-header">
+      <div class="tag">Results</div>
+      <h1>What Just Happened</h1>
+    </div>
+
+    <div class="final-score-display">
+      <div class="big-num" id="final-best"></div>
+      <div class="label">best score across all games</div>
+    </div>
+
+    <div class="rules-reveal">
+      <h3>The Hidden Rules</h3>
+      <div class="rule-row">
+        <div class="rule-points high">+15</div>
+        <div class="rule-desc">Action <strong>C</strong> on any <strong>Green</strong> shape</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-points med">+10</div>
+        <div class="rule-desc">Action <strong>A</strong> on any <strong>Red</strong> shape</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-points med">+5</div>
+        <div class="rule-desc">Action <strong>B</strong> on any <strong>Circle</strong> (any color)</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-points" style="color: var(--text-dim)">+0</div>
+        <div class="rule-else">Everything else</div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <h3>You just did reinforcement learning.</h3>
+      <p>Nobody handed you a dataset. Nobody told you the rules upfront. You took actions in an environment, observed rewards, and adjusted your strategy over time. That's the core loop: act, observe, update. It's the same loop that trains game-playing AIs, robotic controllers, and recommendation systems.</p>
+    </div>
+    <div class="takeaway">
+      <h3>Exploration vs. exploitation.</h3>
+      <p>Early on, you probably tried random things just to see what happened. Later, you started repeating what worked. That tension between exploring new actions and exploiting known good ones is one of the central challenges in reinforcement learning. Too much exploration wastes time. Too much exploitation means you might miss a better strategy you never tried.</p>
+    </div>
+    <div class="takeaway">
+      <h3>The reward signal is everything.</h3>
+      <p>You only learned because you could see the points. If the reward had been delayed (say, only shown at the end of 6 rounds with no per-move feedback), learning would have been much harder. This is the "credit assignment problem": figuring out which of your actions actually caused the reward. In complex systems, this is one of the hardest parts of RL.</p>
+    </div>
+
+    <div class="btn-center" style="margin-top: 32px;">
+      <button class="btn btn-secondary" onclick="restartFresh()">Play Again (new games)</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── GAME STATE (logic unchanged) ───
+let score = 0;
+let maxScore = 0;
+let roundsLeft = 6;
+let gameNumber = 1;
+let currentState = null;
+let roundHistory = [];
+let roundRewards = [];
+
+const states = [
+  { shape: 'Circle', color: 'Red' },
+  { shape: 'Circle', color: 'Green' },
+  { shape: 'Circle', color: 'Blue' },
+  { shape: 'Square', color: 'Red' },
+  { shape: 'Square', color: 'Green' },
+  { shape: 'Square', color: 'Blue' },
+  { shape: 'Rectangle', color: 'Red' },
+  { shape: 'Rectangle', color: 'Green' },
+  { shape: 'Rectangle', color: 'Blue' }
+];
+
+// Hidden reward rules (unchanged)
+function calculateReward(action, state) {
+  if (action === 'A' && state.color === 'Red') return 10;
+  if (action === 'B' && state.shape === 'Circle') return 5;
+  if (action === 'C' && state.color === 'Green') return 15;
+  return 0;
+}
+
+function getRandomState() {
+  return states[Math.floor(Math.random() * states.length)];
+}
+
+// ─── RENDERING ───
+const colorMap = { Red: '#ef4444', Green: '#22c55e', Blue: '#3b82f6' };
+
+function renderState(state) {
+  const svg = document.getElementById('state-svg');
+  svg.innerHTML = '';
+  const fill = colorMap[state.color];
+
+  if (state.shape === 'Circle') {
+    svg.innerHTML = `<circle cx="60" cy="60" r="50" fill="${fill}"/>`;
+  } else if (state.shape === 'Square') {
+    svg.innerHTML = `<rect x="10" y="10" width="100" height="100" rx="6" fill="${fill}"/>`;
+  } else {
+    svg.innerHTML = `<rect x="5" y="25" width="110" height="70" rx="6" fill="${fill}"/>`;
+  }
+}
+
+function renderRoundDots() {
+  const container = document.getElementById('round-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'round-dot';
+    const roundIdx = i;
+    if (roundIdx < roundRewards.length) {
+      dot.textContent = '+' + roundRewards[roundIdx];
+      dot.classList.add(roundRewards[roundIdx] > 0 ? 'done-positive' : 'done-zero');
+    } else if (roundIdx === roundRewards.length) {
+      dot.textContent = (roundIdx + 1);
+      dot.classList.add('current');
+    } else {
+      dot.textContent = (roundIdx + 1);
+    }
+    container.appendChild(dot);
+  }
+}
+
+function renderHistory() {
+  const wrapper = document.getElementById('history-wrapper');
+  if (roundHistory.length === 0) { wrapper.style.display = 'none'; return; }
+  wrapper.style.display = 'block';
+  document.getElementById('history-game-label').textContent = `Game ${gameNumber}`;
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = '';
+  roundHistory.forEach((h, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = h.reward > 0 ? 'reward-row' : 'zero-row';
+    tr.innerHTML = `<td>${idx + 1}</td><td>${h.state.color} ${h.state.shape}</td><td>${h.action}</td><td>+${h.reward}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function showRewardFlash(reward) {
+  const el = document.getElementById('reward-flash');
+  el.textContent = reward > 0 ? `+${reward}` : '+0';
+  el.className = 'reward-flash ' + (reward > 0 ? 'positive' : 'zero');
+  // Brief animation
+  el.style.opacity = '0';
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+}
+
+// ─── SCREENS ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function startGame() {
+  showScreen('screen-game');
+  initRound();
+}
+
+function initRound() {
+  document.getElementById('game-active-area').style.display = 'flex';
+  document.getElementById('game-over-area').style.display = 'none';
+  document.getElementById('reward-flash').innerHTML = '&nbsp;';
+  currentState = getRandomState();
+  renderState(currentState);
+  renderRoundDots();
+  renderHistory();
+  updateScoreDisplay();
+  toggleActionButtons(true);
+}
+
+function updateScoreDisplay() {
+  document.getElementById('current-score').textContent = score;
+  document.getElementById('rounds-left').textContent = roundsLeft;
+  document.getElementById('game-num').textContent = gameNumber;
+  document.getElementById('best-score').textContent = maxScore;
+}
+
+function toggleActionButtons(enabled) {
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? '1' : '0.4';
+    btn.style.cursor = enabled ? 'pointer' : 'default';
+  });
+}
+
+// ─── CORE GAME LOGIC (unchanged) ───
+function makeMove(action) {
+  if (roundsLeft <= 0) return;
+
+  const reward = calculateReward(action, currentState);
+  score += reward;
+  roundsLeft--;
+
+  roundHistory.push({ state: { ...currentState }, action, reward });
+  roundRewards.push(reward);
+
+  showRewardFlash(reward);
+  renderRoundDots();
+  renderHistory();
+  updateScoreDisplay();
+
+  if (roundsLeft === 0) {
+    // Game over
+    toggleActionButtons(false);
+    setTimeout(() => {
+      if (score > maxScore) {
+        maxScore = score;
+        document.getElementById('best-score').textContent = maxScore;
+      }
+      document.getElementById('game-active-area').style.display = 'none';
+      document.getElementById('game-over-area').style.display = 'block';
+      document.getElementById('go-score').textContent = score;
+
+      let msg = '';
+      if (gameNumber === 1) {
+        msg = "That was your first run. You were mostly guessing, and that's fine. Play again and see if your score improves now that you've seen some reward signals.";
+      } else if (score > 50) {
+        msg = "Looks like you've figured out the pattern. You're exploiting what you've learned.";
+      } else if (score > 25) {
+        msg = "Getting better. You're starting to narrow down which actions pay off for which states.";
+      } else {
+        msg = "Still exploring? Try paying attention to what the shapes and colors have in common when you earn points.";
+      }
+      document.getElementById('go-message').textContent = msg;
+    }, 600);
+    return;
+  }
+
+  // Next round after a beat
+  setTimeout(() => {
+    currentState = getRandomState();
+    renderState(currentState);
+    renderRoundDots();
+  }, 400);
+}
+
+function playAgain() {
+  score = 0;
+  roundsLeft = 6;
+  gameNumber++;
+  roundHistory = [];
+  roundRewards = [];
+  initRound();
+}
+
+function showTakeaways() {
+  showScreen('screen-takeaways');
+  document.getElementById('final-best').textContent = maxScore;
+}
+
+function restartFresh() {
+  score = 0;
+  maxScore = 0;
+  roundsLeft = 6;
+  gameNumber = 1;
+  roundHistory = [];
+  roundRewards = [];
+  showScreen('screen-intro');
+}
+</script>
+</body>
+</html>

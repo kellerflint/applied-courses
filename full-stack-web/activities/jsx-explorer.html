@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JSX Syntax Explorer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      padding: 20px;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .nav-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      padding: 6px 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #475569;
+      transition: background 0.15s;
+    }
+
+    .nav-btn:hover:not(:disabled) { background: #f1f5f9; }
+    .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .counter {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    /* Card */
+    .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .concept-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .concept-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .concept-desc {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* Code panels */
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .panel {
+      padding: 16px 20px;
+    }
+
+    .panel + .panel {
+      border-left: 1px solid #f1f5f9;
+    }
+
+    .panel-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-label.jsx { color: #6366f1; }
+    .panel-label.html { color: #0891b2; }
+
+    .panel-label .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .jsx .dot { background: #6366f1; }
+    .html .dot { background: #0891b2; }
+
+    pre {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      white-space: pre;
+    }
+
+    /* Highlights */
+    .hl-key  { color: #7c3aed; font-weight: 600; }
+    .hl-attr { color: #0369a1; }
+    .hl-val  { color: #065f46; }
+    .hl-tag  { color: #b45309; }
+    .hl-expr { color: #9d174d; }
+    .hl-cmt  { color: #94a3b8; font-style: italic; }
+
+    /* Note */
+    .note {
+      padding: 14px 20px;
+      border-top: 1px solid #f1f5f9;
+      background: #fffbeb;
+      font-size: 0.85rem;
+      color: #78350f;
+      line-height: 1.5;
+    }
+
+    .note strong { color: #92400e; }
+
+    /* Dots progress */
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 0 4px;
+    }
+
+    .dot-ind {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      transition: background 0.2s;
+    }
+
+    .dot-ind.active { background: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <span class="nav-title">JSX Syntax Explorer</span>
+      <div class="nav-controls">
+        <button class="nav-btn" id="prev-btn" onclick="prev()" disabled>← Prev</button>
+        <span class="counter" id="counter">1 / 5</span>
+        <button class="nav-btn" id="next-btn" onclick="next()">Next →</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="concept-label" id="label"></div>
+        <div class="concept-title" id="title"></div>
+        <div class="concept-desc" id="desc"></div>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label jsx"><span class="dot"></span>JSX</div>
+          <pre id="jsx-code"></pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label html"><span class="dot"></span>Equivalent HTML</div>
+          <pre id="html-code"></pre>
+        </div>
+      </div>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <script>
+    const examples = [
+      {
+        label: "Concept 1 of 5",
+        title: "JSX looks like HTML — but it's JavaScript",
+        desc: "JSX is a syntax extension that lets you write HTML-like code inside a JavaScript function. React compiles it into function calls that create real DOM elements.",
+        jsx: `function Welcome() {
+  return (
+    <div>
+      <h1>Hello!</h1>
+      <p>Welcome to React.</p>
+    </div>
+  );
+}`,
+        html: `<div>
+  <h1>Hello!</h1>
+  <p>Welcome to React.</p>
+</div>`,
+        jsxHtml: `function Welcome() {
+  return (
+    <span class="hl-tag">&lt;div&gt;</span>
+      <span class="hl-tag">&lt;h1&gt;</span>Hello!<span class="hl-tag">&lt;/h1&gt;</span>
+      <span class="hl-tag">&lt;p&gt;</span>Welcome to React.<span class="hl-tag">&lt;/p&gt;</span>
+    <span class="hl-tag">&lt;/div&gt;</span>
+  );
+}`,
+        note: "<strong>The key difference:</strong> JSX lives inside a JavaScript function and gets returned like a value. Regular HTML is just markup. JSX is markup that JavaScript can work with."
+      },
+      {
+        label: "Concept 2 of 5",
+        title: "className, not class",
+        desc: "In HTML you write class=\"...\". In JSX you write className=\"...\" instead. The reason: class is a reserved keyword in JavaScript, so JSX uses className to avoid the conflict.",
+        jsx: `function Button() {
+  return (
+    <button className="btn primary">
+      Click me
+    </button>
+  );
+}`,
+        html: `<button class="btn primary">
+  Click me
+</button>`,
+        jsxHtml: `function Button() {
+  return (
+    <span class="hl-tag">&lt;button</span> <span class="hl-attr">className</span>=<span class="hl-val">"btn primary"</span><span class="hl-tag">&gt;</span>
+      Click me
+    <span class="hl-tag">&lt;/button&gt;</span>
+  );
+}`,
+        note: "<strong>className is the main gotcha for beginners.</strong> If your CSS isn't applying and you can't figure out why, check whether you wrote class instead of className. React won't error — it just silently ignores it."
+      },
+      {
+        label: "Concept 3 of 5",
+        title: "Curly braces embed JavaScript",
+        desc: "Wrap any JavaScript expression in { } to use it inside JSX. Variables, math, function calls, ternaries — anything that evaluates to a value can go inside curly braces.",
+        jsx: `function Profile({ name, score }) {
+  return (
+    <div>
+      <h2>{name}</h2>
+      <p>Score: {score * 10}</p>
+      <p>{score > 50 ? "Expert" : "Learner"}</p>
+    </div>
+  );
+}`,
+        html: `<!-- If name="Alex" and score=75: -->
+
+<div>
+  <h2>Alex</h2>
+  <p>Score: 750</p>
+  <p>Expert</p>
+</div>`,
+        jsxHtml: null,
+        note: "<strong>Curly braces only work for expressions</strong> — things that produce a value. You can't put an if statement or a for loop directly inside JSX curly braces. Use ternaries for conditionals and .map() for lists instead."
+      },
+      {
+        label: "Concept 4 of 5",
+        title: "Props pass data into components",
+        desc: "Props are how you pass data into a component. They work like HTML attributes — you set them where you use the component, and the component receives them as an object.",
+        jsx: `// Defining the component:
+function Badge({ text, color }) {
+  return (
+    <span className={\`badge \${color}\`}>
+      {text}
+    </span>
+  );
+}
+
+// Using it:
+<Badge text="Admin" color="red" />
+<Badge text="Guest" color="gray" />`,
+        html: `<!-- First badge renders as: -->
+<span class="badge red">Admin</span>
+
+<!-- Second badge renders as: -->
+<span class="badge gray">Guest</span>`,
+        jsxHtml: null,
+        note: "<strong>Props are read-only inside the component.</strong> A component can use its props to decide what to render, but it shouldn't modify them. Data flows in one direction: from parent to child."
+      },
+      {
+        label: "Concept 5 of 5",
+        title: "Self-closing tags and single root",
+        desc: "Two syntax rules trip up most beginners: tags without children must be self-closed, and every component must return a single root element.",
+        jsx: `// Self-closing tags:
+<img src="photo.jpg" alt="A photo" />
+<input type="text" />
+<br />
+
+// Single root — wrap siblings in a div
+// (or use an empty <> fragment):
+function App() {
+  return (
+    <>
+      <h1>Title</h1>
+      <p>Paragraph</p>
+    </>
+  );
+}`,
+        html: `<!-- HTML allows this: -->
+<img src="photo.jpg" alt="A photo">
+<input type="text">
+<br>
+
+<!-- JSX requires the slash: -->
+<!-- <img src="photo.jpg" alt="A photo" />  ✓ -->
+<!-- <img src="photo.jpg" alt="A photo">   ✗ -->`,
+        jsxHtml: null,
+        note: "<strong>The &lt;&gt; shorthand</strong> is a React Fragment — it groups elements without adding an extra div to the DOM. Use it when you need a single root but don't want an extra wrapper element in your HTML output."
+      }
+    ];
+
+    let current = 0;
+
+    function render() {
+      const ex = examples[current];
+      document.getElementById('label').textContent = ex.label;
+      document.getElementById('title').textContent = ex.title;
+      document.getElementById('desc').textContent = ex.desc;
+      document.getElementById('note').innerHTML = ex.note;
+
+      // JSX panel
+      const jsxEl = document.getElementById('jsx-code');
+      if (ex.jsxHtml) {
+        jsxEl.innerHTML = ex.jsxHtml;
+      } else {
+        jsxEl.textContent = ex.jsx;
+      }
+
+      // HTML panel
+      document.getElementById('html-code').textContent = ex.html;
+
+      // Nav
+      document.getElementById('counter').textContent = `${current + 1} / ${examples.length}`;
+      document.getElementById('prev-btn').disabled = current === 0;
+      document.getElementById('next-btn').disabled = current === examples.length - 1;
+
+      // Dots
+      const dotsEl = document.getElementById('dots');
+      dotsEl.innerHTML = examples.map((_, i) =>
+        `<div class="dot-ind ${i === current ? 'active' : ''}"></div>`
+      ).join('');
+    }
+
+    function next() { if (current < examples.length - 1) { current++; render(); } }
+    function prev() { if (current > 0) { current--; render(); } }
+
+    render();
+  </script>
+</body>
+</html>

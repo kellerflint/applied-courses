@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classify the AI</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.9rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 0.8rem;
+    overflow-y: auto;
+  }
+
+  .instruction {
+    font-size: 0.88rem;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .card-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    min-height: 44px;
+  }
+
+  .categories {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .category {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .category-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid currentColor;
+  }
+  .category[data-cat="rules"] .category-label { color: #6a737d; }
+  .category[data-cat="ml"] .category-label { color: #2563eb; }
+  .category[data-cat="nn"] .category-label { color: #7c3aed; }
+  .category[data-cat="genai"] .category-label { color: #059669; }
+
+  .drop-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    border: 2px dashed #d1d9e0;
+    border-radius: 8px;
+    min-height: 60px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .drop-zone.over {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .card {
+    padding: 0.5rem 0.7rem;
+    background: #fff;
+    border: 2px solid #d1d9e0;
+    border-radius: 6px;
+    cursor: grab;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+    white-space: nowrap;
+  }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; }
+  .card.correct { border-color: #1a7f37; background: #ecfdf5; }
+  .card.wrong { border-color: #cf222e; background: #fef2f2; }
+
+  .footer {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e1e4e8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .status {
+    font-size: 0.88rem;
+    color: #6a737d;
+  }
+  .status.correct { color: #1a7f37; font-weight: 600; }
+  .status.wrong { color: #cf222e; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button:hover { background: #f3f4f6; }
+  button.primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+  button.primary:hover { background: #1d4ed8; }
+
+  .success-msg {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    color: #065f46;
+    line-height: 1.5;
+    display: none;
+  }
+  .success-msg.visible { display: block; }
+
+  @media (max-width: 600px) {
+    .categories { grid-template-columns: 1fr; }
+    .card { font-size: 0.78rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>Classify the AI</strong> — Drag each technology into the category that best describes it.
+</div>
+
+<div class="main">
+  <div class="instruction">
+    Each card describes an AI application. Drag it into the category that fits best. Some could arguably fit in more than one spot. Go with the <strong>primary</strong> technique each one relies on.
+  </div>
+
+  <div class="card-bank" id="bank"></div>
+
+  <div class="categories">
+    <div class="category" data-cat="rules">
+      <div class="category-label">Rules-Based / Algorithmic AI</div>
+      <div class="drop-zone" id="zone-rules"></div>
+    </div>
+    <div class="category" data-cat="ml">
+      <div class="category-label">Machine Learning</div>
+      <div class="drop-zone" id="zone-ml"></div>
+    </div>
+    <div class="category" data-cat="nn">
+      <div class="category-label">Neural Networks / Deep Learning</div>
+      <div class="drop-zone" id="zone-nn"></div>
+    </div>
+    <div class="category" data-cat="genai">
+      <div class="category-label">Generative AI</div>
+      <div class="drop-zone" id="zone-genai"></div>
+    </div>
+  </div>
+
+  <div class="success-msg" id="success-msg">
+    <strong>Nice work!</strong> In practice, many real systems combine techniques. Self-driving cars use rules, ML, and deep learning together. Chatbots can mix rules with LLMs. The categories help you understand the building blocks, but real applications often blend them.
+  </div>
+</div>
+
+<div class="footer">
+  <span class="status" id="status">Place all cards to check your answer.</span>
+  <div style="display:flex;gap:0.5rem">
+    <button id="btn-reset">Reset</button>
+    <button id="btn-check" class="primary" disabled>Check</button>
+  </div>
+</div>
+
+<script>
+const items = [
+  { id: "c0", text: "Pathfinding AI in video games", cat: "rules" },
+  { id: "c1", text: "ChatGPT", cat: "genai" },
+  { id: "c2", text: "Handwriting recognition", cat: "nn" },
+  { id: "c3", text: "Predicting house prices", cat: "ml" },
+  { id: "c4", text: "YouTube / TikTok recommendations", cat: "nn" },
+  { id: "c5", text: "Self-driving cars", cat: "nn" },
+  { id: "c6", text: "Image generation (DALL-E)", cat: "genai" },
+  { id: "c7", text: "Customer service chatbots", cat: "rules" },
+  { id: "c8", text: "Language translation", cat: "nn" },
+];
+
+const TOTAL = items.length;
+const bank = document.getElementById("bank");
+const statusEl = document.getElementById("status");
+const btnCheck = document.getElementById("btn-check");
+const btnReset = document.getElementById("btn-reset");
+const successMsg = document.getElementById("success-msg");
+
+let draggedEl = null;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function createCard(item) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.draggable = true;
+  card.dataset.id = item.id;
+  card.dataset.cat = item.cat;
+  card.textContent = item.text;
+
+  card.addEventListener("dragstart", (e) => {
+    draggedEl = card;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    draggedEl = null;
+  });
+
+  return card;
+}
+
+function initBank() {
+  bank.innerHTML = "";
+  const shuffled = shuffle([...items]);
+  for (const item of shuffled) {
+    bank.appendChild(createCard(item));
+  }
+}
+
+// Set up all drop zones (categories + bank)
+const allZones = document.querySelectorAll(".drop-zone, .card-bank");
+allZones.forEach((zone) => {
+  zone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    if (!draggedEl) return;
+    zone.classList.add("over");
+  });
+  zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("over");
+    if (!draggedEl) return;
+    zone.appendChild(draggedEl);
+    clearFeedback();
+    updateState();
+  });
+});
+
+function updateState() {
+  const inBank = bank.querySelectorAll(".card").length;
+  const placed = TOTAL - inBank;
+  btnCheck.disabled = placed < TOTAL;
+  if (placed < TOTAL) {
+    statusEl.textContent = `${placed}/${TOTAL} cards placed.`;
+    statusEl.className = "status";
+  }
+}
+
+function clearFeedback() {
+  document.querySelectorAll(".card").forEach((c) => {
+    c.classList.remove("correct", "wrong");
+  });
+  successMsg.classList.remove("visible");
+}
+
+btnCheck.addEventListener("click", () => {
+  let allCorrect = true;
+  const zones = { rules: "zone-rules", ml: "zone-ml", nn: "zone-nn", genai: "zone-genai" };
+
+  document.querySelectorAll(".drop-zone .card").forEach((card) => {
+    const zone = card.closest(".drop-zone");
+    const zoneCat = Object.entries(zones).find(([, id]) => zone.id === id);
+    if (!zoneCat) return;
+
+    if (card.dataset.cat === zoneCat[0]) {
+      card.classList.add("correct");
+      card.classList.remove("wrong");
+    } else {
+      card.classList.add("wrong");
+      card.classList.remove("correct");
+      allCorrect = false;
+    }
+  });
+
+  if (allCorrect) {
+    statusEl.textContent = "All correct!";
+    statusEl.className = "status correct";
+    successMsg.classList.add("visible");
+  } else {
+    statusEl.textContent = "Some cards are in the wrong category. Look for the red borders.";
+    statusEl.className = "status wrong";
+    successMsg.classList.remove("visible");
+  }
+});
+
+btnReset.addEventListener("click", () => {
+  document.querySelectorAll(".drop-zone .card").forEach((card) => {
+    bank.appendChild(card);
+  });
+  clearFeedback();
+  statusEl.textContent = `Place all cards to check your answer.`;
+  statusEl.className = "status";
+  btnCheck.disabled = true;
+  initBank();
+});
+
+initBank();
+</script>
+</body>
+</html>

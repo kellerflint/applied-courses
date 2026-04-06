@@ -1,0 +1,102 @@
+{% extends "base.njk" %}
+
+{% block extraStyles %}
+.course-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.course-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+.course-header p {
+  color: var(--text-muted);
+}
+
+.unit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.unit-section {}
+
+.unit-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.page-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--text);
+  transition: background 0.1s;
+}
+.page-link:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.page-link-num {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 1.5rem;
+}
+
+.page-link-title {
+  font-size: 0.95rem;
+}
+{% endblock %}
+
+{% block topBar %}
+<div class="top-bar">
+  <a class="brand" href="/">Courses</a>
+</div>
+{% endblock %}
+
+{% block main %}
+{% set coursePages = collections.pages | pagesInCourse(page.url) %}
+{% set unitGroups = coursePages | groupByUnit %}
+
+<main class="page-wrap">
+  <div class="course-header">
+    <h1>{{ title }}</h1>
+    {% if description %}<p>{{ description }}</p>{% endif %}
+  </div>
+
+  <div class="unit-list">
+    {% for unit in unitGroups %}
+    <div class="unit-section">
+      <div class="unit-heading">{{ unit.title }}</div>
+      <div class="page-links">
+        {% for p in unit.pages %}
+        <a class="page-link" href="{{ p.url }}">
+          <span class="page-link-num">{{ loop.index }}</span>
+          <span class="page-link-title">{{ p.data.title }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

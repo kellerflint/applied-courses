@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workflow Sort</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.9rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+
+  .instruction {
+    font-size: 0.92rem;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .columns {
+    display: flex;
+    gap: 1.5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .column-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6a737d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #e1e4e8;
+  }
+
+  .drop-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 60px;
+  }
+
+  .card {
+    padding: 0.65rem 0.85rem;
+    background: #fff;
+    border: 2px solid #d1d9e0;
+    border-radius: 8px;
+    cursor: grab;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+  }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; }
+  .card.step { border-left: 4px solid #2563eb; }
+  .card.desc { border-left: 4px solid #7c3aed; }
+
+  .card .card-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6a737d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.2rem;
+  }
+  .card.step .card-label { color: #2563eb; }
+  .card.desc .card-label { color: #7c3aed; }
+
+  .slot {
+    min-height: 70px;
+    border: 2px dashed #d1d9e0;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0.5rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .slot.over {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+  .slot .placeholder {
+    font-size: 0.8rem;
+    color: #adb5bd;
+  }
+  .slot.filled {
+    border-style: solid;
+    border-color: #d1d9e0;
+    min-height: auto;
+  }
+  .slot.filled .card { margin: 0; border: none; }
+
+  .answer-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .answer-row .slot {
+    flex: 1;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #6a737d;
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .footer {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e1e4e8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .status {
+    font-size: 0.88rem;
+    color: #6a737d;
+  }
+  .status.correct { color: #1a7f37; font-weight: 600; }
+  .status.wrong { color: #cf222e; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button:hover { background: #f3f4f6; }
+  button.primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+  button.primary:hover { background: #1d4ed8; }
+
+  .success-msg {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    color: #065f46;
+    line-height: 1.55;
+    display: none;
+  }
+  .success-msg.visible { display: block; }
+
+  @media (max-width: 600px) {
+    .columns { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>AI Workflow Sort</strong> — Drag the steps and descriptions into the correct order. Match each step with its description.
+</div>
+
+<div class="main">
+  <div class="instruction">
+    Think about what you did today. Drag the <strong style="color:#2563eb">steps</strong> and <strong style="color:#7c3aed">descriptions</strong> into the right slots to build the general applied AI workflow.
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <div class="column-label">Available pieces</div>
+      <div class="drop-zone" id="bank"></div>
+    </div>
+
+    <div class="column" style="flex:1.4">
+      <div class="column-label">Workflow (put in order)</div>
+      <div class="drop-zone" id="answer-zone">
+        <div class="answer-row" data-row="0">
+          <div class="step-number">1</div>
+          <div class="slot" data-type="step" data-row="0"><span class="placeholder">Step</span></div>
+          <div class="slot" data-type="desc" data-row="0"><span class="placeholder">Description</span></div>
+        </div>
+        <div class="answer-row" data-row="1">
+          <div class="step-number">2</div>
+          <div class="slot" data-type="step" data-row="1"><span class="placeholder">Step</span></div>
+          <div class="slot" data-type="desc" data-row="1"><span class="placeholder">Description</span></div>
+        </div>
+        <div class="answer-row" data-row="2">
+          <div class="step-number">3</div>
+          <div class="slot" data-type="step" data-row="2"><span class="placeholder">Step</span></div>
+          <div class="slot" data-type="desc" data-row="2"><span class="placeholder">Description</span></div>
+        </div>
+        <div class="answer-row" data-row="3">
+          <div class="step-number">4</div>
+          <div class="slot" data-type="step" data-row="3"><span class="placeholder">Step</span></div>
+          <div class="slot" data-type="desc" data-row="3"><span class="placeholder">Description</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="success-msg" id="success-msg">
+    <strong>Correct!</strong><br>This same workflow applies whether you're working with TensorFlow, YOLO, a cloud API, or a fine-tuned LLM. The tools and data types change, but the steps stay the same. You'll repeat this pattern throughout the course.
+  </div>
+</div>
+
+<div class="footer">
+  <span class="status" id="status">Place all 8 pieces to check your answer.</span>
+  <div style="display:flex;gap:0.5rem">
+    <button id="btn-reset">Reset</button>
+    <button id="btn-check" class="primary" disabled>Check</button>
+  </div>
+</div>
+
+<script>
+const steps = [
+  { id: "s0", type: "step", text: "Collect data" },
+  { id: "s1", type: "step", text: "Train a model" },
+  { id: "s2", type: "step", text: "Export & deploy" },
+  { id: "s3", type: "step", text: "Integrate into software" },
+];
+
+const descs = [
+  { id: "d0", type: "desc", text: "Gather labeled examples that represent each category the model should recognize" },
+  { id: "d1", type: "desc", text: "Feed the data into a learning algorithm so it finds patterns that distinguish the categories" },
+  { id: "d2", type: "desc", text: "Package the trained model and make it available for other applications to load" },
+  { id: "d3", type: "desc", text: "Load the model in your application code and use its predictions to drive behavior" },
+];
+
+// correct answer: row 0 = s0+d0, row 1 = s1+d1, row 2 = s2+d2, row 3 = s3+d3
+const correctMap = { 0: { step: "s0", desc: "d0" }, 1: { step: "s1", desc: "d1" }, 2: { step: "s2", desc: "d2" }, 3: { step: "s3", desc: "d3" } };
+
+const bank = document.getElementById("bank");
+const statusEl = document.getElementById("status");
+const btnCheck = document.getElementById("btn-check");
+const btnReset = document.getElementById("btn-reset");
+const successMsg = document.getElementById("success-msg");
+
+let draggedEl = null;
+
+function createCard(item) {
+  const card = document.createElement("div");
+  card.className = `card ${item.type}`;
+  card.draggable = true;
+  card.dataset.id = item.id;
+  card.dataset.cardType = item.type;
+
+  const label = document.createElement("div");
+  label.className = "card-label";
+  label.textContent = item.type === "step" ? "Step" : "Description";
+
+  const text = document.createTextNode(item.text);
+  card.appendChild(label);
+  card.appendChild(text);
+
+  card.addEventListener("dragstart", (e) => {
+    draggedEl = card;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    draggedEl = null;
+  });
+
+  return card;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function initBank() {
+  bank.innerHTML = "";
+  const all = shuffle([...steps, ...descs]);
+  for (const item of all) {
+    bank.appendChild(createCard(item));
+  }
+}
+
+// Drag over / drop on slots
+document.querySelectorAll(".slot").forEach((slot) => {
+  slot.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    if (!draggedEl) return;
+    if (draggedEl.dataset.cardType !== slot.dataset.type) return;
+    slot.classList.add("over");
+  });
+  slot.addEventListener("dragleave", () => slot.classList.remove("over"));
+  slot.addEventListener("drop", (e) => {
+    e.preventDefault();
+    slot.classList.remove("over");
+    if (!draggedEl) return;
+    if (draggedEl.dataset.cardType !== slot.dataset.type) return;
+
+    // If slot already has a card, move it back to bank
+    const existing = slot.querySelector(".card");
+    if (existing) bank.appendChild(existing);
+
+    // If dragged from another slot, clear that slot
+    const oldSlot = draggedEl.closest(".slot");
+    if (oldSlot) {
+      oldSlot.classList.remove("filled");
+      if (!oldSlot.querySelector(".placeholder")) {
+        const ph = document.createElement("span");
+        ph.className = "placeholder";
+        ph.textContent = oldSlot.dataset.type === "step" ? "Step" : "Description";
+        oldSlot.appendChild(ph);
+      }
+    }
+
+    // Place card in slot
+    const ph = slot.querySelector(".placeholder");
+    if (ph) ph.remove();
+    slot.appendChild(draggedEl);
+    slot.classList.add("filled");
+
+    updateState();
+  });
+});
+
+// Allow dropping back to bank
+bank.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+bank.addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (!draggedEl) return;
+  const oldSlot = draggedEl.closest(".slot");
+  if (oldSlot) {
+    oldSlot.classList.remove("filled");
+    const ph = document.createElement("span");
+    ph.className = "placeholder";
+    ph.textContent = oldSlot.dataset.type === "step" ? "Step" : "Description";
+    oldSlot.appendChild(ph);
+  }
+  bank.appendChild(draggedEl);
+  updateState();
+});
+
+function updateState() {
+  const allSlots = document.querySelectorAll(".slot");
+  const filledCount = document.querySelectorAll(".slot.filled").length;
+  btnCheck.disabled = filledCount < 8;
+  if (filledCount < 8) {
+    statusEl.textContent = `${filledCount}/8 pieces placed.`;
+    statusEl.className = "status";
+  }
+}
+
+btnCheck.addEventListener("click", () => {
+  let allCorrect = true;
+  for (let row = 0; row < 4; row++) {
+    const stepSlot = document.querySelector(`.slot[data-type="step"][data-row="${row}"]`);
+    const descSlot = document.querySelector(`.slot[data-type="desc"][data-row="${row}"]`);
+    const stepCard = stepSlot.querySelector(".card");
+    const descCard = descSlot.querySelector(".card");
+
+    const stepOk = stepCard && stepCard.dataset.id === correctMap[row].step;
+    const descOk = descCard && descCard.dataset.id === correctMap[row].desc;
+
+    stepSlot.style.borderColor = stepOk ? "#1a7f37" : "#cf222e";
+    descSlot.style.borderColor = descOk ? "#1a7f37" : "#cf222e";
+
+    if (!stepOk || !descOk) allCorrect = false;
+  }
+
+  if (allCorrect) {
+    statusEl.textContent = "All correct!";
+    statusEl.className = "status correct";
+    successMsg.classList.add("visible");
+  } else {
+    statusEl.textContent = "Some pieces are in the wrong spot. Try again.";
+    statusEl.className = "status wrong";
+    successMsg.classList.remove("visible");
+  }
+});
+
+btnReset.addEventListener("click", () => {
+  document.querySelectorAll(".slot").forEach((slot) => {
+    const card = slot.querySelector(".card");
+    if (card) bank.appendChild(card);
+    slot.classList.remove("filled");
+    slot.style.borderColor = "";
+    if (!slot.querySelector(".placeholder")) {
+      const ph = document.createElement("span");
+      ph.className = "placeholder";
+      ph.textContent = slot.dataset.type === "step" ? "Step" : "Description";
+      slot.appendChild(ph);
+    }
+  });
+  statusEl.textContent = "Place all 8 pieces to check your answer.";
+  statusEl.className = "status";
+  btnCheck.disabled = true;
+  successMsg.classList.remove("visible");
+  initBank();
+});
+
+initBank();
+</script>
+</body>
+</html>
