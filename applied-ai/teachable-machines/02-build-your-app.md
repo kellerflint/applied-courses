@@ -146,13 +146,7 @@ Replace `YOUR_MODEL_ID` with the URL you copied from Teachable Machine in the pr
 
 ## Step 2: Open It
 
-Open `index.html` in your browser. Some browsers require a local server for webcam access to work. If opening the file directly gives you errors, run this in your terminal from the folder where your file is:
-
-```bash
-python -m http.server 8000
-```
-
-Then go to `http://localhost:8000` in your browser. Click **Start Camera** and allow webcam access.
+Open `index.html` in your browser. Click **Start Camera** and allow webcam access.
 
 You should see your webcam feed with live prediction labels updating below it. If you see `NaN` or errors, double-check that your model URL is correct and ends with `/`.
 
