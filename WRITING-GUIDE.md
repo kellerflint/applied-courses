@@ -88,6 +88,8 @@ For open-ended questions where there are multiple valid answers, still use `Reve
 
 Reveals always follow directly below the partner prompt that precedes them, with no content between.
 
+**Reveal styling** is handled globally in `_includes/base.njk`. The `<summary>` renders as a small pill-shaped button in the accent color so it reads as interactive rather than as plain text. A triangle indicator (▶/▼) shows open/closed state. `<details>` has `margin: 1.25em 0` so there is consistent spacing above and below it whether it is open or closed. Do not add inline styles to `<details>` or `<summary>` elements — the global styles handle everything.
+
 **Q&A sections**
 When a page is structured around questions (like a reflect/review page), each question gets its own `##` section with a short descriptive heading. The partner prompt goes directly under the heading (with optional 1–2 sentence framing if context is needed), and the reveal follows the prompt.
 

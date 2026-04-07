@@ -51,6 +51,8 @@ To update a deployed site, go to the repository, click **Add file > Upload files
 
 Vite React projects need a build step before they can be hosted. The `gh-pages` package handles this.
 
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/hn1IkJk24ow?si=5WqbFR5a_Gi6jNtG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 ### 1. Create a repository and push your project
 
 Create a new GitHub repository, then push your local Vite project to it using Git.

@@ -3,7 +3,11 @@ title: How the Course Works
 order: 1
 ---
 
-This course focuses on React. You'll build real projects with it throughout the quarter. The "Full Stack" in the course name refers to the capstone: you'll be building the frontend here while your Algorithms (334) class builds the backend for the same project. Both sides need to work together.
+This course is about front-end web development with React. React is one of the most widely used front-end JavaScript frameworks in industry, and learning it is a meaningful step up from writing standard HTML, CSS, and JavaScript.
+
+You've already done back-end development in SDEV 328: APIs, ORMs, server-side architecture, and such. This course is the front-end counterpart to that. By the end of the quarter, you should be able to build real, full-stack web applications across the whole stack. That's an awesome place to be!
+
+Later in the quarter, you'll put that to work in a final project built in collaboration with your Algorithms class (SDEV 334). You'll build the front end here and the back end in 334. Both sides will need to connect and work together. Details on that will come later in the quarter.
 
 ## What You'll Be Doing in Class
 
@@ -40,12 +44,12 @@ If you need an extension, ask before 5pm on the day the assignment is due. The d
 
 ## Midterm and Final Reviews
 
-You'll meet with me twice: once at midterm and once at finals. We'll sit down, open your code, and walk through it together. I'll ask you to explain what you wrote and why you made the choices you did.
+You'll meet with me twice: once at midterm and once at finals. We'll sit down, look though code you've submitted over the quarter, and walk through it together. I'll ask you to explain what you wrote and why you made the choices you did.
 
-You need to be able to answer. Write code you understand well enough to explain from scratch. If you can't explain it, that's a signal to go back and understand it better.
+You need to be able to answer. Write code you understand well enough to explain from scratch. If you can't explain it, that's a signal to go back and understand it better. Often it's also a sign of overreliance on AI tools. Do not let AI substitute for your own learning. Test your own understanding regularly.
 
 ## The Most Valuable Skill in This Class
 
-Being able to talk about code clearly and confidently matters more than most people will ever tell you. You have to explain it out loud to another person, describe what something does, justify a design decision, and ask precise questions when you're stuck.
+Being able to talk about code clearly and confidently matters more than most people will ever tell you. You must to be able to explain it out loud to another person, describe what something does, justify a design decision, and ask precise questions when you're stuck.
 
 That skill is noticed in every interview, every code review, and every team you'll work on. This class is structured to build it. Take that part seriously.
