@@ -7,7 +7,7 @@ Today you're going to train an image classification model and plug it into a web
 
 This matters because it's the same basic workflow behind most applied AI: collect data, train a model, and integrate it into software. We're starting here because [Teachable Machine](https://teachablemachine.withgoogle.com/) lets you do the whole loop in about an hour, so you can see how all the pieces fit together before we dig into each one individually later in the course.
 
-Find a partner. You'll work through this together.
+Find a partner. You'll pair program on one shared app (so only one of you needs to open Teachable Machine and train the model).
 
 ## What is Teachable Machine?
 
@@ -49,7 +49,7 @@ For each class:
 
 ### Tips for good training data
 
-- **Both partners should record samples.** If only one person records, the model may learn to recognize that person's appearance rather than the gesture. Having two different people in the training data forces it to focus on what actually matters.
+- **Both partners should record samples (for the same model).** If only one person records, the model may learn to recognize that person's appearance rather than the gesture. Having two different people in the training data forces it to focus on what actually matters.
 - **Change your background between recordings** for the same reason. If every "thumbs up" sample has the same bookshelf behind you, the model might learn "bookshelf = thumbs up."
 - **Keep your classes visually distinct.** If two gestures look nearly identical on camera, the model has very little to work with to tell them apart.
 
@@ -71,6 +71,6 @@ Once it finishes, the **Preview** panel on the right will activate. You'll see y
 4. Copy the URL it gives you. It will look something like:
    `https://teachablemachine.withgoogle.com/models/abc123/`
 
-**Save this URL.** You'll use it on the next page to load your model into a web app.
+**Save this URL.** You'll use it on the next page to load your model into your app.
 
 When you upload the model, Google hosts it at that URL as a set of files that any web page can load using TensorFlow.js. This is how your app will access the model you just trained.

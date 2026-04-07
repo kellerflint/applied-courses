@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confidence Threshold Activity</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f8fa;
+    color: #1f2328;
+    font-size: 14px;
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2328;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  /* Scenario buttons */
+  .scenario-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .scenario-btn {
+    flex: 1;
+    min-width: 160px;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #f6f8fa;
+    color: #1f2328;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .scenario-btn:hover {
+    background: #eaeef2;
+    border-color: #8c959f;
+  }
+
+  .scenario-btn.active {
+    background: #0969da;
+    border-color: #0969da;
+    color: #fff;
+  }
+
+  /* Prediction bars */
+  .bars-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bar-label {
+    width: 100px;
+    font-size: 13px;
+    color: #57606a;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 18px;
+    background: #eaeef2;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: #0969da;
+    border-radius: 4px;
+    transition: width 0.1s ease-out;
+  }
+
+  .bar-value {
+    width: 38px;
+    text-align: right;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: #57606a;
+    flex-shrink: 0;
+  }
+
+  /* Threshold slider */
+  .threshold-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .threshold-row label {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .threshold-row input[type=range] {
+    flex: 1;
+    accent-color: #0969da;
+    cursor: pointer;
+    height: 4px;
+  }
+
+  .threshold-value {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #0969da;
+    width: 34px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Output panels */
+  .output-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .output-panel {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .output-panel.no-threshold {
+    background: #fffbf0;
+    border-color: #d4a72c;
+  }
+
+  .output-panel.with-threshold {
+    background: #f0fdf4;
+    border-color: #2da44e;
+  }
+
+  .output-panel h3 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .output-panel.no-threshold h3 {
+    color: #9a6700;
+  }
+
+  .output-panel.with-threshold h3 {
+    color: #1a7f37;
+  }
+
+  .output-class {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    min-height: 26px;
+  }
+
+  .output-panel.no-threshold .output-class {
+    color: #9a6700;
+  }
+
+  .output-panel.with-threshold .output-class {
+    color: #1a7f37;
+  }
+
+  .output-uncertain {
+    color: #8c959f !important;
+    font-style: italic;
+  }
+
+  .changes-counter {
+    font-size: 11px;
+    color: #57606a;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .changes-count {
+    font-weight: 600;
+  }
+
+  /* Insight box */
+  .insight {
+    background: #ddf4ff;
+    border: 1px solid #54aeff;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #0550ae;
+    line-height: 1.5;
+  }
+
+  .insight strong {
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Scenario selector -->
+  <div class="card">
+    <div style="margin-bottom: 10px;">
+      <h2>Scenario</h2>
+    </div>
+    <div class="scenario-row">
+      <button class="scenario-btn active" data-scenario="clear">Clearly showing gesture</button>
+      <button class="scenario-btn" data-scenario="ambiguous">Ambiguous / mid-gesture</button>
+      <button class="scenario-btn" data-scenario="nothing">Not showing anything</button>
+    </div>
+  </div>
+
+  <!-- Live prediction bars -->
+  <div class="card">
+    <div style="margin-bottom: 10px;">
+      <h2>Live Predictions <span style="font-weight: 400; color: #57606a; font-size: 13px;">(updates every 150ms)</span></h2>
+    </div>
+    <div class="bars-section">
+      <div class="bar-row">
+        <span class="bar-label">Thumbs Up</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-0"></div></div>
+        <span class="bar-value" id="val-0">0.00</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Thumbs Down</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-1"></div></div>
+        <span class="bar-value" id="val-1">0.00</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Nothing</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-2"></div></div>
+        <span class="bar-value" id="val-2">0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Threshold slider -->
+  <div class="card">
+    <div class="threshold-row">
+      <label for="threshold-slider">Confidence threshold:</label>
+      <input type="range" id="threshold-slider" min="0" max="1" step="0.01" value="0.80">
+      <span class="threshold-value" id="threshold-display">0.80</span>
+    </div>
+  </div>
+
+  <!-- Output panels -->
+  <div class="output-row">
+    <div class="output-panel no-threshold">
+      <h3>Without threshold</h3>
+      <div class="output-class" id="out-raw">—</div>
+      <div class="changes-counter">Changes/sec: <span class="changes-count" id="cps-raw">0</span></div>
+    </div>
+    <div class="output-panel with-threshold">
+      <h3>With threshold</h3>
+      <div class="output-class" id="out-thresh">—</div>
+      <div class="changes-counter">Changes/sec: <span class="changes-count" id="cps-thresh">0</span></div>
+    </div>
+  </div>
+
+  <!-- Key insight -->
+  <div class="insight">
+    <strong>Key insight:</strong> The threshold is not about accuracy. It is about stability. You only take action when the model is confident enough. Otherwise you wait!
+  </div>
+
+</div>
+
+<script>
+  const CLASSES = ["Thumbs Up", "Thumbs Down", "Nothing"];
+
+  // --- Scenario definitions ---
+  // Each scenario returns target probabilities [thumbsUp, thumbsDown, nothing]
+  // with noise parameters applied each frame.
+  const SCENARIOS = {
+    clear: {
+      // Thumbs Up dominant, hovers ~0.85
+      base: [0.85, 0.08, 0.07],
+      noise: [0.06, 0.04, 0.03],
+    },
+    ambiguous: {
+      // Thumbs Up and Thumbs Down trade places, neither consistently high
+      base: [0.45, 0.40, 0.15],
+      noise: [0.18, 0.18, 0.08],
+      oscillate: true, // additional oscillation between classes 0 and 1
+    },
+    nothing: {
+      // All low, random noise
+      base: [0.12, 0.10, 0.78],
+      noise: [0.08, 0.08, 0.12],
+    },
+  };
+
+  let currentScenario = "clear";
+  let threshold = 0.80;
+  let probs = [0.0, 0.0, 0.0];
+  let oscillatePhase = 0;
+
+  // Change tracking
+  let rawHistory = []; // timestamps of raw changes
+  let threshHistory = []; // timestamps of threshold changes
+  let lastRawClass = "";
+  let lastThreshClass = "";
+
+  // DOM refs
+  const bars = [0, 1, 2].map(i => document.getElementById("bar-" + i));
+  const vals = [0, 1, 2].map(i => document.getElementById("val-" + i));
+  const outRaw = document.getElementById("out-raw");
+  const outThresh = document.getElementById("out-thresh");
+  const cpsRaw = document.getElementById("cps-raw");
+  const cpsThresh = document.getElementById("cps-thresh");
+  const threshSlider = document.getElementById("threshold-slider");
+  const threshDisplay = document.getElementById("threshold-display");
+
+  // --- Scenario buttons ---
+  document.querySelectorAll(".scenario-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".scenario-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentScenario = btn.dataset.scenario;
+      oscillatePhase = 0;
+      rawHistory = [];
+      threshHistory = [];
+      lastRawClass = "";
+      lastThreshClass = "";
+    });
+  });
+
+  // --- Threshold slider ---
+  threshSlider.addEventListener("input", () => {
+    threshold = parseFloat(threshSlider.value);
+    threshDisplay.textContent = threshold.toFixed(2);
+  });
+
+  // --- Simulation ---
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function gaussianNoise() {
+    // Box-Muller approximation
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  function generateProbs() {
+    const s = SCENARIOS[currentScenario];
+    let raw = s.base.map((b, i) => b + gaussianNoise() * s.noise[i]);
+
+    if (s.oscillate) {
+      // Make classes 0 and 1 trade places with a slow sine wave
+      oscillatePhase += 0.25;
+      const shift = Math.sin(oscillatePhase) * 0.22;
+      raw[0] += shift;
+      raw[1] -= shift;
+    }
+
+    // Softmax-ish: clamp negatives then normalize
+    raw = raw.map(v => Math.max(0.001, v));
+    const sum = raw.reduce((a, b) => a + b, 0);
+    return raw.map(v => v / sum);
+  }
+
+  function topClass(p) {
+    let best = 0;
+    for (let i = 1; i < p.length; i++) {
+      if (p[i] > p[best]) best = i;
+    }
+    return { index: best, prob: p[best], name: CLASSES[best] };
+  }
+
+  function countPerSecond(history) {
+    const now = Date.now();
+    // Keep only last 3 seconds for rolling average
+    const window = 3000;
+    const recent = history.filter(t => now - t < window);
+    // Trim the history array in place
+    history.length = 0;
+    recent.forEach(t => history.push(t));
+    return (recent.length / (window / 1000)).toFixed(1);
+  }
+
+  function tick() {
+    probs = generateProbs();
+    const now = Date.now();
+
+    // Update bars
+    probs.forEach((p, i) => {
+      bars[i].style.width = (p * 100).toFixed(1) + "%";
+      vals[i].textContent = p.toFixed(2);
+    });
+
+    // Raw output
+    const top = topClass(probs);
+    const rawName = top.name;
+    if (rawName !== lastRawClass) {
+      rawHistory.push(now);
+      lastRawClass = rawName;
+    }
+    outRaw.textContent = rawName;
+    outRaw.className = "output-class"; // reset
+
+    // Threshold output
+    let threshName;
+    if (top.prob > threshold) {
+      threshName = top.name;
+    } else {
+      threshName = "Uncertain";
+    }
+    if (threshName !== lastThreshClass) {
+      threshHistory.push(now);
+      lastThreshClass = threshName;
+    }
+    if (threshName === "Uncertain") {
+      outThresh.textContent = "Uncertain";
+      outThresh.className = "output-class output-uncertain";
+    } else {
+      outThresh.textContent = threshName;
+      outThresh.className = "output-class";
+    }
+
+    // Changes per second
+    cpsRaw.textContent = countPerSecond(rawHistory);
+    cpsThresh.textContent = countPerSecond(threshHistory);
+  }
+
+  setInterval(tick, 150);
+  tick();
+</script>
+</body>
+</html>

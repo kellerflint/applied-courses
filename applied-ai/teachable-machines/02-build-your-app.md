@@ -200,7 +200,11 @@ Every frame, the model produces an array of predictions. Before you start writin
 
 Now you'll extend the `predict()` function to make your page respond to what the model sees.
 
-Notice the `topClass.probability > 0.8` checks in the examples below. This is a **confidence threshold**. The model always has an opinion, even when it's very uncertain. The threshold means you only take action when the model is at least 80% sure. Without it, your app would constantly flicker between states on ambiguous frames.
+The examples below use a **confidence threshold**, a check like `topClass.probability > 0.8`. Before writing any of this code, try the demo to see why that matters.
+
+{% activity "confidence-threshold.html", "Confidence Threshold Explorer", "520px" %}
+
+Switch between scenarios and watch what happens to the two output panels. Without a threshold your app reacts to every frame, including the noisy ones. The threshold means you only act when the model is confident enough to be worth acting on.
 
 ### Change the background color
 
