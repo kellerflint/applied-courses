@@ -61,10 +61,17 @@ In all three cases, the fix is the same: make your training data more varied so 
 >
 > 3. You used transfer learning to build a custom classifier from a small dataset. Where else might this technique be useful? Think about other kinds of data or scenarios beyond image classification.
 
-## What to Turn In
+## Deploy
 
-- Your working `index.html` file
-- A brief comment (a few sentences) answering the three discussion questions above
+Host your app on GitHub Pages so you can share it and submit it. This is a plain HTML/CSS/JavaScript project, so use the **static site** method.
+
+See [Hosting with GitHub Pages](/full-stack-web/orientation/05-github-pages/) for step-by-step instructions.
+
+Make sure your main file is named `index.html` before uploading.
+
+## Submit
+
+Submit the link to your live GitHub Pages site on Canvas.
 
 ## Feedback
 
