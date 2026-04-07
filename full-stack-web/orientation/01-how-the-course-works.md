@@ -3,11 +3,11 @@ title: How the Course Works
 order: 1
 ---
 
-This course is about front-end web development with React. React is one of the most widely used front-end JavaScript frameworks in industry, and learning it is a meaningful step up from writing standard HTML, CSS, and JavaScript.
+This course is mostly focused on front-end web development with React. React is one of the most widely used front-end libraries in industry, and learning it is a meaningful step up from writing standard HTML, CSS, and JavaScript.
 
 You've already done back-end development in SDEV 328: APIs, ORMs, server-side architecture, and such. This course is the front-end counterpart to that. By the end of the quarter, you should be able to build real, full-stack web applications across the whole stack. That's an awesome place to be!
 
-Later in the quarter, you'll put that to work in a final project built in collaboration with your Algorithms class (SDEV 334). You'll build the front end here and the back end in 334. Both sides will need to connect and work together. Details on that will come later in the quarter.
+Later in the quarter, you'll put that to work in a final project built in collaboration with your algorithms class (SDEV 334). You'll build the front end here and the back end in 334. Both sides will need to connect and work together. Details on that will come later in the quarter.
 
 ## What You'll Be Doing in Class
 
