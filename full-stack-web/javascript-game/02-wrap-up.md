@@ -40,3 +40,10 @@ Make sure your main file is named `index.html` before uploading.
 ## Submit
 
 Submit the link to your live GitHub Pages site on Canvas. Your repository should include a README with a brief description of your game mechanics and the link to the live site.
+
+## Feedback
+
+<div class="tally-embed-wrapper">
+<iframe data-tally-src="https://tally.so/embed/ZjYqMa?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1&course=Full+Stack+Web&unit=Interactive+JavaScript+Game" loading="lazy" width="100%" height="539" frameborder="0" marginheight="0" marginwidth="0" title="Applied Course Feedback"></iframe>
+</div>
+<script>var d=document,w="https://tally.so/widgets/embed.js",v=function(){"undefined"!=typeof Tally?Tally.loadEmbeds():d.querySelectorAll("iframe[data-tally-src]:not([src])").forEach((function(e){e.src=e.dataset.tallySrc}))};if("undefined"!=typeof Tally)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>

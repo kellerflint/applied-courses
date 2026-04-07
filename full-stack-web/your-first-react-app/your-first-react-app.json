@@ -2,5 +2,5 @@
   "layout": "page.njk",
   "tags": ["page"],
   "unitTitle": "Your First React App",
-  "unitOrder": 3
+  "unitOrder": 2
 }

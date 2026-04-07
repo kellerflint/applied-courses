@@ -155,35 +155,6 @@ Fill these in with your actual facts.
 
 ## Step 4: Style It
 
-Open `App.css` and delete everything in it. Add some basic styles using regular CSS element selectors:
+Open `App.css` and delete everything in it. Add some basic styles using regular CSS element selectors.
 
-```css
-body {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: system-ui, sans-serif;
-}
-
-h1 {
-  margin-bottom: 1.5rem;
-}
-
-h2 {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #888;
-  margin-bottom: 0.25rem;
-}
-
-p {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-}
-```
-
-This is plain CSS. React doesn't change how CSS works. Adjust the styles until the cards look clean.
+This is just plain old CSS. React doesn't change how CSS works. Adjust the styles until the cards look clean.

@@ -295,7 +295,16 @@
     // ── Build static FunFactCard.jsx lines ───────────────────
     const compPanel = document.getElementById('componentPanel');
 
-    compPanel.appendChild(codeLine('', [span('kw','function'), ' ', span('fn','FunFactCard'), '({ ', span('pr','fact'), ' }) {']));
+    const factParam = document.createElement('span');
+    factParam.id = 'factParam';
+    factParam.className = 'fact-slot';
+    factParam.textContent = 'fact';
+
+    const sigLine = document.createElement('div');
+    sigLine.className = 'code-line';
+    sigLine.appendChild(document.createTextNode(''));
+    [span('kw','function'), document.createTextNode(' '), span('fn','FunFactCard'), document.createTextNode('({ '), factParam, document.createTextNode(' }) {')].forEach(n => sigLine.appendChild(n));
+    compPanel.appendChild(sigLine);
     compPanel.appendChild(codeLine('  ', [span('kw','return'), ' (']));
     compPanel.appendChild(codeLine('    ', [span('tag','<div>')]));
     compPanel.appendChild(codeLine('      ', [span('tag','<h2>'), 'Fun Fact', span('tag','</h2>')]));
@@ -354,18 +363,27 @@
       appPanel.insertBefore(usageLine, closingDiv);
       appPanel.scrollTop = appPanel.scrollHeight;
 
-      // Phase 2: value flashes through {fact} in FunFactCard
+      // Phase 2: fact param in function signature flashes with the incoming value
       setTimeout(() => {
-        factSlot.textContent = '"' + short + '"';
-        factSlot.classList.add('flash');
+        factParam.textContent = '"' + short + '"';
+        factParam.classList.add('flash');
       }, 350);
 
-      // Phase 3: flash clears, card appears in rendered output
+      // Phase 3: param clears, value flows into {fact} in JSX body
+      setTimeout(() => {
+        factParam.textContent = 'fact';
+        factParam.classList.remove('flash');
+        factSlot.textContent = '"' + short + '"';
+        factSlot.classList.add('flash');
+      }, 750);
+
+      // Phase 4: flash clears, card appears in rendered output
       setTimeout(() => {
         factSlot.textContent = 'fact';
         factSlot.classList.remove('flash');
 
         emptyMsg.style.display = 'none';
+
         const card = document.createElement('div');
         card.className = 'card';
         const cardLabel = document.createElement('div');
@@ -381,7 +399,7 @@
         factInput.value = '';
         factInput.focus();
         renderBtn.disabled = false;
-      }, 850);
+      }, 1200);
     }
 
     factInput.addEventListener('keydown', e => {

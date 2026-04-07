@@ -2,5 +2,5 @@
   "layout": "page.njk",
   "tags": ["page"],
   "unitTitle": "Interactive JavaScript Game",
-  "unitOrder": 2
+  "unitOrder": 1
 }

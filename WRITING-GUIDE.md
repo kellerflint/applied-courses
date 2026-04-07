@@ -101,6 +101,20 @@ If questions are grouped under a parent section (like `## Check Your Understandi
 ```
 Always a self-contained HTML file in the `activities/` folder. Height in px (e.g. `"520px"`). The display title renders as a link that opens the activity directly in a new tab, so anyone can link to or embed it standalone.
 
+**Feedback embed**
+Every unit's final page (the submit/wrap-up page) ends with a feedback form. Add this after the last content section:
+
+```html
+<div class="tally-embed-wrapper">
+<iframe data-tally-src="https://tally.so/embed/ZjYqMa?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1&course=COURSE+TITLE&unit=UNIT+TITLE" loading="lazy" width="100%" height="539" frameborder="0" marginheight="0" marginwidth="0" title="Applied Course Feedback"></iframe>
+</div>
+<script>var d=document,w="https://tally.so/widgets/embed.js",v=function(){"undefined"!=typeof Tally?Tally.loadEmbeds():d.querySelectorAll("iframe[data-tally-src]:not([src])").forEach((function(e){e.src=e.dataset.tallySrc}))};if("undefined"!=typeof Tally)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>
+```
+
+Replace `COURSE+TITLE` and `UNIT+TITLE` with URL-encoded versions of the course and unit names (spaces become `+`). Pull the values from the unit's `.json` file (`unitTitle`) and the course's root `.json` file (`courseTitle`). Orientation units do not get a feedback embed.
+
+The `.tally-embed-wrapper` dark mode styles are defined globally in `base.njk` — no per-page styles needed.
+
 ## Tone
 
 - Address students directly ("you")
