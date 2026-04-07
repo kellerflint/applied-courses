@@ -29,4 +29,4 @@ This is the most interesting moment in tech in a long time. You have access to t
 
 Most class time is spent working through guided activities with a partner. You'll explore interactive demos, build small experiments, and work through discussion questions together. Occasionally there will be a short quiz or knowledge check at the start of class. Later in the quarter there will be studio time to work on the final project.
 
-All initial instruction is delivered async through readings, videos, and interactive exercises.
+Most instruction is delivered async through readings, videos, and interactive exercises.
