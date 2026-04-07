@@ -204,7 +204,7 @@ The examples below use a **confidence threshold**, a check like `topClass.probab
 
 {% activity "confidence-threshold.html", "Confidence Threshold Explorer", "520px" %}
 
-Switch between scenarios and watch what happens to the two output panels. Without a threshold your app reacts to every frame, including the noisy ones. The threshold means you only act when the model is confident enough to be worth acting on.
+Switch between scenarios and watch what happens to the two output panels. Without a threshold, your app acts on the top predicted class even when the model is barely more confident in it than the others. The threshold means you only act when the model is actually sure.
 
 ### Change the background color
 

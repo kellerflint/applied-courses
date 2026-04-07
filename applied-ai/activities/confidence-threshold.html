@@ -208,16 +208,6 @@
     font-style: italic;
   }
 
-  .changes-counter {
-    font-size: 11px;
-    color: #57606a;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .changes-count {
-    font-weight: 600;
-  }
-
   /* Insight box */
   .insight {
     background: #ddf4ff;
@@ -287,18 +277,16 @@
     <div class="output-panel no-threshold">
       <h3>Without threshold</h3>
       <div class="output-class" id="out-raw">—</div>
-      <div class="changes-counter">Changes/sec: <span class="changes-count" id="cps-raw">0</span></div>
     </div>
     <div class="output-panel with-threshold">
       <h3>With threshold</h3>
       <div class="output-class" id="out-thresh">—</div>
-      <div class="changes-counter">Changes/sec: <span class="changes-count" id="cps-thresh">0</span></div>
     </div>
   </div>
 
   <!-- Key insight -->
   <div class="insight">
-    <strong>Key insight:</strong> The threshold is not about accuracy. It is about stability. You only take action when the model is confident enough. Otherwise you wait!
+    <strong>Key insight:</strong> Without a threshold, your app acts on the top predicted class even when the model is barely more confident in it than the others. The threshold filters out those low-confidence guesses so you only act when the model is actually sure.
   </div>
 
 </div>
@@ -333,9 +321,6 @@
   let probs = [0.0, 0.0, 0.0];
   let oscillatePhase = 0;
 
-  // Change tracking
-  let rawHistory = []; // timestamps of raw changes
-  let threshHistory = []; // timestamps of threshold changes
   let lastRawClass = "";
   let lastThreshClass = "";
 
@@ -344,8 +329,6 @@
   const vals = [0, 1, 2].map(i => document.getElementById("val-" + i));
   const outRaw = document.getElementById("out-raw");
   const outThresh = document.getElementById("out-thresh");
-  const cpsRaw = document.getElementById("cps-raw");
-  const cpsThresh = document.getElementById("cps-thresh");
   const threshSlider = document.getElementById("threshold-slider");
   const threshDisplay = document.getElementById("threshold-display");
 
@@ -356,8 +339,6 @@
       btn.classList.add("active");
       currentScenario = btn.dataset.scenario;
       oscillatePhase = 0;
-      rawHistory = [];
-      threshHistory = [];
       lastRawClass = "";
       lastThreshClass = "";
     });
@@ -406,20 +387,8 @@
     return { index: best, prob: p[best], name: CLASSES[best] };
   }
 
-  function countPerSecond(history) {
-    const now = Date.now();
-    // Keep only last 3 seconds for rolling average
-    const window = 3000;
-    const recent = history.filter(t => now - t < window);
-    // Trim the history array in place
-    history.length = 0;
-    recent.forEach(t => history.push(t));
-    return (recent.length / (window / 1000)).toFixed(1);
-  }
-
   function tick() {
     probs = generateProbs();
-    const now = Date.now();
 
     // Update bars
     probs.forEach((p, i) => {
@@ -429,36 +398,17 @@
 
     // Raw output
     const top = topClass(probs);
-    const rawName = top.name;
-    if (rawName !== lastRawClass) {
-      rawHistory.push(now);
-      lastRawClass = rawName;
-    }
-    outRaw.textContent = rawName;
-    outRaw.className = "output-class"; // reset
+    outRaw.textContent = top.name;
+    outRaw.className = "output-class";
 
     // Threshold output
-    let threshName;
     if (top.prob > threshold) {
-      threshName = top.name;
+      outThresh.textContent = top.name;
+      outThresh.className = "output-class";
     } else {
-      threshName = "Uncertain";
-    }
-    if (threshName !== lastThreshClass) {
-      threshHistory.push(now);
-      lastThreshClass = threshName;
-    }
-    if (threshName === "Uncertain") {
       outThresh.textContent = "Uncertain";
       outThresh.className = "output-class output-uncertain";
-    } else {
-      outThresh.textContent = threshName;
-      outThresh.className = "output-class";
     }
-
-    // Changes per second
-    cpsRaw.textContent = countPerSecond(rawHistory);
-    cpsThresh.textContent = countPerSecond(threshHistory);
   }
 
   setInterval(tick, 150);
