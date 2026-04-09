@@ -151,10 +151,10 @@ function App() {
 
 Fill these in with your actual facts.
 
-> **With your partner:** What would this look like written as plain HTML, without components? Count how many lines you'd have to change if you wanted to update the structure of each card.
-
 ## Step 4: Style It
 
-Open `App.css` and delete everything in it. Add some basic styles using regular CSS element selectors.
+Open `App.css` and delete everything in it. Also open `index.css` and delete everything in there too. Vite ships with default styles in both files that will fight with whatever you write, so clearing them out first gives you a clean slate.
+
+Now add some basic styles in `App.css` using regular CSS element selectors.
 
 This is just plain old CSS. React doesn't change how CSS works. Adjust the styles until the cards look clean.

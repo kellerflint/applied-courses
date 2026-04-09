@@ -65,16 +65,22 @@ npm install --save-dev gh-pages
 
 ### 3. Add your homepage URL to package.json
 
+Open `package.json`. Add a new `homepage` line at the top level of the object, next to fields like `name` and `version`. Don't replace anything that's already there, just add this one line:
+
 ```json
-"homepage": "https://<yourusername>.github.io/<your-repository-name>"
+"homepage": "https://<yourusername>.github.io/<your-repository-name>",
 ```
 
 ### 4. Add deploy scripts to package.json
+
+Find the existing `scripts` object in `package.json`. It already has `dev`, `build`, and `preview` inside it. Add these two new lines inside that same object without removing the existing ones:
 
 ```json
 "predeploy": "npm run build",
 "deploy": "gh-pages -d dist"
 ```
+
+Make sure there's a comma after the previous script line so the JSON stays valid.
 
 ### 5. Add the base path to vite.config.js
 
