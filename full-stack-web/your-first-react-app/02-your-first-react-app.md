@@ -151,8 +151,6 @@ function App() {
 
 Fill these in with your actual facts.
 
-> **With your partner:** What would this look like written as plain HTML, without components? Count how many lines you'd have to change if you wanted to update the structure of each card.
-
 ## Step 4: Style It
 
 Open `App.css` and delete everything in it. Add some basic styles using regular CSS element selectors.
