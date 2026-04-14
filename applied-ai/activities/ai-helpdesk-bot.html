@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Help Desk: expert system</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    padding: 0.7rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    padding: 1.2rem 1rem;
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .transcript {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .transcript-item {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+  }
+  .transcript-q {
+    color: #6a737d;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+  .transcript-a {
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+
+  .question-card {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 1.2rem 1.2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .bot-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #2563eb;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .question-text {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .option-btn {
+    background: #fff;
+    border: 1.5px solid #d1d9e0;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #1a1a1a;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .option-btn:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .diagnosis-card {
+    background: #ecfdf5;
+    border: 1.5px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+  .diagnosis-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #047857;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .diagnosis-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #064e3b;
+    margin-bottom: 0.6rem;
+  }
+  .diagnosis-advice {
+    font-size: 0.92rem;
+    color: #1a3a2a;
+    line-height: 1.55;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  button.action {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button.action:hover { background: #f3f4f6; }
+  button.action.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.action.primary:hover { background: #1d4ed8; }
+
+  .rules-panel {
+    margin-top: 1rem;
+    background: #1f2937;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    color: #e5e7eb;
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    display: none;
+  }
+  .rules-panel.visible { display: block; }
+  .rules-panel .kw { color: #f59e0b; }
+  .rules-panel .str { color: #86efac; }
+  .rules-panel .arrow { color: #93c5fd; }
+  .rules-panel .comment { color: #6a737d; }
+  .rules-panel-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+    margin-bottom: 0.7rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>IT Help Desk Bot</strong> &nbsp;An expert system. Every question and conclusion was hand-coded.
+</div>
+
+<div class="main">
+  <div class="transcript" id="transcript"></div>
+  <div id="active-area"></div>
+</div>
+
+<script>
+const TREE = {
+  start: {
+    question: "Hi! What's going on with your internet?",
+    var: "problem",
+    options: [
+      { label: "I can't connect to anything",                       value: "no_connection",  next: "no_connection" },
+      { label: "Some sites or apps work, others don't",             value: "partial",        next: "partial" },
+      { label: "Connection works but it's really slow",             value: "slow",           next: "slow" },
+    ]
+  },
+  no_connection: {
+    question: "Can other devices in your home reach the internet?",
+    var: "other_devices_work",
+    options: [
+      { label: "Yes, other devices are fine",                       value: "yes", next: "no_conn_my_device" },
+      { label: "No, nothing in the house can connect",              value: "no",  next: "no_conn_router" },
+      { label: "I don't know or can't check right now",             value: "unknown", next: "no_conn_router" },
+    ]
+  },
+  no_conn_my_device: {
+    question: "Have you tried turning your device's Wi-Fi off and back on yet?",
+    var: "tried_wifi_toggle",
+    options: [
+      { label: "No, not yet",                                       value: "no",  next: "leaf_toggle_wifi" },
+      { label: "Yes, I tried that and it didn't help",              value: "yes", next: "no_conn_my_device_2" },
+    ]
+  },
+  no_conn_my_device_2: {
+    question: "Can you see your Wi-Fi network in the list of available networks?",
+    var: "network_visible",
+    options: [
+      { label: "Yes, my network shows up",                          value: "yes", next: "leaf_forget_network" },
+      { label: "No, it's not showing up at all",                    value: "no",  next: "leaf_restart_device" },
+    ]
+  },
+  no_conn_router: {
+    question: "Are the lights on your router on at all?",
+    var: "router_lights_on",
+    options: [
+      { label: "Yes, lights are on",                                value: "yes", next: "no_conn_router_2" },
+      { label: "No, the router is dark",                            value: "no",  next: "leaf_router_power" },
+      { label: "I'm not sure or can't check the router",            value: "unknown", next: "no_conn_router_2" },
+    ]
+  },
+  no_conn_router_2: {
+    question: "Is the internet light on the router solid (not blinking, not red)?",
+    var: "internet_light_solid",
+    options: [
+      { label: "Solid",                                             value: "yes", next: "leaf_power_cycle" },
+      { label: "Blinking, red, or off",                             value: "no",  next: "leaf_isp_or_modem" },
+      { label: "Not sure",                                          value: "unknown", next: "leaf_power_cycle" },
+    ]
+  },
+  partial: {
+    question: "Is the issue with specific websites in a browser, or with specific apps?",
+    var: "partial_type",
+    options: [
+      { label: "Specific websites in a browser",                    value: "websites", next: "leaf_dns" },
+      { label: "Specific apps (a game, streaming app, etc.)",       value: "apps",     next: "leaf_app" },
+    ]
+  },
+  slow: {
+    question: "Is anyone else on your network using a lot of bandwidth right now (streaming, big downloads, video calls)?",
+    var: "heavy_usage",
+    options: [
+      { label: "Yes",                                               value: "yes", next: "leaf_bandwidth" },
+      { label: "No, just me",                                       value: "no",  next: "slow_2" },
+      { label: "Not sure",                                          value: "unknown", next: "slow_2" },
+    ]
+  },
+  slow_2: {
+    question: "Are you connected by Wi-Fi or by an Ethernet cable?",
+    var: "connection_type",
+    options: [
+      { label: "Wi-Fi",                                             value: "wifi",  next: "leaf_wifi_signal" },
+      { label: "Ethernet (wired)",                                  value: "wired", next: "leaf_wired_slow" },
+    ]
+  },
+};
+
+const LEAVES = {
+  leaf_toggle_wifi: {
+    title: "Turn your Wi-Fi off and back on.",
+    advice: "Open your device's Wi-Fi settings, switch Wi-Fi off, wait five seconds, then switch it back on and let it reconnect. This nudges the device to renegotiate its connection from scratch and clears most one-off glitches. If it still doesn't connect, come back and answer that you tried it.",
+  },
+  leaf_forget_network: {
+    title: "Forget the network and rejoin it.",
+    advice: "Open your Wi-Fi settings, find the network in the list, and choose 'Forget this network.' Then connect to it fresh and re-enter the password. This clears any saved configuration that might be wrong, like an outdated password or a stuck IP setting.",
+  },
+  leaf_restart_device: {
+    title: "Restart your device.",
+    advice: "Reboot your computer or phone. If the network isn't even appearing in the list, the wireless hardware on your device may be in a stuck state, and a restart is the cleanest fix. If it's still missing after a restart, the issue might be a driver or hardware fault.",
+  },
+  leaf_router_power: {
+    title: "Check the router's power.",
+    advice: "If the router has no lights at all, it isn't getting power. Make sure the power cable is plugged in firmly at both ends and try a different outlet if you can. If it still won't power on, the router itself may need to be replaced.",
+  },
+  leaf_power_cycle: {
+    title: "Power cycle your router.",
+    advice: "Unplug the router (and the modem if they're separate) and wait 30 seconds. Then plug them back in and wait two minutes for everything to come back online. This is the classic 'turn it off and on again' fix and works more often than it has any right to.",
+  },
+  leaf_isp_or_modem: {
+    title: "Likely an ISP outage or modem issue.",
+    advice: "If the internet light isn't solid, the router isn't getting a signal from your ISP. First, power cycle the router and modem. If that doesn't fix it, check your ISP's status page or call their support line. The problem may be on their end and there's nothing more you can do from inside your house.",
+  },
+  leaf_dns: {
+    title: "Could be DNS, or the site is down.",
+    advice: "Try the same site on a different network or device. If it works there, the site is up and your DNS resolver might be having issues. Try using a public DNS like 1.1.1.1 or 8.8.8.8. If the site is down for everyone, you can confirm at downforeveryoneorjustme.com.",
+  },
+  leaf_app: {
+    title: "Probably an app permission or firewall issue.",
+    advice: "Check whether the specific app has permission to use the network in your system settings. If you have any firewall or VPN running, try disabling it temporarily to see if that's blocking the app from reaching the internet.",
+  },
+  leaf_bandwidth: {
+    title: "You're sharing the bandwidth.",
+    advice: "When several people on the same network are streaming, downloading, or on video calls at once, everyone's connection slows down. Pause the heaviest uses if you can, or try again when the network is less busy.",
+  },
+  leaf_wifi_signal: {
+    title: "Wi-Fi signal might be weak.",
+    advice: "Move closer to the router and see if the speed improves. Wi-Fi gets weaker through walls and at distance. If moving closer fixes it, you may want a mesh network, a Wi-Fi extender, or a wired connection for that part of the house.",
+  },
+  leaf_wired_slow: {
+    title: "Restart the router.",
+    advice: "On a wired connection with no obvious bandwidth contention, the most likely fix is a router restart. Unplug it for 30 seconds and plug it back in. If the slowness persists after that, your ISP is the next thing to check.",
+  },
+};
+
+let currentNodeId = 'start';
+let path = []; // [{ var, value, label, question }]
+let rulesOpen = false;
+
+const transcriptEl = document.getElementById('transcript');
+const activeAreaEl = document.getElementById('active-area');
+
+function answer(optionIndex) {
+  const node = TREE[currentNodeId];
+  const option = node.options[optionIndex];
+  path.push({
+    var: node.var,
+    value: option.value,
+    label: option.label,
+    question: node.question,
+  });
+  currentNodeId = option.next;
+  rulesOpen = false;
+  render();
+  // Scroll to bottom of main so the new question is visible
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function restart() {
+  currentNodeId = 'start';
+  path = [];
+  rulesOpen = false;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleRules() {
+  rulesOpen = !rulesOpen;
+  render();
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderTranscript() {
+  transcriptEl.innerHTML = '';
+  for (const item of path) {
+    const div = document.createElement('div');
+    div.className = 'transcript-item';
+    div.innerHTML = `
+      <div class="transcript-q">${escapeHtml(item.question)}</div>
+      <div class="transcript-a">${escapeHtml(item.label)}</div>
+    `;
+    transcriptEl.appendChild(div);
+  }
+}
+
+function renderRulesPanel() {
+  if (!rulesOpen) return '';
+  let lines = [];
+  let indent = 0;
+  const pad = n => '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(n);
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i];
+    lines.push(`${pad(indent)}<span class="kw">if</span> (${p.var} == <span class="str">"${p.value}"</span>) {`);
+    indent++;
+  }
+  const leaf = LEAVES[currentNodeId];
+  if (leaf) {
+    lines.push(`${pad(indent)}<span class="arrow">recommend</span> <span class="str">"${escapeHtml(leaf.title)}"</span>`);
+  }
+  while (indent > 0) {
+    indent--;
+    lines.push(`${pad(indent)}}`);
+  }
+
+  return `<div class="rules-panel visible"><div class="rules-panel-title">The rules I followed</div>${lines.join('<br>')}</div>`;
+}
+
+function render() {
+  renderTranscript();
+
+  const node = TREE[currentNodeId];
+  const leaf = LEAVES[currentNodeId];
+
+  if (node) {
+    let optionsHtml = '';
+    for (let i = 0; i < node.options.length; i++) {
+      optionsHtml += `<button class="option-btn" data-idx="${i}">${escapeHtml(node.options[i].label)}</button>`;
+    }
+    activeAreaEl.innerHTML = `
+      <div class="question-card">
+        <div class="bot-label">Help desk bot</div>
+        <div class="question-text">${escapeHtml(node.question)}</div>
+        <div class="options">${optionsHtml}</div>
+      </div>
+      ${path.length > 0 ? `<div class="actions"><button class="action" id="btn-restart">Start over</button></div>` : ''}
+    `;
+    activeAreaEl.querySelectorAll('.option-btn').forEach(btn => {
+      btn.addEventListener('click', () => answer(Number(btn.dataset.idx)));
+    });
+    const restartBtn = document.getElementById('btn-restart');
+    if (restartBtn) restartBtn.addEventListener('click', restart);
+  } else if (leaf) {
+    activeAreaEl.innerHTML = `
+      <div class="diagnosis-card">
+        <div class="diagnosis-label">Diagnosis</div>
+        <div class="diagnosis-title">${escapeHtml(leaf.title)}</div>
+        <div class="diagnosis-advice">${escapeHtml(leaf.advice)}</div>
+      </div>
+      <div class="actions">
+        <button class="action primary" id="btn-restart">Start over</button>
+        <button class="action" id="btn-rules">${rulesOpen ? 'Hide' : 'See'} the rules it followed</button>
+      </div>
+      ${renderRulesPanel()}
+    `;
+    document.getElementById('btn-restart').addEventListener('click', restart);
+    document.getElementById('btn-rules').addEventListener('click', toggleRules);
+  }
+}
+
+render();
+</script>
+</body>
+</html>

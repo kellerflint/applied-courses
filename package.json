@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "eleventy --serve",
     "build": "eleventy",
-    "deploy": "npm run build && wrangler deploy",
-    "preview": "npm run build && wrangler dev"
+    "deploy": "npm run build && rsync -avz --delete _site/ YOUR_USER@YOUR_SERVER:/var/www/courses/"
   },
   "keywords": [],
   "author": "",

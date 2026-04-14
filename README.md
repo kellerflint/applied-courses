@@ -19,6 +19,39 @@ Output goes to `_site/`.
 
 ---
 
+## Deploy
+
+```
+npm run deploy
+```
+
+Builds the site and rsyncs it to the server. **Before first use, update the deploy script in `package.json`:**
+
+```
+"deploy": "npm run build && rsync -avz --delete _site/ YOUR_USER@YOUR_SERVER:/var/www/courses/"
+```
+
+- `YOUR_USER` — your SSH username on the VM
+- `YOUR_SERVER` — your VM's IP or domain
+- `/var/www/courses/` — path nginx serves from (must exist on the server)
+
+**One-time server setup:**
+1. Install Caddy: https://caddyserver.com/docs/install
+2. Create the folder: `sudo mkdir -p /var/www/courses && sudo chown YOUR_USER /var/www/courses`
+3. Create/edit `/etc/caddy/Caddyfile`:
+```
+your-domain.com {
+    root * /var/www/courses
+    file_server
+}
+```
+4. Start Caddy: `sudo systemctl enable --now caddy`
+5. Add your SSH public key to the server so deploys don't prompt for a password
+
+Caddy automatically obtains and renews SSL via Let's Encrypt. Just make sure your domain's DNS points to the VM before starting Caddy.
+
+---
+
 ## Structure
 
 ```

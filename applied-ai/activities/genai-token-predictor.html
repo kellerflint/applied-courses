@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How an LLM generates text</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .left {
+    flex: 1.3;
+    padding: 1rem 1.1rem;
+    border-right: 1px solid #e1e4e8;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .right {
+    flex: 1;
+    padding: 1rem 1.1rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .panel-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6a737d;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .prompt-box {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.85rem;
+    color: #4b5563;
+    line-height: 1.5;
+    flex-shrink: 0;
+  }
+
+  .response-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .response-box {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    line-height: 1.6;
+    flex: 1;
+    overflow-y: auto;
+    word-wrap: break-word;
+  }
+
+  .response-box .new-token {
+    display: inline-block;
+    animation: tokenIn 220ms ease-out;
+  }
+  @keyframes tokenIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.05em;
+    background: #9ca3af;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    animation: blink 1s steps(1, end) infinite;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+  .cursor.done { display: none; }
+
+  .bars {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-right: 0.2rem;
+  }
+
+  .bar {
+    display: grid;
+    grid-template-columns: 70px 1fr 38px;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+  }
+
+  .bar-token {
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 0.78rem;
+    color: #374151;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+    height: 18px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: #93c5fd;
+    border-radius: 4px;
+    transition: width 280ms ease, background 200ms ease;
+  }
+
+  .bar.active .bar-fill {
+    background: #22c55e;
+  }
+  .bar.active .bar-token {
+    color: #15803d;
+    font-weight: 700;
+  }
+  .bar.active .bar-pct {
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  .bar-pct {
+    font-size: 0.74rem;
+    color: #6a737d;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .footer {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e1e4e8;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  button, select {
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button:hover { background: #f3f4f6; }
+  button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.primary:hover { background: #1d4ed8; }
+
+  select { padding: 0.4rem 0.6rem; }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: #6a737d;
+  }
+  .speed-control input[type="range"] { width: 90px; }
+
+  @media (max-width: 720px) {
+    .main { flex-direction: column; }
+    .left { border-right: none; border-bottom: 1px solid #e1e4e8; flex: none; height: 50%; }
+    .right { flex: none; height: 50%; }
+    .footer { padding: 0.5rem 0.7rem; gap: 0.5rem; }
+    button, select { font-size: 0.76rem; padding: 0.35rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>How an LLM generates text</strong> &nbsp;Predict the next token, add it, repeat.
+</div>
+
+<div class="main">
+  <div class="left">
+    <div>
+      <div class="panel-label">Prompt</div>
+      <div class="prompt-box" id="prompt-box"></div>
+    </div>
+    <div class="response-section">
+      <div class="panel-label">Response (generated token by token)</div>
+      <div class="response-box" id="response-box"><span id="response-text"></span><span class="cursor" id="cursor"></span></div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="panel-label">Next-token probabilities</div>
+    <div class="bars" id="bars"></div>
+  </div>
+</div>
+
+<div class="footer">
+  <button id="btn-restart">Restart</button>
+  <button id="btn-play" class="primary">Pause</button>
+  <select id="prompt-select"></select>
+  <div class="speed-control">
+    Speed
+    <input type="range" id="speed" min="200" max="2500" step="100" value="1400">
+  </div>
+</div>
+
+<script>
+const PROMPTS = [
+  {
+    id: 'fairytale',
+    label: "Story: Once upon a time...",
+    prompt: "Once upon a time, there was a",
+    steps: [
+      { candidates: [
+        { token: "small", prob: 0.32 },
+        { token: "young", prob: 0.22 },
+        { token: "kind", prob: 0.14 },
+        { token: "great", prob: 0.11 },
+        { token: "wise", prob: 0.08 },
+        { token: "lonely", prob: 0.06 },
+        { token: "tiny", prob: 0.04 },
+        { token: "strange", prob: 0.03 },
+      ]},
+      { candidates: [
+        { token: "dragon", prob: 0.28 },
+        { token: "village", prob: 0.22 },
+        { token: "girl", prob: 0.18 },
+        { token: "boy", prob: 0.12 },
+        { token: "kingdom", prob: 0.08 },
+        { token: "rabbit", prob: 0.06 },
+        { token: "boat", prob: 0.04 },
+        { token: "house", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "who", prob: 0.35 },
+        { token: "named", prob: 0.28 },
+        { token: "that", prob: 0.14 },
+        { token: "with", prob: 0.09 },
+        { token: "living", prob: 0.06 },
+        { token: "in", prob: 0.05 },
+        { token: "and", prob: 0.03 },
+      ]},
+      { candidates: [
+        { token: "lived", prob: 0.38 },
+        { token: "loved", prob: 0.22 },
+        { token: "could", prob: 0.14 },
+        { token: "wanted", prob: 0.11 },
+        { token: "had", prob: 0.08 },
+        { token: "was", prob: 0.04 },
+        { token: "spent", prob: 0.03 },
+      ]},
+      { candidates: [
+        { token: "in", prob: 0.62 },
+        { token: "alone", prob: 0.14 },
+        { token: "deep", prob: 0.09 },
+        { token: "atop", prob: 0.06 },
+        { token: "high", prob: 0.04 },
+        { token: "near", prob: 0.03 },
+        { token: "with", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "a", prob: 0.48 },
+        { token: "the", prob: 0.28 },
+        { token: "an", prob: 0.11 },
+        { token: "his", prob: 0.06 },
+        { token: "her", prob: 0.04 },
+        { token: "tall", prob: 0.02 },
+        { token: "deep", prob: 0.01 },
+      ]},
+      { candidates: [
+        { token: "cave", prob: 0.30 },
+        { token: "forest", prob: 0.22 },
+        { token: "castle", prob: 0.16 },
+        { token: "mountain", prob: 0.14 },
+        { token: "valley", prob: 0.10 },
+        { token: "kingdom", prob: 0.05 },
+        { token: "swamp", prob: 0.03 },
+      ]},
+      { candidates: [
+        { token: "high", prob: 0.24 },
+        { token: "deep", prob: 0.22 },
+        { token: "on", prob: 0.18 },
+        { token: "near", prob: 0.14 },
+        { token: "by", prob: 0.10 },
+        { token: "with", prob: 0.07 },
+        { token: "filled", prob: 0.05 },
+      ]},
+      { candidates: [
+        { token: "in", prob: 0.42 },
+        { token: "above", prob: 0.26 },
+        { token: "atop", prob: 0.16 },
+        { token: "on", prob: 0.09 },
+        { token: "near", prob: 0.05 },
+        { token: "up", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "the", prob: 0.78 },
+        { token: "a", prob: 0.12 },
+        { token: "some", prob: 0.05 },
+        { token: "his", prob: 0.03 },
+        { token: "her", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "mountains", prob: 0.38 },
+        { token: "clouds", prob: 0.22 },
+        { token: "hills", prob: 0.14 },
+        { token: "sky", prob: 0.12 },
+        { token: "forest", prob: 0.08 },
+        { token: "valley", prob: 0.06 },
+      ]},
+      { candidates: [
+        { token: ".", prob: 0.32 },
+        { token: ",", prob: 0.25 },
+        { token: "where", prob: 0.18 },
+        { token: "and", prob: 0.12 },
+        { token: "above", prob: 0.08 },
+        { token: "with", prob: 0.05 },
+      ]},
+    ]
+  },
+
+  {
+    id: 'recipe',
+    label: "Recipe: Chocolate chip cookies start with...",
+    prompt: "The recipe for chocolate chip cookies starts with",
+    steps: [
+      { candidates: [
+        { token: "flour", prob: 0.28 },
+        { token: "butter", prob: 0.22 },
+        { token: "mixing", prob: 0.14 },
+        { token: "two", prob: 0.11 },
+        { token: "creaming", prob: 0.08 },
+        { token: "softened", prob: 0.06 },
+        { token: "preheating", prob: 0.05 },
+        { token: "the", prob: 0.04 },
+        { token: "your", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: ",", prob: 0.38 },
+        { token: "and", prob: 0.32 },
+        { token: ".", prob: 0.12 },
+        { token: "mixed", prob: 0.08 },
+        { token: "as", prob: 0.05 },
+        { token: "in", prob: 0.03 },
+        { token: "with", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "sugar", prob: 0.42 },
+        { token: "butter", prob: 0.28 },
+        { token: "salt", prob: 0.12 },
+        { token: "eggs", prob: 0.08 },
+        { token: "baking", prob: 0.06 },
+        { token: "and", prob: 0.03 },
+        { token: "white", prob: 0.01 },
+      ]},
+      { candidates: [
+        { token: ",", prob: 0.64 },
+        { token: "and", prob: 0.28 },
+        { token: ".", prob: 0.04 },
+        { token: "with", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "and", prob: 0.38 },
+        { token: "butter", prob: 0.22 },
+        { token: "eggs", prob: 0.14 },
+        { token: "salt", prob: 0.11 },
+        { token: "baking", prob: 0.08 },
+        { token: "brown", prob: 0.05 },
+        { token: "vanilla", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "butter", prob: 0.48 },
+        { token: "eggs", prob: 0.22 },
+        { token: "salt", prob: 0.12 },
+        { token: "baking", prob: 0.08 },
+        { token: "brown", prob: 0.06 },
+        { token: "a", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: ".", prob: 0.42 },
+        { token: ",", prob: 0.28 },
+        { token: "in", prob: 0.12 },
+        { token: "creamed", prob: 0.08 },
+        { token: "before", prob: 0.05 },
+        { token: "until", prob: 0.05 },
+      ]},
+      { candidates: [
+        { token: "Cream", prob: 0.22 },
+        { token: "Mix", prob: 0.18 },
+        { token: "Beat", prob: 0.16 },
+        { token: "Combine", prob: 0.14 },
+        { token: "Add", prob: 0.11 },
+        { token: "Stir", prob: 0.09 },
+        { token: "First", prob: 0.06 },
+        { token: "Then", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "the", prob: 0.64 },
+        { token: "together", prob: 0.14 },
+        { token: "them", prob: 0.12 },
+        { token: "until", prob: 0.06 },
+        { token: "your", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "butter", prob: 0.56 },
+        { token: "sugar", prob: 0.28 },
+        { token: "two", prob: 0.06 },
+        { token: "ingredients", prob: 0.05 },
+        { token: "softened", prob: 0.03 },
+        { token: "cold", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "and", prob: 0.64 },
+        { token: "with", prob: 0.22 },
+        { token: "until", prob: 0.08 },
+        { token: "into", prob: 0.04 },
+        { token: ",", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "sugar", prob: 0.78 },
+        { token: "eggs", prob: 0.12 },
+        { token: "flour", prob: 0.05 },
+        { token: "salt", prob: 0.03 },
+        { token: "vanilla", prob: 0.02 },
+      ]},
+    ]
+  },
+
+  {
+    id: 'learning',
+    label: "Advice: Learning a new programming language...",
+    prompt: "The best way to learn a new programming language is to",
+    steps: [
+      { candidates: [
+        { token: "build", prob: 0.32 },
+        { token: "write", prob: 0.22 },
+        { token: "start", prob: 0.14 },
+        { token: "practice", prob: 0.11 },
+        { token: "use", prob: 0.08 },
+        { token: "read", prob: 0.06 },
+        { token: "find", prob: 0.04 },
+        { token: "pick", prob: 0.03 },
+      ]},
+      { candidates: [
+        { token: "something", prob: 0.42 },
+        { token: "small", prob: 0.18 },
+        { token: "a", prob: 0.16 },
+        { token: "real", prob: 0.12 },
+        { token: "projects", prob: 0.08 },
+        { token: "things", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "real", prob: 0.28 },
+        { token: "small", prob: 0.24 },
+        { token: "you", prob: 0.18 },
+        { token: "with", prob: 0.12 },
+        { token: "useful", prob: 0.10 },
+        { token: "fun", prob: 0.06 },
+        { token: "simple", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "with", prob: 0.38 },
+        { token: "in", prob: 0.28 },
+        { token: ".", prob: 0.14 },
+        { token: "and", prob: 0.09 },
+        { token: ",", prob: 0.06 },
+        { token: "using", prob: 0.05 },
+      ]},
+      { candidates: [
+        { token: "it", prob: 0.56 },
+        { token: "the", prob: 0.22 },
+        { token: "that", prob: 0.12 },
+        { token: "your", prob: 0.06 },
+        { token: "this", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: ".", prob: 0.48 },
+        { token: ",", prob: 0.28 },
+        { token: "instead", prob: 0.12 },
+        { token: "as", prob: 0.06 },
+        { token: "from", prob: 0.04 },
+        { token: "rather", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "Tutorials", prob: 0.22 },
+        { token: "Reading", prob: 0.18 },
+        { token: "Watching", prob: 0.16 },
+        { token: "Books", prob: 0.14 },
+        { token: "Memorizing", prob: 0.11 },
+        { token: "Courses", prob: 0.09 },
+        { token: "Theory", prob: 0.06 },
+        { token: "Just", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "and", prob: 0.38 },
+        { token: "are", prob: 0.32 },
+        { token: "alone", prob: 0.14 },
+        { token: "can", prob: 0.09 },
+        { token: "will", prob: 0.06 },
+        { token: "help", prob: 0.01 },
+      ]},
+      { candidates: [
+        { token: "books", prob: 0.42 },
+        { token: "courses", prob: 0.28 },
+        { token: "videos", prob: 0.18 },
+        { token: "lectures", prob: 0.08 },
+        { token: "documentation", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "help", prob: 0.32 },
+        { token: "are", prob: 0.24 },
+        { token: "can", prob: 0.18 },
+        { token: "matter", prob: 0.12 },
+        { token: "give", prob: 0.08 },
+        { token: "teach", prob: 0.06 },
+      ]},
+      { candidates: [
+        { token: ",", prob: 0.42 },
+        { token: "but", prob: 0.28 },
+        { token: "you", prob: 0.14 },
+        { token: "with", prob: 0.09 },
+        { token: "to", prob: 0.05 },
+        { token: ".", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "but", prob: 0.48 },
+        { token: "and", prob: 0.22 },
+        { token: "though", prob: 0.14 },
+        { token: "however", prob: 0.10 },
+        { token: "yet", prob: 0.04 },
+        { token: "still", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "nothing", prob: 0.32 },
+        { token: "you", prob: 0.22 },
+        { token: "real", prob: 0.18 },
+        { token: "they", prob: 0.14 },
+        { token: "writing", prob: 0.08 },
+        { token: "actually", prob: 0.06 },
+      ]},
+      { candidates: [
+        { token: "beats", prob: 0.38 },
+        { token: "replaces", prob: 0.28 },
+        { token: "is", prob: 0.14 },
+        { token: "compares", prob: 0.10 },
+        { token: "matches", prob: 0.06 },
+        { token: "teaches", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "actually", prob: 0.32 },
+        { token: "writing", prob: 0.28 },
+        { token: "building", prob: 0.18 },
+        { token: "shipping", prob: 0.12 },
+        { token: "making", prob: 0.08 },
+        { token: "doing", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: "shipping", prob: 0.28 },
+        { token: "writing", prob: 0.24 },
+        { token: "building", prob: 0.22 },
+        { token: "making", prob: 0.14 },
+        { token: "running", prob: 0.08 },
+        { token: "trying", prob: 0.04 },
+      ]},
+      { candidates: [
+        { token: "code", prob: 0.38 },
+        { token: "something", prob: 0.28 },
+        { token: "a", prob: 0.18 },
+        { token: "your", prob: 0.10 },
+        { token: "real", prob: 0.04 },
+        { token: "the", prob: 0.02 },
+      ]},
+      { candidates: [
+        { token: ".", prob: 0.78 },
+        { token: "to", prob: 0.12 },
+        { token: "in", prob: 0.05 },
+        { token: "for", prob: 0.03 },
+        { token: "that", prob: 0.02 },
+      ]},
+    ]
+  },
+];
+
+// Tokens that should not have a leading space when joined
+const NO_LEADING_SPACE = new Set([",", ".", "!", "?", ";", ":"]);
+
+const promptBoxEl = document.getElementById('prompt-box');
+const responseTextEl = document.getElementById('response-text');
+const cursorEl = document.getElementById('cursor');
+const barsEl = document.getElementById('bars');
+const btnRestart = document.getElementById('btn-restart');
+const btnPlay = document.getElementById('btn-play');
+const promptSelect = document.getElementById('prompt-select');
+const speedEl = document.getElementById('speed');
+
+let currentPrompt = PROMPTS[0];
+let stepIndex = 0;
+let playing = true;
+let timer = null;
+
+// Populate prompt selector
+for (const p of PROMPTS) {
+  const opt = document.createElement('option');
+  opt.value = p.id;
+  opt.textContent = p.label;
+  promptSelect.appendChild(opt);
+}
+
+function loadPrompt(id) {
+  currentPrompt = PROMPTS.find(p => p.id === id) || PROMPTS[0];
+  promptBoxEl.textContent = currentPrompt.prompt;
+  responseTextEl.innerHTML = '';
+  stepIndex = 0;
+  cursorEl.classList.remove('done');
+  renderBars(currentPrompt.steps[0].candidates, false);
+  if (playing) scheduleNext();
+}
+
+function renderBars(candidates, markActive) {
+  // Sort by prob descending (data is already sorted, but be safe)
+  const sorted = [...candidates].sort((a, b) => b.prob - a.prob);
+  const max = sorted[0].prob;
+  barsEl.innerHTML = '';
+  for (let i = 0; i < sorted.length; i++) {
+    const c = sorted[i];
+    const div = document.createElement('div');
+    div.className = 'bar' + (markActive && i === 0 ? ' active' : '');
+    const widthPct = (c.prob / max) * 100;
+    div.innerHTML = `
+      <div class="bar-token">${escapeHtml(c.token)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${widthPct}%"></div></div>
+      <div class="bar-pct">${Math.round(c.prob * 100)}%</div>
+    `;
+    barsEl.appendChild(div);
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function appendToken(token) {
+  const span = document.createElement('span');
+  span.className = 'new-token';
+  const lead = NO_LEADING_SPACE.has(token) ? '' : ' ';
+  span.textContent = lead + token;
+  responseTextEl.appendChild(span);
+  // Scroll response box to bottom
+  const box = document.getElementById('response-box');
+  box.scrollTop = box.scrollHeight;
+}
+
+function doStep() {
+  if (stepIndex >= currentPrompt.steps.length) {
+    // Done
+    cursorEl.classList.add('done');
+    playing = false;
+    btnPlay.textContent = 'Play';
+    return;
+  }
+  const step = currentPrompt.steps[stepIndex];
+  // Show bars with the top one highlighted
+  renderBars(step.candidates, true);
+  // Append the chosen token (top candidate)
+  const chosen = [...step.candidates].sort((a, b) => b.prob - a.prob)[0];
+  appendToken(chosen.token);
+  stepIndex++;
+}
+
+function scheduleNext() {
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  if (!playing) return;
+  if (stepIndex >= currentPrompt.steps.length) {
+    cursorEl.classList.add('done');
+    playing = false;
+    btnPlay.textContent = 'Play';
+    return;
+  }
+  const delay = Number(speedEl.value);
+  timer = setTimeout(() => {
+    doStep();
+    scheduleNext();
+  }, delay);
+}
+
+function play() {
+  if (stepIndex >= currentPrompt.steps.length) {
+    // Restart from beginning if at end
+    loadPrompt(currentPrompt.id);
+  }
+  playing = true;
+  btnPlay.textContent = 'Pause';
+  cursorEl.classList.remove('done');
+  scheduleNext();
+}
+
+function pause() {
+  playing = false;
+  btnPlay.textContent = 'Play';
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+}
+
+btnRestart.addEventListener('click', () => {
+  pause();
+  loadPrompt(currentPrompt.id);
+  play();
+});
+
+btnPlay.addEventListener('click', () => {
+  if (playing) pause();
+  else play();
+});
+
+promptSelect.addEventListener('change', () => {
+  pause();
+  loadPrompt(promptSelect.value);
+  play();
+});
+
+// Speed change resets the current schedule so the new speed takes effect immediately
+speedEl.addEventListener('input', () => {
+  if (playing) scheduleNext();
+});
+
+// Initial load
+loadPrompt(currentPrompt.id);
+play();
+</script>
+</body>
+</html>

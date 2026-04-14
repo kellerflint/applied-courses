@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting admission chance</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  .header {
+    padding: 0.7rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 1.4rem 1.1rem 2.5rem;
+  }
+
+  section {
+    margin-bottom: 2rem;
+  }
+  section:last-child { margin-bottom: 0.5rem; }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  p.intro {
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 0.85rem;
+  }
+
+  table {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    font-size: 0.85rem;
+  }
+  th, td {
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid #f1f3f5;
+  }
+  th {
+    background: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6a737d;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; color: #1a1a1a; }
+  td.chance { font-weight: 600; color: #1a7f37; }
+
+  .graphs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    padding: 0.9rem;
+  }
+  .graph {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .graph-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    color: #6a737d;
+    margin-top: 0.7rem;
+    justify-content: center;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+  .legend-line {
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+
+  .predict-card {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+
+  .sliders {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 60px;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .slider-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .slider-row input[type="range"] { width: 100%; accent-color: #f59e0b; }
+  .slider-value {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ca8a04;
+    text-align: right;
+  }
+
+  .prediction {
+    margin-top: 1.2rem;
+    padding: 0.9rem 1rem;
+    background: #fff7ed;
+    border: 1.5px solid #fdba74;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .prediction-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9a3412;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .prediction-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #c2410c;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 680px) {
+    .graphs {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .slider-row {
+      grid-template-columns: 90px 1fr 50px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>Predicting admission chance</strong> &nbsp;A simple machine learning example.
+</div>
+
+<div class="main">
+
+  <section>
+    <h2><span class="step-num">1</span> The data</h2>
+    <p class="intro">Below is a small dataset of past applicants. Each row is one student. The first three columns describe the student (GPA, SAT score, and the score their admission essay got from the readers on a 1 to 10 scale). The last column shows what actually happened: their admission chance, as a percentage. This is the kind of data a machine learning model learns from.</p>
+    <table id="data-table">
+      <thead>
+        <tr><th>GPA</th><th>SAT</th><th>Essay (1-10)</th><th>Admission chance</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="step-num">2</span> The pattern</h2>
+    <p class="intro">The graphs below plot each piece of data against the admission chance. Each blue dot is one student from the table. The red line is the trend the model found. Notice that all three features have a linear relationship with the outcome: higher GPA, higher SAT, and higher essay score all push admission chance up. That trend line is what the model "learned" from the data.</p>
+    <div class="graphs" id="graphs"></div>
+    <div class="graph-legend">
+      <span><span class="legend-dot" style="background:#2563eb"></span>Past students</span>
+      <span><span class="legend-line" style="background:#dc2626"></span>Best-fit trend</span>
+      <span><span class="legend-dot" style="background:#f59e0b;border:1.5px solid #fff;box-shadow:0 0 0 1px #f59e0b"></span>Your prediction</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="step-num">3</span> Try a prediction</h2>
+    <p class="intro">Drag the sliders to invent a new student. The model will use the trend it learned to predict their admission chance. The orange dot in each graph above shows where your student lands on that feature, and the prediction below updates as you drag.</p>
+    <div class="predict-card">
+      <div class="sliders">
+        <div class="slider-row">
+          <div class="slider-label">GPA</div>
+          <input type="range" id="slider-gpa" min="2.5" max="4.0" step="0.1" value="3.5">
+          <div class="slider-value" id="val-gpa">3.5</div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">SAT score</div>
+          <input type="range" id="slider-sat" min="1100" max="1600" step="10" value="1350">
+          <div class="slider-value" id="val-sat">1350</div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Essay score</div>
+          <input type="range" id="slider-essay" min="1" max="10" step="1" value="6">
+          <div class="slider-value" id="val-essay">6</div>
+        </div>
+      </div>
+      <div class="prediction">
+        <div class="prediction-label">Predicted admission chance</div>
+        <div class="prediction-value" id="prediction">— %</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const DATA = [
+  { gpa: 3.9, sat: 1520, essay: 9, chance: 92 },
+  { gpa: 3.7, sat: 1480, essay: 8, chance: 84 },
+  { gpa: 3.5, sat: 1400, essay: 7, chance: 72 },
+  { gpa: 3.8, sat: 1450, essay: 6, chance: 76 },
+  { gpa: 3.2, sat: 1350, essay: 8, chance: 65 },
+  { gpa: 3.6, sat: 1500, essay: 5, chance: 70 },
+  { gpa: 4.0, sat: 1550, essay: 9, chance: 95 },
+  { gpa: 3.0, sat: 1280, essay: 6, chance: 50 },
+  { gpa: 3.4, sat: 1380, essay: 7, chance: 64 },
+  { gpa: 2.8, sat: 1200, essay: 5, chance: 38 },
+];
+
+const FEATURES = {
+  gpa:   { name: "GPA",          axisName: "GPA",          min: 2.5,  max: 4.0,  format: v => v.toFixed(1) },
+  sat:   { name: "SAT score",    axisName: "SAT",          min: 1100, max: 1600, format: v => Math.round(v) },
+  essay: { name: "Essay score",  axisName: "Essay (1-10)", min: 1,    max: 10,   format: v => Math.round(v) },
+};
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function linearRegression(xs, ys) {
+  const n = xs.length;
+  const sumX  = xs.reduce((a, b) => a + b, 0);
+  const sumY  = ys.reduce((a, b) => a + b, 0);
+  const sumXY = xs.reduce((acc, x, i) => acc + x * ys[i], 0);
+  const sumXX = xs.reduce((acc, x) => acc + x * x, 0);
+  const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const b = (sumY - m * sumX) / n;
+  return { m, b };
+}
+
+const REGRESSIONS = {
+  gpa:   linearRegression(DATA.map(d => d.gpa),   DATA.map(d => d.chance)),
+  sat:   linearRegression(DATA.map(d => d.sat),   DATA.map(d => d.chance)),
+  essay: linearRegression(DATA.map(d => d.essay), DATA.map(d => d.chance)),
+};
+
+function predictionFromInputs(values) {
+  const p1 = REGRESSIONS.gpa.m   * values.gpa   + REGRESSIONS.gpa.b;
+  const p2 = REGRESSIONS.sat.m   * values.sat   + REGRESSIONS.sat.b;
+  const p3 = REGRESSIONS.essay.m * values.essay + REGRESSIONS.essay.b;
+  return clamp((p1 + p2 + p3) / 3, 0, 100);
+}
+
+// Render data table
+const tbody = document.querySelector('#data-table tbody');
+for (const d of DATA) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="num">${d.gpa.toFixed(1)}</td>
+    <td class="num">${d.sat}</td>
+    <td class="num">${d.essay}</td>
+    <td class="chance">${d.chance}%</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// Render graphs (one per feature)
+const graphsEl = document.getElementById('graphs');
+const FEATURE_KEYS = ['gpa', 'sat', 'essay'];
+
+const W = 220, H = 180;
+const PAD_LEFT = 30, PAD_RIGHT = 8, PAD_TOP = 12, PAD_BOTTOM = 32;
+const PW = W - PAD_LEFT - PAD_RIGHT;
+const PH = H - PAD_TOP - PAD_BOTTOM;
+
+function xToPx(x, feat) {
+  return PAD_LEFT + ((x - feat.min) / (feat.max - feat.min)) * PW;
+}
+function yToPx(y) {
+  return PAD_TOP + (1 - y / 100) * PH;
+}
+
+function buildGraph(featureKey) {
+  const feat = FEATURES[featureKey];
+  const reg = REGRESSIONS[featureKey];
+
+  // Best-fit line endpoints across the display range, clipped via clipPath
+  const lineX1 = xToPx(feat.min, feat);
+  const lineY1 = yToPx(reg.m * feat.min + reg.b);
+  const lineX2 = xToPx(feat.max, feat);
+  const lineY2 = yToPx(reg.m * feat.max + reg.b);
+
+  // Data dots
+  let dotsHtml = '';
+  for (const d of DATA) {
+    const cx = xToPx(d[featureKey], feat);
+    const cy = yToPx(d.chance);
+    dotsHtml += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#2563eb" fill-opacity="0.75"/>`;
+  }
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="graph" data-feature="${featureKey}" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <clipPath id="clip-${featureKey}">
+          <rect x="${PAD_LEFT}" y="${PAD_TOP}" width="${PW}" height="${PH}"/>
+        </clipPath>
+      </defs>
+      <rect x="${PAD_LEFT}" y="${PAD_TOP}" width="${PW}" height="${PH}" fill="#f9fafb" stroke="#e5e7eb"/>
+      <g clip-path="url(#clip-${featureKey})">
+        <line x1="${lineX1}" y1="${lineY1}" x2="${lineX2}" y2="${lineY2}" stroke="#dc2626" stroke-width="2"/>
+        ${dotsHtml}
+        <circle class="user-dot" cx="0" cy="0" r="6" fill="#f59e0b" stroke="#fff" stroke-width="2" style="display:none"/>
+      </g>
+      <text x="${PAD_LEFT - 5}" y="${PAD_TOP + 4}" text-anchor="end" font-size="9" fill="#6a737d">100%</text>
+      <text x="${PAD_LEFT - 5}" y="${PAD_TOP + PH/2 + 3}" text-anchor="end" font-size="9" fill="#6a737d">50%</text>
+      <text x="${PAD_LEFT - 5}" y="${PAD_TOP + PH + 3}" text-anchor="end" font-size="9" fill="#6a737d">0%</text>
+      <text x="${PAD_LEFT}" y="${H - 14}" text-anchor="start" font-size="9" fill="#9ca3af">${feat.format(feat.min)}</text>
+      <text x="${PAD_LEFT + PW}" y="${H - 14}" text-anchor="end" font-size="9" fill="#9ca3af">${feat.format(feat.max)}</text>
+      <text x="${PAD_LEFT + PW/2}" y="${H - 4}" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">${feat.axisName}</text>
+    </svg>
+  `;
+}
+
+graphsEl.innerHTML = FEATURE_KEYS.map(buildGraph).join('');
+
+// Sliders + prediction wiring
+const slGpa   = document.getElementById('slider-gpa');
+const slSat   = document.getElementById('slider-sat');
+const slEssay = document.getElementById('slider-essay');
+const valGpa   = document.getElementById('val-gpa');
+const valSat   = document.getElementById('val-sat');
+const valEssay = document.getElementById('val-essay');
+const predEl  = document.getElementById('prediction');
+
+function update() {
+  const values = {
+    gpa:   parseFloat(slGpa.value),
+    sat:   parseFloat(slSat.value),
+    essay: parseFloat(slEssay.value),
+  };
+  valGpa.textContent   = values.gpa.toFixed(1);
+  valSat.textContent   = Math.round(values.sat);
+  valEssay.textContent = Math.round(values.essay);
+
+  const pred = predictionFromInputs(values);
+  predEl.textContent = `${Math.round(pred)}%`;
+
+  // Move user dot in each graph
+  for (const key of FEATURE_KEYS) {
+    const svg = graphsEl.querySelector(`svg[data-feature="${key}"]`);
+    const dot = svg.querySelector('.user-dot');
+    const feat = FEATURES[key];
+    dot.setAttribute('cx', xToPx(values[key], feat));
+    dot.setAttribute('cy', yToPx(pred));
+    dot.style.display = '';
+  }
+}
+
+slGpa.addEventListener('input', update);
+slSat.addEventListener('input', update);
+slEssay.addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
