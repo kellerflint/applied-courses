@@ -65,6 +65,26 @@ print(df.shape)
 df.head()
 ```
 
+## Choose Your Columns
+
+Before cleaning anything, decide which columns you're actually going to use. Run this to see what you're working with:
+
+```python
+print(df.dtypes)
+```
+
+You want numeric columns only. String or categorical columns will break the models later. Pick the ones that make sense as features and set them here:
+
+```python
+# List the feature columns you want to use
+feature_cols = ["col_a", "col_b", "col_c"]  # replace with your actual column names
+
+# The column you're trying to predict
+target_col = "target"  # replace with your actual target column name
+```
+
+This is also a good moment to think about which features are actually meaningful. If a column is an ID, a name, or something that wouldn't logically help predict your target, leave it out.
+
 ## Clean Your Data
 
 Before training anything, you need to deal with missing values and outliers. Models break in unexpected ways when fed messy data.
@@ -98,8 +118,6 @@ Outliers are data points so far from the rest that they're likely errors or genu
 The IQR method flags anything that falls more than 3× the interquartile range beyond the first or third quartile. That's a loose filter that catches obvious outliers without aggressively trimming your data.
 
 ```python
-feature_cols = [col for col in df.columns if col != "target"]  # replace "target" with your column name
-
 def remove_outliers_iqr(dataframe, columns, factor=3.0):
     mask = pd.Series([True] * len(dataframe), index=dataframe.index)
     for col in columns:
@@ -119,11 +137,9 @@ If this drops more than 20-30% of your data, consider using a larger factor (lik
 
 ## Prepare Features and Target
 
-Separate your features (the input columns) from the target (the column you're predicting). Replace `"target"` with the actual name of your target column throughout:
-
 ```python
 X = df_clean[feature_cols]
-y = df_clean["target"]  # replace "target" with your actual column name
+y = df_clean[target_col]
 ```
 
 If your target column has string labels like `"yes"` / `"no"`, you may need to encode them:
