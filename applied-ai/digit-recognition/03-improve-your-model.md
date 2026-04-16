@@ -168,6 +168,16 @@ files.download("my_digit_model_v2.keras")
 
 Go to **[http://64.23.245.76/](http://64.23.245.76/)**, submit your updated model, and check the leaderboard.
 
+## Submit on Canvas
+
+**Share your notebook:**
+
+1. Click **Share** in the top right of your Colab notebook
+2. Under "General access," change it to **"Anyone with the link"** and set the role to **Viewer**
+3. Copy the link
+
+**Each partner submits separately on Canvas.** Paste your shared Colab link into the submission. Both of you need to submit individually, even though it's the same notebook.
+
 <div class="tally-embed-wrapper">
 <iframe data-tally-src="https://tally.so/embed/ZjYqMa?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1&course=Applied+AI&unit=Digit+Recognition" loading="lazy" width="100%" height="539" frameborder="0" marginheight="0" marginwidth="0" title="Applied Course Feedback"></iframe>
 </div>

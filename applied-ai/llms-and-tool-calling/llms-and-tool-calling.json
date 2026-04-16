@@ -1,6 +1,0 @@
-{
-  "layout": "page.njk",
-  "tags": ["page"],
-  "unitTitle": "LLMs & Tool Calling",
-  "unitOrder": 7
-}
