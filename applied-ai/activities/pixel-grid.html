@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixels as Numbers</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 16px;
+      min-height: 100%;
+      gap: 16px;
+    }
+
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .panel-label {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Drawing grid */
+    #draw-canvas {
+      cursor: crosshair;
+      border-radius: 4px;
+      border: 1px solid #2d3148;
+      image-rendering: pixelated;
+    }
+
+    /* Number grid */
+    #num-grid {
+      display: grid;
+      gap: 3px;
+      font-family: "Fira Code", "Cascadia Code", monospace;
+      font-size: 0.6rem;
+      line-height: 1;
+    }
+
+    .cell {
+      width: 30px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    /* Flat array display */
+    .flat-box {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: "Fira Code", "Cascadia Code", monospace;
+      font-size: 0.72rem;
+      color: #a5b4fc;
+      max-width: 480px;
+      width: 100%;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .flat-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-bottom: 4px;
+      font-family: system-ui, sans-serif;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 20px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .stat-row span { color: #e2e8f0; font-weight: 600; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      background: #1e2130;
+      border: 1px solid #3d4468;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    button:hover { background: #2d3148; color: #e2e8f0; }
+
+    .note {
+      font-size: 0.76rem;
+      color: #64748b;
+      text-align: center;
+      max-width: 480px;
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 480px;
+      border: none;
+      border-top: 1px solid #1e2130;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Pixels Are Numbers</h2>
+
+  <!-- Drawing canvas -->
+  <div class="panel">
+    <div class="panel-label">Draw a digit</div>
+    <canvas id="draw-canvas" width="280" height="280"></canvas>
+    <div class="btn-row">
+      <button id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Number grid -->
+  <div class="panel">
+    <div class="panel-label">Pixel values (10 × 10)</div>
+    <div id="num-grid"></div>
+    <div class="stat-row">
+      Non-zero pixels: <span id="nonzero">0</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div style="width:100%;max-width:480px">
+    <div class="flat-label">Same data as a flat list (what the network sees):</div>
+    <div class="flat-box" id="flat-out">[ 0, 0, 0, ... ]</div>
+  </div>
+
+  <p class="note">The grid and the list contain exactly the same numbers. An image is just a list of pixel values — that list is what you feed into a neural network.</p>
+
+<script>
+  const GRID = 10;           // 10×10 logical pixels
+  const CELL = 28;           // canvas pixels per logical cell
+  const canvas = document.getElementById("draw-canvas");
+  const ctx = canvas.getContext("2d");
+
+  // pixel data: 10×10 grid of values 0.0–1.0
+  let pixels = Array.from({length: GRID}, () => new Array(GRID).fill(0));
+  let painting = false;
+
+  // ── build number grid ──────────────────────────────────────────────────────
+  const numGrid = document.getElementById("num-grid");
+  numGrid.style.gridTemplateColumns = `repeat(${GRID}, 30px)`;
+
+  const cellEls = [];
+  for (let r = 0; r < GRID; r++) {
+    cellEls[r] = [];
+    for (let c = 0; c < GRID; c++) {
+      const el = document.createElement("div");
+      el.className = "cell";
+      numGrid.appendChild(el);
+      cellEls[r][c] = el;
+    }
+  }
+
+  // ── drawing ────────────────────────────────────────────────────────────────
+  function paintAt(x, y, pressure) {
+    // map canvas coords to logical grid
+    const gc = Math.floor(x / CELL);
+    const gr = Math.floor(y / CELL);
+    const RADIUS = 1.1; // logical cell radius
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const nr = gr + dr, nc = gc + dc;
+        if (nr < 0 || nr >= GRID || nc < 0 || nc >= GRID) continue;
+        const dist = Math.sqrt(dr*dr + dc*dc);
+        const fade = Math.max(0, 1 - dist / RADIUS);
+        pixels[nr][nc] = Math.min(1, pixels[nr][nc] + fade * pressure);
+      }
+    }
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  canvas.addEventListener("mousedown",  e => { painting = true; paintAt(getPos(e).x, getPos(e).y, 0.8); render(); });
+  canvas.addEventListener("mousemove",  e => { if (!painting) return; paintAt(getPos(e).x, getPos(e).y, 0.5); render(); });
+  canvas.addEventListener("mouseup",    () => { painting = false; });
+  canvas.addEventListener("mouseleave", () => { painting = false; });
+
+  canvas.addEventListener("touchstart", e => { e.preventDefault(); painting = true; const p = getPos(e); paintAt(p.x, p.y, 0.8); render(); }, {passive:false});
+  canvas.addEventListener("touchmove",  e => { e.preventDefault(); if (!painting) return; const p = getPos(e); paintAt(p.x, p.y, 0.5); render(); }, {passive:false});
+  canvas.addEventListener("touchend",   () => { painting = false; });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    pixels = Array.from({length: GRID}, () => new Array(GRID).fill(0));
+    render();
+  });
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  function render() {
+    // draw canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#0f1117";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        const v = pixels[r][c];
+        if (v > 0) {
+          const brightness = Math.round(v * 255);
+          ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+          ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+        // grid lines
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+      }
+    }
+
+    // update number cells
+    let nonzero = 0;
+    const flat = [];
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        const v = pixels[r][c];
+        const rounded = Math.round(v * 100) / 100;
+        flat.push(rounded);
+        if (v > 0.01) nonzero++;
+
+        const el = cellEls[r][c];
+        el.textContent = rounded.toFixed(2);
+        el.style.background = v > 0.05 ? `rgb(${Math.round(v*40)},${Math.round(v*50)},${Math.round(v*120)})` : "transparent";
+        el.style.color = v > 0.3 ? "#a5b4fc" : (v > 0.05 ? "#6366f1" : "#334155");
+      }
+    }
+
+    document.getElementById("nonzero").textContent = nonzero;
+
+    const flatStr = flat.map(v => v.toFixed(2)).join(", ");
+    document.getElementById("flat-out").textContent = "[ " + flatStr + " ]";
+  }
+
+  render();
+</script>
+</body>
+</html>

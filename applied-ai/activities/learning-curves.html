@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Curves</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 20px;
+      gap: 16px;
+    }
+
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      padding: 7px 18px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      background: #1e2130;
+      color: #64748b;
+      border-color: #2d3148;
+    }
+    button:hover { color: #94a3b8; border-color: #3d4468; }
+
+    button.active-under  { background: #1c2a1e; color: #4ade80; border-color: #4ade80; }
+    button.active-good   { background: #1a2035; color: #60a5fa; border-color: #60a5fa; }
+    button.active-over   { background: #2a1a1e; color: #f87171; border-color: #f87171; }
+
+    canvas#chart {
+      border-radius: 8px;
+      max-width: 100%;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .legend-line {
+      width: 28px;
+      height: 2px;
+      border-radius: 1px;
+    }
+
+    .legend-line.dashed {
+      background: repeating-linear-gradient(
+        to right,
+        currentColor 0, currentColor 5px,
+        transparent 5px, transparent 9px
+      );
+    }
+
+    /* Info card */
+    .info-card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 14px 18px;
+      max-width: 560px;
+      width: 100%;
+      line-height: 1.6;
+    }
+
+    .info-card .scenario-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .info-card p {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .info-card .action {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .under-color  { color: #4ade80; }
+    .good-color   { color: #60a5fa; }
+    .over-color   { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <h2>Learning Curves</h2>
+
+  <div class="btn-row">
+    <button id="btnUnder">Underfitting</button>
+    <button id="btnGood">Good Fit</button>
+    <button id="btnOver">Overfitting</button>
+  </div>
+
+  <canvas id="chart" width="560" height="300"></canvas>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:#60a5fa;height:2px"></div>
+      Training accuracy
+    </div>
+    <div class="legend-item">
+      <div class="legend-line dashed" style="color:#f59e0b"></div>
+      Validation accuracy
+    </div>
+  </div>
+
+  <div class="info-card" id="infoCard">
+    <div class="scenario-label good-color">Good Fit</div>
+    <p>Training and validation accuracy both rise together and converge near the same value. The model is learning general patterns.</p>
+    <p class="action good-color">Keep these settings. Your model is generalizing well.</p>
+  </div>
+
+<script>
+  const canvas = document.getElementById("chart");
+  const ctx = canvas.getContext("2d");
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const PAD = { top: 20, right: 20, bottom: 40, left: 48 };
+  const PLOT_W = W - PAD.left - PAD.right;
+  const PLOT_H = H - PAD.top - PAD.bottom;
+
+  // ── Scenario data generators ──────────────────────────────────────────────
+  // Each returns { train: [...], val: [...] } for N epochs
+
+  function makeUnderfitting(N = 30) {
+    // Both lines still climbing, haven't converged, gap is small
+    const train = [], val = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      // Slow learner, still rising at epoch N
+      train.push(0.35 + 0.38 * (1 - Math.exp(-t * 2.2)) + (Math.random() - 0.5) * 0.015);
+      val.push(  0.30 + 0.33 * (1 - Math.exp(-t * 2.0)) + (Math.random() - 0.5) * 0.02);
+    }
+    return { train, val };
+  }
+
+  function makeGoodFit(N = 30) {
+    const train = [], val = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      train.push(0.40 + 0.56 * (1 - Math.exp(-t * 4.5)) + (Math.random() - 0.5) * 0.012);
+      val.push(  0.37 + 0.50 * (1 - Math.exp(-t * 4.0)) + (Math.random() - 0.5) * 0.018);
+    }
+    return { train, val };
+  }
+
+  function makeOverfitting(N = 30) {
+    const train = [], val = [];
+    let valPeak = 0;
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      // Training keeps climbing toward ~1.0
+      train.push(Math.min(0.99, 0.40 + 0.58 * (1 - Math.exp(-t * 6.0)) + (Math.random() - 0.5) * 0.010));
+      // Validation peaks around epoch 8-10 then drifts down
+      const peakT = 0.28;
+      let v;
+      if (t < peakT) {
+        v = 0.38 + 0.45 * (t / peakT) * (1 - Math.exp(-t * 8));
+        valPeak = v;
+      } else {
+        v = valPeak - 0.18 * Math.pow((t - peakT) / (1 - peakT), 1.4);
+      }
+      val.push(Math.max(0.1, v + (Math.random() - 0.5) * 0.018));
+    }
+    return { train, val };
+  }
+
+  // ── Scenarios ──────────────────────────────────────────────────────────────
+  let EPOCHS = 30;
+
+  const SCENARIOS = {
+    under: {
+      data: makeUnderfitting(EPOCHS),
+      label: 'Underfitting',
+      cls: 'under-color',
+      trainColor: '#60a5fa',
+      valColor: '#f59e0b',
+      description: 'Both training and validation accuracy are still climbing. The model hasn\'t learned enough yet. More epochs, a bigger network, or more data will help.',
+      action: 'Train longer, or try a larger network.',
+      btnClass: 'active-under',
+    },
+    good: {
+      data: makeGoodFit(EPOCHS),
+      label: 'Good Fit',
+      cls: 'good-color',
+      trainColor: '#60a5fa',
+      valColor: '#f59e0b',
+      description: 'Training and validation accuracy both rise and converge near the same value. The model is learning general patterns that work on data it has never seen.',
+      action: 'Keep these settings. Your model is generalizing well.',
+      btnClass: 'active-good',
+    },
+    over: {
+      data: makeOverfitting(EPOCHS),
+      label: 'Overfitting',
+      cls: 'over-color',
+      trainColor: '#60a5fa',
+      valColor: '#f59e0b',
+      description: 'Training accuracy keeps rising while validation accuracy plateaus and starts to drop. The model has memorized the training data and no longer generalizes. The gap between the two lines is the problem.',
+      action: 'Try dropout, data augmentation, or fewer epochs.',
+      btnClass: 'active-over',
+    },
+  };
+
+  let current = 'good';
+  let animFrame = 0;
+  let animId = null;
+
+  // ── Draw chart ─────────────────────────────────────────────────────────────
+  function drawChart(scenario, frame) {
+    const s = SCENARIOS[scenario];
+    const { train, val } = s.data;
+    const epochs = Math.min(frame, train.length);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0, 0, W, H);
+
+    // grid
+    ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 4; g++) {
+      const y = PAD.top + PLOT_H - (g / 4) * PLOT_H;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + PLOT_W, y);
+      ctx.stroke();
+      // y-axis labels
+      ctx.fillStyle = '#475569';
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((g * 25) + '%', PAD.left - 6, y);
+    }
+
+    // x-axis labels
+    ctx.fillStyle = '#475569';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    [0, 10, 20, 30].forEach(ep => {
+      const x = PAD.left + (ep / (EPOCHS - 1)) * PLOT_W;
+      ctx.fillText(ep, x, PAD.top + PLOT_H + 8);
+    });
+
+    // axis labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Epoch', PAD.left + PLOT_W / 2, H - 8);
+    ctx.save();
+    ctx.translate(12, PAD.top + PLOT_H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Accuracy', 0, 0);
+    ctx.restore();
+
+    if (epochs < 2) return;
+
+    function plotLine(data, color, dashed) {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      if (dashed) ctx.setLineDash([6, 4]);
+      else ctx.setLineDash([]);
+
+      for (let i = 0; i < epochs; i++) {
+        const x = PAD.left + (i / (EPOCHS - 1)) * PLOT_W;
+        const y = PAD.top + PLOT_H - data[i] * PLOT_H;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    plotLine(train, s.trainColor, false);
+    plotLine(val,   s.valColor,   true);
+  }
+
+  // ── Animation ──────────────────────────────────────────────────────────────
+  function animate() {
+    animFrame++;
+    drawChart(current, animFrame);
+    if (animFrame < EPOCHS) {
+      animId = requestAnimationFrame(animate);
+    }
+  }
+
+  function startScenario(key) {
+    // regenerate data for variety each click
+    SCENARIOS.under.data = makeUnderfitting(EPOCHS);
+    SCENARIOS.good.data  = makeGoodFit(EPOCHS);
+    SCENARIOS.over.data  = makeOverfitting(EPOCHS);
+
+    if (animId) cancelAnimationFrame(animId);
+    current = key;
+    animFrame = 0;
+
+    // update buttons
+    document.querySelectorAll('.btn-row button').forEach(b => {
+      b.className = '';
+    });
+    const btnMap = { under: 'btnUnder', good: 'btnGood', over: 'btnOver' };
+    document.getElementById(btnMap[key]).className = SCENARIOS[key].btnClass;
+
+    // update info card
+    const s = SCENARIOS[key];
+    const card = document.getElementById('infoCard');
+    card.innerHTML = `
+      <div class="scenario-label ${s.cls}">${s.label}</div>
+      <p>${s.description}</p>
+      <p class="action ${s.cls}">${s.action}</p>
+    `;
+
+    animId = requestAnimationFrame(animate);
+  }
+
+  document.getElementById('btnUnder').addEventListener('click', () => startScenario('under'));
+  document.getElementById('btnGood').addEventListener('click',  () => startScenario('good'));
+  document.getElementById('btnOver').addEventListener('click',  () => startScenario('over'));
+
+  // Start with good fit
+  startScenario('good');
+</script>
+</body>
+</html>

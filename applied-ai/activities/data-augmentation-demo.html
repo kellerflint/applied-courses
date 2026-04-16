@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Augmentation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 20px;
+      min-height: 100%;
+      gap: 16px;
+    }
+
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .col-label {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+
+    canvas {
+      cursor: crosshair;
+      border-radius: 6px;
+      border: 1px solid #2d3148;
+      image-rendering: pixelated;
+    }
+
+    canvas.aug {
+      cursor: default;
+      border-color: #1e293b;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      background: #1e2130;
+      border: 1px solid #3d4468;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    button:hover { background: #2d3148; color: #e2e8f0; }
+    button.primary {
+      background: #312e81;
+      border-color: #4f46e5;
+      color: #a5b4fc;
+    }
+    button.primary:hover { background: #3730a3; color: #e0e7ff; }
+
+    /* augmented grid */
+    .aug-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 84px);
+      gap: 8px;
+    }
+
+    .aug-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .aug-tag {
+      font-size: 0.62rem;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .arrow {
+      font-size: 1.4rem;
+      color: #334155;
+      align-self: center;
+      padding-top: 24px;
+    }
+
+    .note {
+      font-size: 0.76rem;
+      color: #64748b;
+      text-align: center;
+      max-width: 540px;
+      line-height: 1.5;
+    }
+
+    .count-badge {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .count-badge span { color: #a5b4fc; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <h2>Data Augmentation</h2>
+
+  <div class="layout">
+
+    <!-- Draw panel -->
+    <div class="col">
+      <div class="col-label">Draw one digit</div>
+      <canvas id="draw-canvas" width="168" height="168"></canvas>
+      <div class="btn-row">
+        <button id="clearBtn">Clear</button>
+        <button id="augBtn" class="primary">Augment →</button>
+      </div>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <!-- Augmented grid -->
+    <div class="col">
+      <div class="col-label">Augmented versions</div>
+      <div class="aug-grid" id="aug-grid"></div>
+      <div class="count-badge">1 drawing → <span id="countOut">8</span> training samples</div>
+    </div>
+
+  </div>
+
+  <p class="note">
+    Each augmented image is slightly different from the original. The model trains on all of them, so it learns to recognize the digit even when it's shifted, zoomed, or rotated slightly. This is especially useful when your dataset is small.
+  </p>
+
+<script>
+  // ── Drawing canvas ─────────────────────────────────────────────────────────
+  const SZ = 28;           // logical pixels
+  const DRAW_CELL = 6;     // canvas px per logical pixel
+  const DRAW_PX = SZ * DRAW_CELL;  // = 168
+
+  const drawCanvas = document.getElementById("draw-canvas");
+  const dCtx = drawCanvas.getContext("2d");
+  let pixels = new Float32Array(SZ * SZ);  // 0–1
+  let painting = false;
+
+  function drawPos(e) {
+    const rect = drawCanvas.getBoundingClientRect();
+    const sx = drawCanvas.width / rect.width;
+    const sy = drawCanvas.height / rect.height;
+    if (e.touches) return {
+      x: (e.touches[0].clientX - rect.left) * sx,
+      y: (e.touches[0].clientY - rect.top)  * sy
+    };
+    return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+  }
+
+  function paintAt(x, y, pressure) {
+    const gc = Math.floor(x / DRAW_CELL);
+    const gr = Math.floor(y / DRAW_CELL);
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        const nr = gr+dr, nc = gc+dc;
+        if (nr < 0 || nr >= SZ || nc < 0 || nc >= SZ) continue;
+        const dist = Math.sqrt(dr*dr + dc*dc);
+        const fade = Math.max(0, 1 - dist / 2.2);
+        pixels[nr*SZ+nc] = Math.min(1, pixels[nr*SZ+nc] + fade * pressure);
+      }
+    }
+  }
+
+  drawCanvas.addEventListener("mousedown",  e => { painting=true; paintAt(drawPos(e).x, drawPos(e).y, 0.9); renderDraw(); });
+  drawCanvas.addEventListener("mousemove",  e => { if(!painting) return; paintAt(drawPos(e).x, drawPos(e).y, 0.6); renderDraw(); });
+  drawCanvas.addEventListener("mouseup",    () => { painting=false; });
+  drawCanvas.addEventListener("mouseleave", () => { painting=false; });
+  drawCanvas.addEventListener("touchstart", e => { e.preventDefault(); painting=true; const p=drawPos(e); paintAt(p.x,p.y,0.9); renderDraw(); }, {passive:false});
+  drawCanvas.addEventListener("touchmove",  e => { e.preventDefault(); if(!painting) return; const p=drawPos(e); paintAt(p.x,p.y,0.6); renderDraw(); }, {passive:false});
+  drawCanvas.addEventListener("touchend",   () => { painting=false; });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    pixels.fill(0);
+    renderDraw();
+    clearAug();
+  });
+
+  document.getElementById("augBtn").addEventListener("click", () => {
+    renderAugmentations();
+  });
+
+  function renderDraw() {
+    dCtx.fillStyle = "#0f1117";
+    dCtx.fillRect(0, 0, DRAW_PX, DRAW_PX);
+    for (let r = 0; r < SZ; r++) {
+      for (let c = 0; c < SZ; c++) {
+        const v = pixels[r*SZ+c];
+        if (v > 0.01) {
+          const b = Math.round(v * 255);
+          dCtx.fillStyle = `rgb(${b},${b},${b})`;
+          dCtx.fillRect(c*DRAW_CELL, r*DRAW_CELL, DRAW_CELL, DRAW_CELL);
+        }
+      }
+    }
+    // subtle grid
+    dCtx.strokeStyle = "rgba(255,255,255,0.04)";
+    dCtx.lineWidth = 0.5;
+    for (let i = 0; i <= SZ; i++) {
+      dCtx.beginPath(); dCtx.moveTo(i*DRAW_CELL, 0); dCtx.lineTo(i*DRAW_CELL, DRAW_PX); dCtx.stroke();
+      dCtx.beginPath(); dCtx.moveTo(0, i*DRAW_CELL); dCtx.lineTo(DRAW_PX, i*DRAW_CELL); dCtx.stroke();
+    }
+  }
+
+  // ── Augmentation helpers ───────────────────────────────────────────────────
+
+  // Bilinear sample from pixels array at fractional (r, c)
+  function sampleBilinear(src, fr, fc) {
+    const r0 = Math.floor(fr), c0 = Math.floor(fc);
+    const r1 = r0+1, c1 = c0+1;
+    const dr = fr-r0, dc = fc-c0;
+    function get(r,c) {
+      if (r<0||r>=SZ||c<0||c>=SZ) return 0;
+      return src[r*SZ+c];
+    }
+    return (1-dr)*(1-dc)*get(r0,c0) + (1-dr)*dc*get(r0,c1)
+         + dr*(1-dc)*get(r1,c0) + dr*dc*get(r1,c1);
+  }
+
+  function applyTransform(src, {shiftR=0, shiftC=0, scaleR=1, scaleC=1, rotateDeg=0} = {}) {
+    const out = new Float32Array(SZ*SZ);
+    const angleRad = rotateDeg * Math.PI / 180;
+    const cosA = Math.cos(angleRad), sinA = Math.sin(angleRad);
+    const cx = SZ/2, cy = SZ/2;
+    for (let r = 0; r < SZ; r++) {
+      for (let c = 0; c < SZ; c++) {
+        // unshift, unrotate, unscale to find source pixel
+        let pr = r - cy, pc = c - cx;
+        // unrotate
+        let ur = cosA*pr + sinA*pc;
+        let uc = -sinA*pr + cosA*pc;
+        // unscale
+        ur = ur / scaleR;
+        uc = uc / scaleC;
+        // unshift
+        ur = ur + cy - shiftR;
+        uc = uc + cx - shiftC;
+        out[r*SZ+c] = sampleBilinear(src, ur, uc);
+      }
+    }
+    return out;
+  }
+
+  // ── Augmentation set ──────────────────────────────────────────────────────
+  const AUGMENTATIONS = [
+    { label: "Original",               fn: p => p.slice() },
+    { label: "Shift right 5px",        fn: p => applyTransform(p, {shiftC:  5}) },
+    { label: "Shift left 5px",         fn: p => applyTransform(p, {shiftC: -5}) },
+    { label: "Shift down 5px",         fn: p => applyTransform(p, {shiftR:  5}) },
+    { label: "Shift up 5px",           fn: p => applyTransform(p, {shiftR: -5}) },
+    { label: "Zoom in 130%",           fn: p => applyTransform(p, {scaleR:1.3, scaleC:1.3}) },
+    { label: "Zoom out 70%",           fn: p => applyTransform(p, {scaleR:0.7, scaleC:0.7}) },
+    { label: "Rotate +20°",            fn: p => applyTransform(p, {rotateDeg:  20}) },
+    { label: "Rotate −20°",            fn: p => applyTransform(p, {rotateDeg: -20}) },
+    { label: "Shift right + down",     fn: p => applyTransform(p, {shiftC:  5, shiftR:  5}) },
+    { label: "Shift left + up",        fn: p => applyTransform(p, {shiftC: -5, shiftR: -5}) },
+    { label: "Zoom in + rotate +20°",  fn: p => applyTransform(p, {scaleR:1.3, scaleC:1.3, rotateDeg:  20}) },
+    { label: "Zoom out + rotate −20°", fn: p => applyTransform(p, {scaleR:0.7, scaleC:0.7, rotateDeg: -20}) },
+  ];
+
+  const AUG_CELL = 3;  // canvas px per logical pixel for aug previews → 84px total
+  const AUG_PX   = SZ * AUG_CELL;
+
+  function makeAugCanvas(pixelData) {
+    const c = document.createElement("canvas");
+    c.width = AUG_PX; c.height = AUG_PX;
+    c.className = "aug";
+    const ctx2 = c.getContext("2d");
+    ctx2.fillStyle = "#0f1117";
+    ctx2.fillRect(0, 0, AUG_PX, AUG_PX);
+    for (let r = 0; r < SZ; r++) {
+      for (let col = 0; col < SZ; col++) {
+        const v = pixelData[r*SZ+col];
+        if (v > 0.01) {
+          const b = Math.round(v * 255);
+          ctx2.fillStyle = `rgb(${b},${b},${b})`;
+          ctx2.fillRect(col*AUG_CELL, r*AUG_CELL, AUG_CELL, AUG_CELL);
+        }
+      }
+    }
+    return c;
+  }
+
+  function renderAugmentations() {
+    const grid = document.getElementById("aug-grid");
+    grid.innerHTML = "";
+    AUGMENTATIONS.forEach(aug => {
+      const augPixels = aug.fn(pixels);
+      const item = document.createElement("div");
+      item.className = "aug-item";
+      item.appendChild(makeAugCanvas(augPixels));
+      const tag = document.createElement("div");
+      tag.className = "aug-tag";
+      tag.textContent = aug.label;
+      item.appendChild(tag);
+      grid.appendChild(item);
+    });
+    document.getElementById("countOut").textContent = AUGMENTATIONS.length;
+  }
+
+  function clearAug() {
+    document.getElementById("aug-grid").innerHTML = "";
+    document.getElementById("countOut").textContent = AUGMENTATIONS.length;
+  }
+
+  renderDraw();
+  renderAugmentations(); // show empty augmentations on load
+</script>
+</body>
+</html>

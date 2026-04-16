@@ -40,19 +40,7 @@ Read through the full unit with activities in place. Check:
 
 Go through the text and fix these specific patterns. Check each one individually across the entire document.
 
-**Remove all em dashes and em dash substitutes.** This means two things:
-
-1. Search for every `—` character and remove it.
-2. Search for every ` - ` (space-hyphen-space) used as a clause separator in prose and remove it.
-
-Both are the same problem. Replace with a period and new sentence, a comma, a colon, or parentheses depending on context. Zero of either pattern in final content.
-
-Examples of what to catch:
-- `"React is built on JavaScript - it's just functions."` → `"React is built on JavaScript. It's just functions."`
-- `"Add upgrades - things players can buy."` → `"Add upgrades, things players can buy."`
-- `"It runs automatically - but only once."` → `"It runs automatically, but only once."`
-
-Note: ` - ` is fine inside list items used as a definition separator, but a colon is cleaner there too. The pattern to eliminate is ` - ` inside flowing prose sentences.
+**Write plain, natural sentences.** Avoid punctuation patterns that substitute for clear writing. Zero em dashes (`—`) and zero ` - ` used as clause separators in prose. Colons are only for introducing lists or blocks of code, not for connecting two thoughts mid-sentence. If you're reaching for one of these, rewrite the sentence instead.
 
 **Remove via negativa framing.** Find every place where text says what something is NOT before saying what it IS. Rewrite to lead with what it is. Patterns to catch:
 - "No X, no Y. Just Z." -> State Z directly.

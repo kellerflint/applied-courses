@@ -9,3 +9,6 @@ _site
 !.dev.vars.example
 .env*
 !.env.example
+
+*.keras
+testing/digit_dataset

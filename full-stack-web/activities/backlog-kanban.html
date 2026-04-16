@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Managing a Backlog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .column {
+      background: #161b27;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 260px;
+    }
+
+    .col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    .col-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .col-title.backlog { color: #94a3b8; }
+    .col-title.in-progress { color: #818cf8; }
+    .col-title.done { color: #4ade80; }
+
+    .col-count {
+      font-size: 11px;
+      font-weight: 700;
+      background: #2d3748;
+      color: #94a3b8;
+      border-radius: 20px;
+      padding: 1px 7px;
+    }
+
+    .cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 40px;
+    }
+
+    .card {
+      background: #1e2330;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+      position: relative;
+    }
+
+    .card-story {
+      font-style: italic;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .card-advance {
+      background: none;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      color: #6366f1;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .card-advance:hover {
+      background: #1e2040;
+      border-color: #6366f1;
+    }
+
+    .card.done-card {
+      opacity: 0.6;
+    }
+
+    .card.done-card .card-story {
+      text-decoration: line-through;
+      text-decoration-color: #4ade8088;
+    }
+
+    .done-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #4ade80;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    .empty-state {
+      font-size: 12px;
+      color: #374151;
+      text-align: center;
+      padding: 16px 8px;
+      font-style: italic;
+    }
+
+    .congrats {
+      display: none;
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #4ade80;
+      padding: 10px;
+      background: #0d1f0d;
+      border-radius: 8px;
+      border: 1px solid #1a3a1a;
+      max-width: 780px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 560px) {
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="board">
+    <div class="column">
+      <div class="col-header">
+        <span class="col-title backlog">Backlog</span>
+        <span class="col-count" id="count-backlog">5</span>
+      </div>
+      <div class="cards-list" id="col-backlog"></div>
+    </div>
+    <div class="column">
+      <div class="col-header">
+        <span class="col-title in-progress">In Progress</span>
+        <span class="col-count" id="count-inprogress">0</span>
+      </div>
+      <div class="cards-list" id="col-inprogress"></div>
+    </div>
+    <div class="column">
+      <div class="col-header">
+        <span class="col-title done">Done</span>
+        <span class="col-count" id="count-done">0</span>
+      </div>
+      <div class="cards-list" id="col-done"></div>
+    </div>
+  </div>
+
+  <div class="congrats" id="congrats">
+    All stories shipped. That's a sprint.
+  </div>
+
+  <script>
+    const stories = [
+      "As a hungry customer, I want to browse nearby restaurants so that I can find something I want to eat.",
+      "As a customer, I want to add items to a cart so that I can order multiple things at once.",
+      "As a customer, I want to place an order so that food gets sent to my address.",
+      "As a customer, I want to track my order status so that I know when to expect delivery.",
+      "As a customer, I want to view my order history so that I can reorder things I liked."
+    ];
+
+    const stateOrder = ['backlog', 'inprogress', 'done'];
+    const colIds = { backlog: 'col-backlog', inprogress: 'col-inprogress', done: 'col-done' };
+    const countIds = { backlog: 'count-backlog', inprogress: 'count-inprogress', done: 'count-done' };
+    const advanceLabels = { backlog: 'Pull into In Progress →', inprogress: 'Mark as Done →' };
+
+    const cardStates = stories.map(() => 'backlog');
+
+    function render() {
+      Object.keys(colIds).forEach(col => {
+        document.getElementById(colIds[col]).innerHTML = '';
+      });
+
+      stories.forEach((story, i) => {
+        const state = cardStates[i];
+        const col = document.getElementById(colIds[state]);
+
+        const card = document.createElement('div');
+        card.className = 'card' + (state === 'done' ? ' done-card' : '');
+
+        const storyEl = document.createElement('div');
+        storyEl.className = 'card-story';
+        storyEl.textContent = story;
+        card.appendChild(storyEl);
+
+        if (state !== 'done') {
+          const btn = document.createElement('button');
+          btn.className = 'card-advance';
+          btn.textContent = advanceLabels[state];
+          btn.onclick = () => advance(i);
+          card.appendChild(btn);
+        } else {
+          const badge = document.createElement('span');
+          badge.className = 'done-badge';
+          badge.textContent = '✓ Done';
+          card.appendChild(badge);
+        }
+
+        col.appendChild(card);
+      });
+
+      Object.keys(colIds).forEach(col => {
+        const count = cardStates.filter(s => s === col).length;
+        document.getElementById(countIds[col]).textContent = count;
+        if (count === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Nothing here yet';
+          document.getElementById(colIds[col]).appendChild(empty);
+        }
+      });
+
+      if (cardStates.every(s => s === 'done')) {
+        document.getElementById('congrats').style.display = 'block';
+      }
+    }
+
+    function advance(i) {
+      const current = stateOrder.indexOf(cardStates[i]);
+      if (current < stateOrder.length - 1) {
+        cardStates[i] = stateOrder[current + 1];
+        render();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

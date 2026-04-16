@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requirements Disaster</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 24px 20px;
+      min-height: 100vh;
+    }
+
+    .scenario {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .client-request {
+      background: #1e2330;
+      border: 1px solid #2d3748;
+      border-left: 3px solid #6366f1;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 24px;
+    }
+
+    .prompt {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1e2330;
+      border: 2px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .card:hover {
+      border-color: #6366f1;
+      background: #232940;
+    }
+
+    .card.selected {
+      border-color: #6366f1;
+      background: #1e2040;
+    }
+
+    .card.revealed {
+      cursor: default;
+    }
+
+    .dev-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6366f1;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .selected-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #6366f1;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .reveal-section {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .reveal-section.visible {
+      display: block;
+    }
+
+    .reveal-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.15s;
+    }
+
+    .reveal-btn:hover {
+      background: #5558e0;
+    }
+
+    .solution {
+      display: none;
+      background: #0d1f0d;
+      border: 1px solid #1a3a1a;
+      border-left: 3px solid #4ade80;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .solution.visible {
+      display: block;
+    }
+
+    .solution-heading {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #4ade80;
+      margin-bottom: 12px;
+    }
+
+    .story {
+      font-size: 14px;
+      color: #bbf7d0;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+
+    .ac-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ac-item {
+      font-size: 13px;
+      color: #86efac;
+      line-height: 1.5;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .ac-item::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .insight {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #1a3a1a;
+      font-size: 13px;
+      color: #86efac;
+      line-height: 1.6;
+    }
+
+    .problem-note {
+      display: none;
+      background: #1c1410;
+      border: 1px solid #3a2a10;
+      border-left: 3px solid #f59e0b;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #fcd34d;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .problem-note.visible {
+      display: block;
+    }
+
+    @media (max-width: 500px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scenario">
+    <div class="label">Client Request</div>
+    <div class="client-request">
+      "We need a notifications feature for our app."
+    </div>
+
+    <p class="prompt">Which of these would you build? Click the one that matches what you'd do.</p>
+
+    <div class="cards" id="cards">
+      <div class="card" data-index="0" onclick="selectCard(this)">
+        <div class="dev-label">Developer A</div>
+        <div class="card-title">In-App Toast Alerts</div>
+        <div class="card-desc">Built small popup banners that appear briefly in the corner of the screen whenever an event occurs, then fade out automatically.</div>
+      </div>
+      <div class="card" data-index="1" onclick="selectCard(this)">
+        <div class="dev-label">Developer B</div>
+        <div class="card-title">In-App Notification Bell</div>
+        <div class="card-desc">Built a bell icon in the header that shows a badge count. Clicking it opens a dropdown of recent activity.</div>
+      </div>
+      <div class="card" data-index="2" onclick="selectCard(this)">
+        <div class="dev-label">Developer C</div>
+        <div class="card-title">Browser Push Notifications</div>
+        <div class="card-desc">Implemented push notifications that appear in the OS notification tray even when the app isn't open.</div>
+      </div>
+      <div class="card" data-index="3" onclick="selectCard(this)">
+        <div class="dev-label">Developer D</div>
+        <div class="card-title">Weekly Email Digest</div>
+        <div class="card-desc">Built an automated email that sends users a summary of their activity at the end of each week.</div>
+      </div>
+    </div>
+
+    <div class="reveal-section" id="revealSection">
+      <div class="problem-note" id="problemNote">
+        All four of these are valid "notifications features." Every developer built something reasonable. Every developer built something different. Without a user story, there was no way to know which one was right.
+      </div>
+      <button class="reveal-btn" onclick="showSolution()">Show how a user story fixes this</button>
+    </div>
+
+    <div class="solution" id="solution">
+      <div class="solution-heading">What a user story and acceptance criteria would have specified</div>
+      <div class="story">
+        "As a <strong>registered user</strong>, I want to <strong>see a notification when someone replies to my post</strong> so that <strong>I can respond without missing activity in the app</strong>."
+      </div>
+      <ul class="ac-list">
+        <li class="ac-item">Given I am logged in, when someone replies to my post, then a badge count appears on the notification bell within 5 seconds.</li>
+        <li class="ac-item">Given I click the notification bell, when the dropdown opens, then I see the replier's name and the first 100 characters of their reply.</li>
+        <li class="ac-item">Given I have unread notifications, when I click one, then it is marked as read and the badge count decreases by one.</li>
+      </ul>
+      <div class="insight">
+        The user story rules out email digests, push notifications, and settings toggles. The acceptance criteria specify the bell, the badge, the dropdown, and the timing. Developer B's build is now the only correct one, and any developer on the team would build the same thing.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selected = false;
+
+    function selectCard(card) {
+      if (selected) return;
+      selected = true;
+
+      const allCards = document.querySelectorAll('.card');
+      allCards.forEach(c => {
+        c.classList.add('revealed');
+        c.onclick = null;
+      });
+
+      card.classList.add('selected');
+      const badge = document.createElement('span');
+      badge.className = 'selected-badge';
+      badge.textContent = 'Your pick';
+      card.appendChild(badge);
+
+      document.getElementById('revealSection').classList.add('visible');
+      document.getElementById('problemNote').classList.add('visible');
+    }
+
+    function showSolution() {
+      document.getElementById('solution').classList.add('visible');
+      document.querySelector('.reveal-btn').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
