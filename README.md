@@ -120,7 +120,7 @@ order: 2
 Your content here.
 ```
 
-`order` controls the sequence within the unit. Pages are also sequenced across units for prev/next navigation.
+`order` controls the sequence within the unit. The prev/next navigation buttons only move between pages within the same unit — they do not cross unit boundaries.
 
 ---
 

@@ -11,7 +11,7 @@ After you make changes, retrain, re-export, and resubmit to see if your score im
 
 ## Dropout
 
-Your model will likely overfit if you train it for too many epochs. **Overfitting** means the model memorizes the training data instead of learning patterns that generalize. Training accuracy looks great, but accuracy on new samples is much lower.
+Your model will likely overfit if you train it for too many epochs. **Overfitting** means the model has memorized the training data. It learns to recognize the exact samples it trained on, and those patterns break down on new samples. Training accuracy looks great while test accuracy stays low.
 
 **Dropout** is one of the simplest tools for fighting overfitting. During training, dropout randomly disables a fraction of the nodes in a layer on each pass. Those nodes are excluded from the output for that sample.
 
@@ -44,10 +44,9 @@ Your model has only seen each digit drawn exactly once by each student. In the r
 
 **Data augmentation** generates new training samples by applying random transformations to your existing images. Augmentation shows the model the same data in more varied forms. The underlying information is the same; the presentation changes. This teaches the model to recognize digits regardless of small positional or size differences.
 
-{% activity "data-augmentation-demo.html", "Data Augmentation", "560px" %}
+{% activity "data-augmentation-demo.html", "Data Augmentation", "660px" %}
 
 Draw a digit above and click Augment. Each panel shows a different transformation of the same drawing. In a real training pipeline, your model would see all of these, effectively multiplying your dataset size.
-
 Here's how to add augmentation to your training pipeline using Keras:
 
 ```python

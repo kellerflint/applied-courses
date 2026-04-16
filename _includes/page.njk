@@ -54,10 +54,14 @@
   <nav class="page-nav">
     {% if currentIdx > 0 %}
       {% set prev = coursePages[currentIdx - 1] %}
-      <a href="{{ prev.url }}" class="prev-link">
-        <span class="nav-label">← Previous</span>
-        <span class="nav-title">{{ prev.data.title }}</span>
-      </a>
+      {% if prev.data.unitTitle == unitTitle %}
+        <a href="{{ prev.url }}" class="prev-link">
+          <span class="nav-label">← Previous</span>
+          <span class="nav-title">{{ prev.data.title }}</span>
+        </a>
+      {% else %}
+        <span></span>
+      {% endif %}
     {% else %}
       <span></span>
     {% endif %}

@@ -13,7 +13,7 @@ A neural network for this task takes in 784 numbers (one per pixel) and outputs 
 
 Use the diagram below to get a feel for the structure before you write any code. Try adjusting the hidden layer sizes and watch how the architecture and the code change.
 
-{% activity "keras-diagram.html", "Keras Network Builder", "620px" %}
+{% activity "keras-diagram.html", "Keras Network Builder", "780px" %}
 
 The key things to notice:
 
@@ -103,7 +103,7 @@ history = model.fit(
 
 - `epochs=20` means the model will go through the entire training set 20 times. Each pass adjusts the weights a little.
 - `batch_size=32` means the model processes 32 samples at a time before updating weights. Smaller batches update more frequently but are noisier; larger batches are more stable but slower.
-- `validation_data=(X_test, y_test)` runs the model against your test set at the end of each epoch so you can track how it performs on data it hasn't trained on. If training accuracy keeps rising but validation accuracy stalls or drops, the model is starting to overfit.
+- `validation_data=(X_test, y_test)` runs the model against your held-out test set at the end of each epoch. This tells you how well the model is generalizing. If training accuracy keeps rising but validation accuracy stalls or drops, the model is starting to overfit.
 
 Watch the output as it trains. You should see the accuracy increase with each epoch.
 
@@ -113,7 +113,7 @@ The `history` object that `model.fit()` returns contains the accuracy and loss n
 
 These plots are called **learning curves**. They show you whether your model learned well, stopped too early, or started memorizing the training data.
 
-{% activity "learning-curves.html", "Learning Curves", "500px" %}
+{% activity "learning-curves.html", "Learning Curves", "620px" %}
 
 Try all three buttons in the activity above. The pattern to watch for in your own training:
 
@@ -148,7 +148,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Look at both plots. Which pattern does your training match? If you see overfitting, that's not a failure — it's information. You'll fix it on the next page.
+Look at both plots. Which pattern does your training match? If you see overfitting, that's useful information. You'll address it on the next page.
 
 > **With your partner:** Look at your learning curves. Where does validation accuracy stop improving? Does training accuracy keep going after that? What does that tell you about how many epochs you actually need?
 

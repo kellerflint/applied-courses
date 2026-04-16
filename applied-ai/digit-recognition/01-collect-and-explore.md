@@ -90,7 +90,7 @@ A few things to notice:
 
 Before you go any further, stop and make sure this idea is concrete.
 
-{% activity "pixel-grid.html", "Pixels as Numbers", "780px" %}
+{% activity "pixel-grid.html", "Pixels as Numbers", "1000px" %}
 
 Draw a digit in the grid above. Watch what happens to the numbers on the right. That list of values is what you just loaded into `X`. Every image in your dataset is one row of that array, and every value in that row is one pixel.
 
