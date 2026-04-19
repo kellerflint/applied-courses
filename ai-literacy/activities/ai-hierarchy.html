@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AI Landscape</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    padding: 0.6rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .main {
+    flex: 1;
+    padding: 1.2rem 1.1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .note {
+    font-size: 0.8rem;
+    color: #6a737d;
+    text-align: center;
+  }
+
+  /* Nested boxes */
+  .layer {
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem 0.75rem;
+    position: relative;
+  }
+
+  .layer-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.2rem;
+  }
+
+  .layer-examples {
+    font-size: 0.74rem;
+    color: #555;
+    margin-bottom: 0.65rem;
+    line-height: 1.45;
+  }
+
+  /* AI — outermost */
+  .layer-ai {
+    background: #eff6ff;
+    border: 2px solid #bfdbfe;
+  }
+  .layer-ai > .layer-label { color: #1d4ed8; }
+
+  /* Rule-based note — sits inside AI, beside ML */
+  .rule-based {
+    display: inline-block;
+    background: #fff;
+    border: 1.5px dashed #bfdbfe;
+    border-radius: 7px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  .rule-based strong { color: #1d4ed8; display: block; font-size: 0.74rem; margin-bottom: 0.1rem; }
+
+  /* ML */
+  .layer-ml {
+    background: #f0fdf4;
+    border: 2px solid #86efac;
+  }
+  .layer-ml > .layer-label { color: #15803d; }
+
+  /* Neural Networks */
+  .layer-nn {
+    background: #faf5ff;
+    border: 2px solid #d8b4fe;
+  }
+  .layer-nn > .layer-label { color: #7e22ce; }
+
+  /* Deep Learning */
+  .layer-dl {
+    background: #fff7ed;
+    border: 2px solid #fdba74;
+  }
+  .layer-dl > .layer-label { color: #c2410c; }
+
+  /* Generative AI — innermost */
+  .layer-genai {
+    background: #fdf2f8;
+    border: 2px solid #f0abfc;
+  }
+  .layer-genai > .layer-label { color: #a21caf; }
+  .layer-genai > .layer-examples { margin-bottom: 0; }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .tag {
+    background: rgba(0,0,0,0.06);
+    border-radius: 99px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.7rem;
+    color: #374151;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>The AI landscape</strong> &nbsp;Every inner term is also the outer one.
+</div>
+
+<div class="main">
+
+  <div class="layer layer-ai">
+    <div class="layer-label">Artificial Intelligence</div>
+    <div class="layer-examples">Any technique that makes a machine behave intelligently — including rule-based systems, search algorithms, and learning from data.</div>
+
+    <div class="rule-based">
+      <strong>Rule-based AI</strong>
+      Logic written by hand: decision trees, expert systems, game pathfinding. No learning from data.
+    </div>
+
+    <div class="layer layer-ml">
+      <div class="layer-label">Machine Learning</div>
+      <div class="layer-examples">The machine learns patterns from data instead of following hand-coded rules.</div>
+      <div class="tag-row" style="margin-bottom:0.65rem">
+        <span class="tag">fraud detection</span>
+        <span class="tag">price prediction</span>
+        <span class="tag">spam filtering</span>
+        <span class="tag">recommendation engines</span>
+      </div>
+
+      <div class="layer layer-nn">
+        <div class="layer-label">Neural Networks</div>
+        <div class="layer-examples">A specific ML approach using layers of connected nodes that learn by adjusting weights.</div>
+        <div class="tag-row" style="margin-bottom:0.65rem">
+          <span class="tag">image recognition</span>
+          <span class="tag">voice assistants</span>
+          <span class="tag">medical imaging</span>
+        </div>
+
+        <div class="layer layer-dl">
+          <div class="layer-label">Deep Learning</div>
+          <div class="layer-examples">Neural networks with many layers, capable of learning very complex patterns.</div>
+          <div class="tag-row" style="margin-bottom:0.65rem">
+            <span class="tag">self-driving cars</span>
+            <span class="tag">protein folding</span>
+            <span class="tag">real-time translation</span>
+          </div>
+
+          <div class="layer layer-genai">
+            <div class="layer-label">Generative AI</div>
+            <div class="layer-examples">Deep learning models that create new content — text, images, audio, video.</div>
+            <div class="tag-row">
+              <span class="tag">ChatGPT</span>
+              <span class="tag">DALL-E</span>
+              <span class="tag">Suno</span>
+              <span class="tag">Midjourney</span>
+              <span class="tag">Gemini</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">Every label in an inner box also applies to the outer boxes. ChatGPT is generative AI, deep learning, a neural network, machine learning, and AI — all at once.</p>
+
+</div>
+
+</body>
+</html>

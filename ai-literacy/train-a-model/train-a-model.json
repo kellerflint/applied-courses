@@ -1,0 +1,6 @@
+{
+  "layout": "page.njk",
+  "tags": ["page"],
+  "unitTitle": "Train a Model",
+  "unitOrder": 3
+}

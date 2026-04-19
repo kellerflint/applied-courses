@@ -214,12 +214,12 @@
 <body>
 
 <div class="header">
-  <strong>BFS Pathfinding</strong> &nbsp;A search algorithm following rules a programmer wrote.
+  <strong>How a search algorithm works</strong> &nbsp;Every step was written by a programmer ahead of time.
 </div>
 
 <div class="main">
   <div class="panel panel-left">
-    <div class="panel-label">Pseudocode</div>
+    <div class="panel-label">Steps</div>
     <div class="pseudocode" id="pseudocode"></div>
   </div>
   <div class="panel panel-right">
@@ -228,7 +228,7 @@
       <div class="grid" id="grid"></div>
     </div>
     <div class="legend">
-      <div class="legend-item"><div class="legend-swatch" style="background:#bfdbfe"></div>In queue</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#bfdbfe"></div>Waiting to check</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#2563eb"></div>Current</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#e5e7eb"></div>Explored</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#86efac"></div>Path</div>
@@ -257,10 +257,10 @@ const WALLS = ["4,0", "4,1", "4,2"];
 const WALL_SET = new Set(WALLS);
 
 const PSEUDOCODE = [
-  { num: "1.", text: "Put the start cell in the queue" },
-  { num: "2.", text: "Take the front cell out of the queue" },
+  { num: "1.", text: "Add the start cell to the waiting list" },
+  { num: "2.", text: "Take the next cell from the waiting list" },
   { num: "3.", text: "If it's the goal, trace the path back. Done." },
-  { num: "4.", text: "Look at each neighbor: if it hasn't been visited, mark it and add it to the queue" },
+  { num: "4.", text: "Look at each neighboring cell. Add any unvisited ones to the waiting list." },
 ];
 
 function key(cell) { return `${cell[0]},${cell[1]}`; }

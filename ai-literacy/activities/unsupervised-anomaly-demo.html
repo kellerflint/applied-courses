@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot the Outlier: Unsupervised Learning Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #7a7a8e;
+    --accent: #6ee7b7;
+    --accent-dim: rgba(110, 231, 183, 0.12);
+    --wrong: #f87171;
+    --wrong-dim: rgba(248, 113, 113, 0.12);
+    --highlight: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .noise {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1000px; margin: 0 auto; padding: 40px 24px;
+  }
+
+  /* INTRO SCREEN */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .intro-header {
+    text-align: center; margin-bottom: 60px;
+  }
+  .intro-header .tag {
+    display: inline-block;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-dim);
+    padding: 6px 16px; border-radius: 2px; margin-bottom: 20px;
+  }
+  .intro-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(36px, 6vw, 56px); font-weight: 700;
+    line-height: 1.1; margin-bottom: 16px;
+    background: linear-gradient(135deg, #e8e8f0 40%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .intro-header p {
+    font-size: 15px; color: var(--text-dim); max-width: 520px; margin: 0 auto; line-height: 1.7;
+  }
+
+  .round-cards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;
+  }
+  .round-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px; position: relative; overflow: hidden;
+  }
+  .round-card .num {
+    font-size: 64px; font-weight: 700; color: var(--surface2);
+    position: absolute; top: -8px; right: 12px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .round-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px; font-weight: 600; margin-bottom: 8px;
+  }
+  .round-card p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 500;
+    padding: 14px 32px; border: none; border-radius: 4px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--accent); color: #0a0a0f;
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-center { display: flex; justify-content: center; }
+
+  /* GAME HEADER */
+  .game-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .game-header .round-label {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+  }
+  .game-header h2 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600;
+  }
+  .game-header .stats {
+    display: flex; gap: 20px; font-size: 13px; color: var(--text-dim);
+  }
+  .game-header .stats span { color: var(--accent); font-weight: 600; }
+
+  .instructions {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: var(--text-dim); line-height: 1.6;
+  }
+  .instructions strong { color: var(--text); }
+
+  /* VISUAL GRID */
+  .visual-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .visual-cell {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .visual-cell:hover { transform: scale(1.05); }
+  .visual-cell.selected { border-color: var(--highlight); box-shadow: 0 0 12px rgba(251, 191, 36, 0.3); }
+  .visual-cell.flagged { border-color: var(--accent); box-shadow: 0 0 12px rgba(110, 231, 183, 0.3); }
+  .visual-cell.unflagged { border-color: var(--wrong); box-shadow: 0 0 12px rgba(248, 113, 113, 0.3); }
+  .visual-cell.low-anomaly { border-color: var(--border); opacity: 0.5; }
+  .visual-cell .marker {
+    display: none; position: absolute; top: 4px; right: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 10px; line-height: 18px; text-align: center; font-weight: 700;
+  }
+  .visual-cell.flagged .marker,
+  .visual-cell.unflagged .marker,
+  .visual-cell.low-anomaly .marker { display: block; }
+  .visual-cell.flagged .marker { background: var(--accent); color: #0a0a0f; }
+  .visual-cell.unflagged .marker { background: var(--wrong); color: #fff; }
+  .visual-cell.low-anomaly .marker { background: var(--border); color: var(--text-dim); }
+
+  .visual-cell svg { width: 60%; height: 60%; }
+
+  /* DATA TABLE */
+  .data-table-wrapper {
+    overflow-x: auto; margin-bottom: 32px;
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .data-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .data-table th {
+    background: var(--surface2); padding: 12px 16px; text-align: left;
+    font-weight: 600; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-dim); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+  }
+  .data-table td {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table tr { cursor: pointer; transition: background 0.1s; }
+  .data-table tbody tr:hover { background: var(--surface2); }
+  .data-table tr.selected { background: rgba(251, 191, 36, 0.08); }
+  .data-table tr.selected td:first-child { box-shadow: inset 3px 0 0 var(--highlight); }
+  .data-table tr.flagged { background: var(--accent-dim); }
+  .data-table tr.flagged td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  .data-table tr.unflagged { background: var(--wrong-dim); }
+  .data-table tr.unflagged td:first-child { box-shadow: inset 3px 0 0 var(--wrong); }
+  .data-table tr.low-anomaly { background: rgba(248, 113, 113, 0.05); }
+  .data-table tr.low-anomaly td:first-child { box-shadow: inset 3px 0 0 var(--border); opacity: 0.5; }
+
+  /* BOTTOM BAR */
+  .bottom-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 0; border-top: 1px solid var(--border);
+  }
+  .selection-count { font-size: 13px; color: var(--text-dim); }
+  .selection-count span { color: var(--highlight); font-weight: 600; }
+
+  /* RESULTS */
+  .results-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 28px; margin-bottom: 32px;
+  }
+  .results-box h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 18px; margin-bottom: 12px;
+  }
+  .results-box p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+  .results-box .score-line {
+    font-size: 20px; color: var(--accent); font-weight: 600; margin: 12px 0;
+  }
+
+  .key {
+    display: flex; gap: 20px; margin-top: 16px; font-size: 12px; color: var(--text-dim);
+  }
+  .key-item { display: flex; align-items: center; gap: 6px; }
+  .key-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .key-dot.green { background: var(--accent); }
+  .key-dot.red { background: var(--wrong); }
+  .key-dot.yellow { background: var(--highlight); }
+
+  /* FINAL SCREEN */
+  .takeaway {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    padding: 24px 28px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .takeaway h3 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 16px; margin-bottom: 10px; color: var(--accent);
+  }
+  .takeaway p { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
+
+  .final-score {
+    text-align: center; padding: 40px 0;
+  }
+  .final-score .big-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 72px; font-weight: 700; color: var(--accent);
+  }
+  .final-score .label { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+  @media (max-width: 600px) {
+    .visual-grid { grid-template-columns: repeat(4, 1fr); }
+    .round-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="container">
+
+  <!-- INTRO -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-header">
+      <div class="tag">Interactive Demo</div>
+      <h1>Spot the Outlier</h1>
+      <p>You'll see data with no labels, no instructions, no hints. Your job: figure out what's "normal" and flag what doesn't fit. This is anomaly detection, a core unsupervised learning task.</p>
+    </div>
+    <div class="round-cards">
+      <div class="round-card">
+        <div class="num">01</div>
+        <h3>Visual Patterns</h3>
+        <p>A grid of shapes. Most follow a pattern. Some deviate. Click the ones that feel "off."</p>
+      </div>
+      <div class="round-card">
+        <div class="num">02</div>
+        <h3>Data Table</h3>
+        <p>Employee records from a fake company. Some rows are anomalous. Find them in the numbers.</p>
+      </div>
+    </div>
+    <div class="btn-center">
+      <button class="btn btn-primary" onclick="startRound1()">Start →</button>
+    </div>
+  </div>
+
+  <!-- ROUND 1: VISUAL -->
+  <div class="screen" id="screen-round1">
+    <div class="game-header">
+      <div>
+        <div class="round-label">Round 1</div>
+        <h2>Visual Patterns</h2>
+      </div>
+      <div class="stats">
+        Selected: <span id="r1-count">0</span>
+      </div>
+    </div>
+    <div class="instructions">
+      Most shapes below share common traits. <strong>Click the ones that feel most out of place.</strong> The system has scored <strong id="r1-anomaly-count"></strong> items as highly anomalous. See how many you can find, then submit.
+    </div>
+    <div class="visual-grid" id="visual-grid"></div>
+    <div class="bottom-bar">
+      <div class="selection-count">
+        <span id="r1-selected">0</span> selected
+      </div>
+      <button class="btn btn-primary" onclick="submitRound1()">Submit Picks</button>
+    </div>
+    <div id="r1-results" style="display:none">
+      <div class="results-box">
+        <h3>Round 1 Results</h3>
+        <div class="score-line" id="r1-score-line"></div>
+        <p id="r1-explanation"></p>
+        <div class="key">
+          <div class="key-item"><div class="key-dot green"></div> High anomaly score (flagged by system)</div>
+          <div class="key-item"><div class="key-dot red"></div> High anomaly score (you missed)</div>
+        </div>
+      </div>
+      <div class="btn-center">
+        <button class="btn btn-primary" onclick="startRound2()">Round 2 →</button>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="screen-round2">
+    <div class="game-header">
+      <div>
+        <div class="round-label">Round 2</div>
+        <h2>Data Table</h2>
+      </div>
+      <div class="stats">
+        Selected: <span id="r2-count">0</span>
+      </div>
+    </div>
+    <div class="instructions">
+      Below are employee records from a fictional company. <strong>Click the rows that seem most anomalous.</strong> The system has scored <strong id="r2-anomaly-count"></strong> rows as high-anomaly outliers. Look at how the columns relate to each other.
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table" id="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Department</th>
+            <th>Tenure (yr)</th>
+            <th>Salary ($k)</th>
+            <th>Perf. Score</th>
+            <th>Sick Days</th>
+            <th>Projects</th>
+          </tr>
+        </thead>
+        <tbody id="data-tbody"></tbody>
+      </table>
+    </div>
+    <div class="bottom-bar">
+      <div class="selection-count">
+        <span id="r2-selected">0</span> selected
+      </div>
+      <button class="btn btn-primary" onclick="submitRound2()">Submit Picks</button>
+    </div>
+    <div id="r2-results" style="display:none">
+      <div class="results-box">
+        <h3>Round 2 Results</h3>
+        <div class="score-line" id="r2-score-line"></div>
+        <p id="r2-explanation"></p>
+        <div class="key">
+          <div class="key-item"><div class="key-dot green"></div> High anomaly score (flagged by system)</div>
+          <div class="key-item"><div class="key-dot red"></div> High anomaly score (you missed)</div>
+        </div>
+      </div>
+      <div class="btn-center">
+        <button class="btn btn-primary" onclick="showFinal()">See Takeaways →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="screen" id="screen-final">
+    <div class="intro-header">
+      <div class="tag">Results</div>
+      <h1>What Just Happened</h1>
+    </div>
+    <div class="final-score">
+      <div class="big-num" id="final-pct"></div>
+      <div class="label">of high-anomaly items flagged</div>
+    </div>
+    <div class="takeaway">
+      <h3>You just did unsupervised learning.</h3>
+      <p>Nobody told you what "normal" looked like. Nobody gave you labeled examples of anomalies. You looked at the data, built a mental model of the pattern, and flagged what deviated. That's exactly what an anomaly detection algorithm does: it learns the distribution of "normal" and flags points that fall outside it.</p>
+    </div>
+    <div class="takeaway">
+      <h3>No labels required.</h3>
+      <p>In supervised learning, you need someone to label every example as "normal" or "anomaly" first. Here, you figured it out from the structure of the data alone. The algorithm never sees a single label. It just learns what typical data looks like and raises a flag when something doesn't fit.</p>
+    </div>
+    <div class="takeaway">
+      <h3>Different people, different models.</h3>
+      <p>You might have noticed different things than the person next to you. Maybe you keyed in on color while they noticed size. Maybe you caught the salary outlier but missed the sick-days one. This is also true of algorithms: different approaches (isolation forests, autoencoders, clustering) surface different kinds of anomalies. There's no single "right" answer, just different models with different sensitivities and thresholds.</p>
+    </div>
+    <div class="btn-center" style="margin-top:32px;">
+      <button class="btn btn-secondary" onclick="restart()">↻ Run Again (new data)</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── STATE ───
+let r1Anomalies = new Set();
+let r1Selected = new Set();
+let r1Submitted = false;
+let r2Anomalies = new Set();
+let r2Selected = new Set();
+let r2Submitted = false;
+let r1Score = 0;
+let r2Score = 0;
+
+// ─── HELPERS ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rand(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+// ─── ROUND 1: VISUAL ───
+function generateVisualGrid() {
+  const grid = document.getElementById('visual-grid');
+  grid.innerHTML = '';
+  r1Anomalies = new Set();
+  r1Selected = new Set();
+  r1Submitted = false;
+
+  // Pattern: circles, ~same size, blue-teal palette
+  const normalHues = [190, 195, 200, 205, 210, 215, 180, 185];
+  const normalSats = [60, 65, 70, 55];
+  const normalLights = [45, 50, 55, 48];
+  const totalCells = 30;
+  const numAnomalies = 4;
+
+  // Decide which indices are anomalies
+  const indices = Array.from({length: totalCells}, (_, i) => i);
+  const anomalyIndices = shuffle([...indices]).slice(0, numAnomalies);
+  anomalyIndices.forEach(i => r1Anomalies.add(i));
+
+  document.getElementById('r1-anomaly-count').textContent = numAnomalies;
+
+  // Anomaly types:
+  // 0: wrong shape (square among circles)
+  // 1: wrong color (warm among cool)
+  // 2: wrong size (much bigger)
+  // 3: has a hole / ring instead of filled
+  const anomalyTypes = shuffle([0, 1, 2, 3]);
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'visual-cell';
+    cell.dataset.index = i;
+    cell.innerHTML = '<div class="marker"></div>';
+
+    if (r1Anomalies.has(i)) {
+      const aType = anomalyTypes[anomalyIndices.indexOf(i)];
+      cell.appendChild(makeAnomalyShape(aType));
+      cell.style.background = 'var(--surface)';
+    } else {
+      cell.appendChild(makeNormalShape(normalHues, normalSats, normalLights));
+      cell.style.background = 'var(--surface)';
+    }
+
+    cell.addEventListener('click', () => toggleR1(i, cell));
+    grid.appendChild(cell);
+  }
+}
+
+function makeNormalShape(hues, sats, lights) {
+  const h = pick(hues), s = pick(sats), l = pick(lights);
+  const color = `hsl(${h}, ${s}%, ${l}%)`;
+  const size = rand(38, 46);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', String(size));
+  c.setAttribute('fill', color);
+  svg.appendChild(c);
+  return svg;
+}
+
+function makeAnomalyShape(type) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+
+  if (type === 0) {
+    // Square among circles
+    const h = pick([195, 200, 205]), s = pick([60, 65]), l = pick([48, 52]);
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '18'); rect.setAttribute('y', '18');
+    rect.setAttribute('width', '64'); rect.setAttribute('height', '64');
+    rect.setAttribute('rx', '4');
+    rect.setAttribute('fill', `hsl(${h}, ${s}%, ${l}%)`);
+    svg.appendChild(rect);
+  } else if (type === 1) {
+    // Warm color among cool
+    const h = pick([10, 20, 350, 30]), s = pick([65, 75]), l = pick([50, 55]);
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', '42');
+    c.setAttribute('fill', `hsl(${h}, ${s}%, ${l}%)`);
+    svg.appendChild(c);
+  } else if (type === 2) {
+    // Much smaller
+    const h = pick([195, 200, 205]), s = pick([60, 65]), l = pick([48, 52]);
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', '18');
+    c.setAttribute('fill', `hsl(${h}, ${s}%, ${l}%)`);
+    svg.appendChild(c);
+  } else {
+    // Ring / hollow
+    const h = pick([195, 200, 205]), s = pick([60, 65]), l = pick([48, 52]);
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', '38');
+    c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', `hsl(${h}, ${s}%, ${l}%)`);
+    c.setAttribute('stroke-width', '6');
+    svg.appendChild(c);
+  }
+  return svg;
+}
+
+function toggleR1(i, cell) {
+  if (r1Submitted) return;
+  if (r1Selected.has(i)) { r1Selected.delete(i); cell.classList.remove('selected'); }
+  else { r1Selected.add(i); cell.classList.add('selected'); }
+  document.getElementById('r1-count').textContent = r1Selected.size;
+  document.getElementById('r1-selected').textContent = r1Selected.size;
+}
+
+function submitRound1() {
+  if (r1Submitted) return;
+  r1Submitted = true;
+
+  let matched = 0, missed = 0, lowAnomaly = 0;
+  document.querySelectorAll('.visual-cell').forEach(cell => {
+    const i = parseInt(cell.dataset.index);
+    const isAnomaly = r1Anomalies.has(i);
+    const wasPicked = r1Selected.has(i);
+    cell.classList.remove('selected');
+
+    if (isAnomaly && wasPicked) { cell.classList.add('flagged'); cell.querySelector('.marker').textContent = '✓'; matched++; }
+    else if (isAnomaly && !wasPicked) { cell.classList.add('unflagged'); cell.querySelector('.marker').textContent = '!'; missed++; }
+    else if (!isAnomaly && wasPicked) { cell.classList.add('low-anomaly'); cell.querySelector('.marker').textContent = '~'; lowAnomaly++; }
+  });
+
+  r1Score = matched;
+  const total = r1Anomalies.size;
+  let scoreLine = `${matched}/${total} high-anomaly items flagged`;
+  if (lowAnomaly > 0) scoreLine += ` · ${lowAnomaly} borderline pick${lowAnomaly > 1 ? 's' : ''}`;
+  document.getElementById('r1-score-line').textContent = scoreLine;
+
+  const explanations = [];
+  explanations.push('The dominant pattern was: medium-sized, filled, blue-teal circles.');
+  explanations.push('The system scored these as highest anomaly: a square (shape deviation), a warm-colored circle (hue deviation), a tiny circle (size deviation), and a hollow ring (fill deviation).');
+  explanations.push('Some were subtler than others. The ring and the small circle share the same color palette as the rest, so their anomaly comes from structural properties, not color alone.');
+  if (lowAnomaly > 0) {
+    explanations.push("If you flagged items that weren't in the top anomalies, that's not necessarily wrong. In real systems, the threshold for what counts as \"anomalous enough\" is always a judgment call.");
+  }
+  document.getElementById('r1-explanation').textContent = explanations.join(' ');
+  document.getElementById('r1-results').style.display = 'block';
+  document.querySelector('#screen-round1 .bottom-bar').style.display = 'none';
+}
+
+// ─── ROUND 2: DATA TABLE ───
+const departments = ['Engineering', 'Sales', 'Marketing', 'Operations', 'Finance', 'Support'];
+
+function generateDataTable() {
+  const tbody = document.getElementById('data-tbody');
+  tbody.innerHTML = '';
+  r2Anomalies = new Set();
+  r2Selected = new Set();
+  r2Submitted = false;
+
+  const rows = [];
+  const totalRows = 20;
+  const numAnomalies = 4;
+
+  // Normal ranges:
+  // Tenure: 1-12, Salary: 55-120, Perf: 2.5-4.5, Sick: 2-10, Projects: 2-8
+  for (let i = 0; i < totalRows; i++) {
+    const dept = pick(departments);
+    rows.push({
+      id: i,
+      dept,
+      tenure: rand(1, 12),
+      salary: rand(55, 120),
+      perf: (2.5 + Math.random() * 2).toFixed(1),
+      sick: rand(2, 10),
+      projects: rand(2, 8),
+      anomaly: false,
+      anomalyReason: ''
+    });
+  }
+
+  // Inject anomalies
+  const anomalySlots = shuffle(Array.from({length: totalRows}, (_, i) => i)).slice(0, numAnomalies);
+
+  // Anomaly 0: Very high salary for low tenure
+  const a0 = anomalySlots[0];
+  rows[a0].tenure = rand(0, 1);
+  rows[a0].salary = rand(185, 220);
+  rows[a0].anomaly = true;
+  rows[a0].anomalyReason = 'Extremely high salary ($' + rows[a0].salary + 'k) with almost no tenure (' + rows[a0].tenure + ' yr)';
+
+  // Anomaly 1: Perfect perf score but tons of sick days and few projects
+  const a1 = anomalySlots[1];
+  rows[a1].perf = '5.0';
+  rows[a1].sick = rand(28, 42);
+  rows[a1].projects = rand(0, 1);
+  rows[a1].anomaly = true;
+  rows[a1].anomalyReason = 'Perfect performance (5.0) but ' + rows[a1].sick + ' sick days and only ' + rows[a1].projects + ' project. Numbers that don\'t add up';
+
+  // Anomaly 2: Negative or zero tenure with high projects
+  const a2 = anomalySlots[2];
+  rows[a2].tenure = 0;
+  rows[a2].projects = rand(18, 25);
+  rows[a2].salary = rand(60, 80);
+  rows[a2].anomaly = true;
+  rows[a2].anomalyReason = rows[a2].projects + ' projects with 0 years of tenure. Impossible volume for a new hire';
+
+  // Anomaly 3: Very low perf, very high salary, high tenure
+  const a3 = anomalySlots[3];
+  rows[a3].tenure = rand(10, 15);
+  rows[a3].salary = rand(155, 175);
+  rows[a3].perf = (0.3 + Math.random() * 0.5).toFixed(1);
+  rows[a3].sick = rand(1, 3);
+  rows[a3].projects = rand(1, 2);
+  rows[a3].anomaly = true;
+  rows[a3].anomalyReason = 'Very low performance (' + rows[a3].perf + ') and minimal output despite high tenure and high salary';
+
+  anomalySlots.forEach(idx => r2Anomalies.add(idx));
+  document.getElementById('r2-anomaly-count').textContent = numAnomalies;
+
+  rows.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = idx;
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${row.dept}</td>
+      <td>${row.tenure}</td>
+      <td>${row.salary}</td>
+      <td>${row.perf}</td>
+      <td>${row.sick}</td>
+      <td>${row.projects}</td>
+    `;
+    tr.addEventListener('click', () => toggleR2(idx, tr));
+    tbody.appendChild(tr);
+  });
+
+  window._r2Rows = rows;
+}
+
+function toggleR2(i, tr) {
+  if (r2Submitted) return;
+  if (r2Selected.has(i)) { r2Selected.delete(i); tr.classList.remove('selected'); }
+  else { r2Selected.add(i); tr.classList.add('selected'); }
+  document.getElementById('r2-count').textContent = r2Selected.size;
+  document.getElementById('r2-selected').textContent = r2Selected.size;
+}
+
+function submitRound2() {
+  if (r2Submitted) return;
+  r2Submitted = true;
+
+  let matched = 0, missed = 0, lowAnomaly = 0;
+  const reasons = [];
+
+  document.querySelectorAll('#data-tbody tr').forEach(tr => {
+    const i = parseInt(tr.dataset.index);
+    const isAnomaly = r2Anomalies.has(i);
+    const wasPicked = r2Selected.has(i);
+    tr.classList.remove('selected');
+
+    if (isAnomaly && wasPicked) { tr.classList.add('flagged'); matched++; }
+    else if (isAnomaly && !wasPicked) { tr.classList.add('unflagged'); missed++; reasons.push(`Row ${i + 1}: ${window._r2Rows[i].anomalyReason}`); }
+    else if (!isAnomaly && wasPicked) { tr.classList.add('low-anomaly'); lowAnomaly++; }
+  });
+
+  r2Score = matched;
+  const total = r2Anomalies.size;
+  let scoreLine = `${matched}/${total} high-anomaly rows flagged`;
+  if (lowAnomaly > 0) scoreLine += ` · ${lowAnomaly} borderline pick${lowAnomaly > 1 ? 's' : ''}`;
+  document.getElementById('r2-score-line').textContent = scoreLine;
+
+  let expl = 'The highest-anomaly rows had cross-column contradictions or impossible value combinations. ';
+  if (reasons.length > 0) {
+    expl += 'The system also flagged: ' + reasons.join('; ') + '. ';
+  } else {
+    expl += 'You caught all the top-scoring anomalies. ';
+  }
+  expl += "In practice, different algorithms would assign different anomaly scores to every row. There's no hard line between \"normal\" and \"anomalous,\" just degrees of how much a data point deviates from the overall pattern.";
+  if (lowAnomaly > 0) {
+    expl += " Your borderline picks weren't wrong per se. A more sensitive model might flag those too.";
+  }
+  document.getElementById('r2-explanation').textContent = expl;
+  document.getElementById('r2-results').style.display = 'block';
+  document.querySelector('#screen-round2 .bottom-bar').style.display = 'none';
+}
+
+// ─── SCREENS ───
+function startRound1() {
+  showScreen('screen-round1');
+  generateVisualGrid();
+}
+
+function startRound2() {
+  showScreen('screen-round2');
+  generateDataTable();
+}
+
+function showFinal() {
+  showScreen('screen-final');
+  const total = r1Anomalies.size + r2Anomalies.size;
+  const got = r1Score + r2Score;
+  const pct = Math.round((got / total) * 100);
+  document.getElementById('final-pct').textContent = pct + '%';
+}
+
+function restart() {
+  showScreen('screen-intro');
+  // Reset UI elements
+  document.querySelector('#screen-round1 .bottom-bar').style.display = 'flex';
+  document.querySelector('#screen-round2 .bottom-bar').style.display = 'flex';
+  document.getElementById('r1-results').style.display = 'none';
+  document.getElementById('r2-results').style.display = 'none';
+}
+</script>
+</body>
+</html>

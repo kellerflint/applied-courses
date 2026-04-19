@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neural Network Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 16px;
+      min-height: 100%;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="range"] {
+      width: 120px;
+      accent-color: #6366f1;
+    }
+
+    .val-badge {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    canvas {
+      border-radius: 8px;
+      max-width: 100%;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .code-note {
+      margin-top: 16px;
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: "Fira Code", "Cascadia Code", monospace;
+      font-size: 0.8rem;
+      color: #a5b4fc;
+      text-align: center;
+    }
+
+    .code-note span { color: #6ee7b7; }
+  </style>
+</head>
+<body>
+
+  <h2>Neural Network Architecture</h2>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Inputs</label>
+      <input type="range" id="nInputs" min="2" max="8" value="4">
+      <span class="val-badge" id="nInputsVal">4</span>
+    </div>
+    <div class="control-group">
+      <label>Hidden layer 1</label>
+      <input type="range" id="nH1" min="2" max="12" value="6">
+      <span class="val-badge" id="nH1Val">6</span>
+    </div>
+    <div class="control-group">
+      <label>Hidden layer 2</label>
+      <input type="range" id="nH2" min="0" max="10" value="4">
+      <span class="val-badge" id="nH2Val">4</span>
+    </div>
+    <div class="control-group">
+      <label>Outputs</label>
+      <input type="range" id="nOutputs" min="2" max="5" value="2">
+      <span class="val-badge" id="nOutputsVal">2</span>
+    </div>
+  </div>
+
+  <canvas id="net" width="680" height="300"></canvas>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#6366f1"></div>
+      Input layer (features)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#0ea5e9"></div>
+      Hidden layer
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#10b981"></div>
+      Output layer (classes)
+    </div>
+  </div>
+
+  <div style="display:none">
+    <span id="codeH1">6</span><span id="codeH2">4</span>
+  </div>
+
+<script>
+  const canvas = document.getElementById("net");
+  const ctx = canvas.getContext("2d");
+
+  // -- example labels -------------------------------------------------------
+  const INPUT_LABELS  = ["age", "income", "score", "region", "tenure", "usage", "tier", "clicks"];
+  const OUTPUT_LABELS = ["class A", "class B", "class C", "class D", "class E"];
+
+  // -- colours --------------------------------------------------------------
+  const COL_INPUT  = "#6366f1";
+  const COL_HIDDEN = "#0ea5e9";
+  const COL_OUTPUT = "#10b981";
+  const COL_EDGE   = "rgba(148, 163, 184, 0.12)";
+  const COL_EDGE_H = "rgba(148, 163, 184, 0.22)";
+
+  const MAX_SHOWN = 8; // max nodes drawn per layer before ellipsis
+
+  function getConfig() {
+    const nI = +document.getElementById("nInputs").value;
+    const nH1 = +document.getElementById("nH1").value;
+    const nH2 = +document.getElementById("nH2").value;
+    const nO = +document.getElementById("nOutputs").value;
+    return { nI, nH1, nH2, nO };
+  }
+
+  function layerColumns(cfg) {
+    const { nH2 } = cfg;
+    return nH2 === 0
+      ? ["input", "h1", "output"]
+      : ["input", "h1", "h2", "output"];
+  }
+
+  function layerSizes(cfg) {
+    const { nI, nH1, nH2, nO } = cfg;
+    if (nH2 === 0) return [nI, nH1, nO];
+    return [nI, nH1, nH2, nO];
+  }
+
+  function layerColors(cols) {
+    return cols.map((c, i) => {
+      if (c === "input")  return COL_INPUT;
+      if (c === "output") return COL_OUTPUT;
+      return COL_HIDDEN;
+    });
+  }
+
+  function layerLabels(cfg) {
+    const cols = layerColumns(cfg);
+    const sizes = layerSizes(cfg);
+    return cols.map((c, i) => {
+      if (c === "input")  return INPUT_LABELS.slice(0, sizes[i]);
+      if (c === "output") return OUTPUT_LABELS.slice(0, sizes[i]);
+      return null; // hidden nodes unlabeled
+    });
+  }
+
+  // returns array of y-centres for up to MAX_SHOWN nodes in a layer
+  function nodePositions(count, canvasH, R) {
+    const shown = Math.min(count, MAX_SHOWN);
+    const gap = Math.min(36, (canvasH - 40) / (shown + 1));
+    const totalH = (shown - 1) * gap;
+    const startY = (canvasH - totalH) / 2;
+    const ys = [];
+    for (let i = 0; i < shown; i++) ys.push(startY + i * gap);
+    return ys;
+  }
+
+  function draw() {
+    const cfg  = getConfig();
+    const cols = layerColumns(cfg);
+    const sizes = layerSizes(cfg);
+    const colors = layerColors(cols);
+    const labels = layerLabels(cfg);
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const R = 14;
+    const nCols = cols.length;
+
+    // x positions
+    const marginX = 80;
+    const xStep = (W - 2 * marginX) / (nCols - 1);
+    const xs = cols.map((_, i) => marginX + i * xStep);
+
+    // compute all node y-positions
+    const allYs = sizes.map(n => nodePositions(n, H, R));
+
+    ctx.clearRect(0, 0, W, H);
+
+    // -- edges ---------------------------------------------------------------
+    for (let li = 0; li < nCols - 1; li++) {
+      const x1 = xs[li];
+      const x2 = xs[li + 1];
+      const ys1 = allYs[li];
+      const ys2 = allYs[li + 1];
+      for (const y1 of ys1) {
+        for (const y2 of ys2) {
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = COL_EDGE;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // -- nodes & labels ------------------------------------------------------
+    cols.forEach((col, li) => {
+      const x = xs[li];
+      const color = colors[li];
+      const n = sizes[li];
+      const shown = Math.min(n, MAX_SHOWN);
+      const ys = allYs[li];
+      const lbs = labels[li];
+
+      ys.forEach((y, ni) => {
+        // is this the ellipsis placeholder?
+        const isEllipsis = n > MAX_SHOWN && ni === MAX_SHOWN - 2;
+        const isHidden   = n > MAX_SHOWN && ni > MAX_SHOWN - 2;
+
+        if (isEllipsis) {
+          // draw "..." dots instead of a circle
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.5;
+          for (let d = -1; d <= 1; d++) {
+            ctx.beginPath();
+            ctx.arc(x, y + d * 6, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          return;
+        }
+        if (isHidden) return;
+
+        // circle
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, Math.PI * 2);
+        ctx.fillStyle = color + "22";
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // label
+        if (lbs && lbs[ni]) {
+          const label = lbs[ni];
+          ctx.fillStyle = "#e2e8f0";
+          ctx.font = "11px system-ui, sans-serif";
+          ctx.textBaseline = "middle";
+          if (col === "input") {
+            ctx.textAlign = "right";
+            ctx.fillText(label, x - R - 5, y);
+          } else {
+            ctx.textAlign = "left";
+            ctx.fillText(label, x + R + 5, y);
+          }
+        }
+      });
+
+      // layer title
+      const titleY = H - 8;
+      ctx.fillStyle = color;
+      ctx.font = "bold 11px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+
+      if (col === "input") {
+        ctx.fillText(`Input (${n})`, x, titleY);
+      } else if (col === "output") {
+        ctx.fillText(`Output (${n})`, x, titleY);
+      } else if (col === "h1") {
+        ctx.fillText(`Hidden 1 (${n})`, x, titleY);
+      } else {
+        ctx.fillText(`Hidden 2 (${n})`, x, titleY);
+      }
+    });
+  }
+
+  function updateBadges() {
+    const cfg = getConfig();
+    document.getElementById("nInputsVal").textContent  = cfg.nI;
+    document.getElementById("nH1Val").textContent      = cfg.nH1;
+    document.getElementById("nH2Val").textContent      = cfg.nH2 === 0 ? "off" : cfg.nH2;
+    document.getElementById("nOutputsVal").textContent = cfg.nO;
+    document.getElementById("codeH1").textContent      = cfg.nH1;
+    document.getElementById("codeH2").textContent      = cfg.nH2 === 0 ? "" : ", " + cfg.nH2;
+
+    // update hidden_layer_sizes display
+    const hText = cfg.nH2 === 0 ? `(${cfg.nH1},)` : `(${cfg.nH1}, ${cfg.nH2})`;
+    document.getElementById("codeH1").textContent = hText.replace(/[()]/g, "").split(",")[0].trim();
+    if (cfg.nH2 > 0) {
+      document.getElementById("codeH2").textContent = ", " + cfg.nH2;
+    } else {
+      document.getElementById("codeH2").textContent = "";
+    }
+  }
+
+  ["nInputs","nH1","nH2","nOutputs"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      updateBadges();
+      draw();
+    });
+  });
+
+  updateBadges();
+  draw();
+</script>
+</body>
+</html>
