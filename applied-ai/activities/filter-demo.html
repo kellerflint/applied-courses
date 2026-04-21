@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filter Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      padding: 20px 24px 28px;
+    }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 2px;
+      background: #d1d5db;
+      border: 2px solid #d1d5db;
+      border-radius: 6px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .input-grid  { grid-template-columns: repeat(12, 26px); }
+    .output-grid { grid-template-columns: repeat(10, 26px); cursor: default; }
+
+    .pixel {
+      width: 26px;
+      height: 26px;
+      background: #fff;
+      cursor: crosshair;
+    }
+
+    .pixel.on { background: #111; }
+
+    .pixel.highlight {
+      box-shadow: inset 0 0 0 2px #f59e0b;
+      position: relative;
+      z-index: 1;
+    }
+
+    .out-cell {
+      width: 26px;
+      height: 26px;
+      background: #f3f4f6;
+      transition: background 0.1s;
+    }
+
+    .out-cell.active { box-shadow: inset 0 0 0 2px #f59e0b; }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      gap: 2px;
+      background: #d1d5db;
+      border: 2px solid #d1d5db;
+      border-radius: 6px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .filter-cell {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      background: #fff;
+    }
+
+    .filter-cell.pos  { background: #f0fdf4; color: #16a34a; }
+    .filter-cell.neg  { background: #fef2f2; color: #dc2626; }
+    .filter-cell.zero { color: #d1d5db; }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    button, select {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid #d1d5db;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover   { background: #1d4ed8; }
+    .btn-primary:disabled { background: #93c5fd; border-color: #93c5fd; cursor: default; }
+
+    .btn-ghost { background: white; color: #374151; }
+    .btn-ghost:hover { background: #f3f4f6; }
+
+    select { background: white; color: #374151; }
+
+    .sub-label {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+
+    .arrow {
+      font-size: 22px;
+      color: #d1d5db;
+      align-self: center;
+      margin-top: 14px;
+      flex-shrink: 0;
+    }
+
+    .legend {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <div class="panel">
+      <div class="panel-title">Input image</div>
+      <div class="grid input-grid" id="inputGrid"></div>
+      <div class="sub-label">Click or drag to draw</div>
+      <div class="controls">
+        <button class="btn-ghost" id="clearBtn">Clear</button>
+        <button class="btn-ghost" id="presetOne">Draw a 1</button>
+        <button class="btn-ghost" id="presetCross">Cross</button>
+      </div>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="panel">
+      <div class="panel-title">Filter (3×3)</div>
+      <div id="filterDisplay"></div>
+      <div class="controls">
+        <select id="filterSelect">
+          <option value="hedge">Horizontal edge</option>
+          <option value="vedge">Vertical edge</option>
+          <option value="diag">Diagonal edge</option>
+        </select>
+      </div>
+      <div class="controls">
+        <button class="btn-primary" id="runBtn">▶ Run</button>
+        <button class="btn-ghost"  id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="panel">
+      <div class="panel-title">Output (feature map)</div>
+      <div class="grid output-grid" id="outputGrid"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const ROWS = 12, COLS = 12;
+    const OUT_R = 10, OUT_C = 10;
+
+    let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    let isDrawing = false;
+    let drawVal = 1;
+    let animating = false;
+
+    const FILTERS = {
+      hedge: { kernel: [[-1,-1,-1],[0,0,0],[1,1,1]] },
+      vedge: { kernel: [[-1,0,1],[-1,0,1],[-1,0,1]] },
+      diag:  { kernel: [[-1,-1,0],[-1,0,1],[0,1,1]] }
+    };
+
+    let currentKey = 'hedge';
+
+    // ── Input grid ──────────────────────────────────────────────
+    const inputEl = document.getElementById('inputGrid');
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'pixel';
+        cell.addEventListener('mousedown', e => {
+          e.preventDefault();
+          if (animating) return;
+          isDrawing = true;
+          drawVal = grid[r][c] === 0 ? 1 : 0;
+          setPixel(r, c, drawVal);
+        });
+        cell.addEventListener('mouseenter', () => {
+          if (isDrawing && !animating) setPixel(r, c, drawVal);
+        });
+        inputEl.appendChild(cell);
+      }
+    }
+    document.addEventListener('mouseup', () => { isDrawing = false; });
+
+    function setPixel(r, c, val) {
+      grid[r][c] = val;
+      inputEl.children[r * COLS + c].classList.toggle('on', val === 1);
+    }
+
+    function refreshInput() {
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          inputEl.children[r * COLS + c].classList.toggle('on', grid[r][c] === 1);
+    }
+
+    // ── Output grid ──────────────────────────────────────────────
+    const outputEl = document.getElementById('outputGrid');
+    for (let i = 0; i < OUT_R * OUT_C; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'out-cell';
+      outputEl.appendChild(cell);
+    }
+
+    // ── Filter display ───────────────────────────────────────────
+    function renderFilter() {
+      const display = document.getElementById('filterDisplay');
+      const { kernel } = FILTERS[currentKey];
+      display.innerHTML = '';
+      const fg = document.createElement('div');
+      fg.className = 'filter-grid';
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const v = kernel[r][c];
+          const cell = document.createElement('div');
+          cell.className = 'filter-cell ' + (v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero');
+          cell.textContent = v > 0 ? `+${v}` : v === 0 ? '0' : v;
+          fg.appendChild(cell);
+        }
+      }
+      display.appendChild(fg);
+    }
+
+    renderFilter();
+
+    document.getElementById('filterSelect').addEventListener('change', e => {
+      currentKey = e.target.value;
+      renderFilter();
+      clearOutput();
+    });
+
+    // ── Output helpers ───────────────────────────────────────────
+    function clearOutput() {
+      for (let i = 0; i < outputEl.children.length; i++) {
+        outputEl.children[i].style.background = '#f3f4f6';
+        outputEl.children[i].classList.remove('active');
+      }
+      for (let i = 0; i < inputEl.children.length; i++)
+        inputEl.children[i].classList.remove('highlight');
+    }
+
+    function convolve(r, c, kernel) {
+      let sum = 0;
+      for (let dr = 0; dr < 3; dr++)
+        for (let dc = 0; dc < 3; dc++)
+          sum += grid[r + dr][c + dc] * kernel[dr][dc];
+      return sum;
+    }
+
+    function dirColor(v, scale) {
+      const n = Math.max(-1, Math.min(1, v / Math.max(scale, 1)));
+      if (n >= 0) {
+        const t = Math.round(n * 230);
+        return `rgb(${255 - t}, ${255}, ${255 - Math.round(t * 0.5)})`;
+      } else {
+        const t = Math.round(-n * 230);
+        return `rgb(${255}, ${255 - t}, ${255 - t})`;
+      }
+    }
+
+    function highlightWindow(r, c) {
+      for (let i = 0; i < inputEl.children.length; i++)
+        inputEl.children[i].classList.remove('highlight');
+      for (let dr = 0; dr < 3; dr++)
+        for (let dc = 0; dc < 3; dc++)
+          inputEl.children[(r + dr) * COLS + (c + dc)].classList.add('highlight');
+    }
+
+    // ── Presets ──────────────────────────────────────────────────
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (animating) return;
+      grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+      refreshInput(); clearOutput();
+    });
+
+    document.getElementById('presetOne').addEventListener('click', () => {
+      if (animating) return;
+      grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+      // Vertical shaft
+      for (let r = 1; r <= 10; r++) grid[r][6] = 1;
+      // Small serif top-left
+      grid[2][5] = 1;
+      // Base
+      for (let c = 4; c <= 8; c++) grid[10][c] = 1;
+      refreshInput(); clearOutput();
+    });
+
+    document.getElementById('presetCross').addEventListener('click', () => {
+      if (animating) return;
+      grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+      for (let i = 0; i < ROWS; i++) grid[i][5] = 1;
+      for (let j = 0; j < COLS; j++) grid[5][j] = 1;
+      refreshInput(); clearOutput();
+    });
+
+    // ── Run ──────────────────────────────────────────────────────
+    async function run() {
+      if (animating) return;
+      animating = true;
+      document.getElementById('runBtn').disabled = true;
+      clearOutput();
+
+      const kernel = FILTERS[currentKey].kernel;
+      const vals = [];
+      for (let r = 0; r < OUT_R; r++)
+        for (let c = 0; c < OUT_C; c++)
+          vals.push(convolve(r, c, kernel));
+
+      const scale = Math.max(...vals.map(Math.abs), 1);
+      const STEP = 30;
+
+      for (let r = 0; r < OUT_R; r++) {
+        for (let c = 0; c < OUT_C; c++) {
+          highlightWindow(r, c);
+          const idx = r * OUT_C + c;
+          outputEl.children[idx].classList.add('active');
+          await new Promise(res => setTimeout(res, STEP));
+          outputEl.children[idx].style.background = dirColor(vals[idx], scale);
+          outputEl.children[idx].classList.remove('active');
+        }
+      }
+      for (let i = 0; i < inputEl.children.length; i++)
+        inputEl.children[i].classList.remove('highlight');
+
+      animating = false;
+      document.getElementById('runBtn').disabled = false;
+    }
+
+    document.getElementById('runBtn').addEventListener('click', run);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!animating) clearOutput();
+    });
+  </script>
+</body>
+</html>

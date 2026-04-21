@@ -5,6 +5,25 @@ module.exports = function (eleventyConfig) {
   // Pass through activity files per course without processing as templates
   eleventyConfig.addPassthroughCopy("*/activities");
   eleventyConfig.ignores.add("*/activities/**");
+  eleventyConfig.addPassthroughCopy("*/images");
+
+  // Image shortcode — renders like an activity embed with a fullscreen button
+  eleventyConfig.addShortcode("image", function (filename, alt) {
+    const urlParts = this.page.url.split("/").filter(Boolean);
+    const courseSlug = urlParts[0] || "";
+    const src = courseSlug ? `/${courseSlug}/images/${filename}` : `/images/${filename}`;
+    const label = alt || filename;
+    return `<div class="activity-embed">
+  <div class="activity-header">
+    <a class="activity-title" href="${src}" target="_blank" rel="noopener">${label}</a>
+    <button class="activity-fullscreen-btn" onclick="(function(btn){var img=btn.closest('.activity-embed').querySelector('img');if(img.requestFullscreen)img.requestFullscreen();else if(img.webkitRequestFullscreen)img.webkitRequestFullscreen();})(this)" title="Open fullscreen">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      Fullscreen
+    </button>
+  </div>
+  <img src="${src}" alt="${label}" style="width:100%;height:auto;display:block;">
+</div>`;
+  });
 
   // Activity shortcode — auto-detects course from the current page URL
   eleventyConfig.addShortcode("activity", function (filename, title, height) {
