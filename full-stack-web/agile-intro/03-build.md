@@ -35,13 +35,18 @@ Before building anything, verify the import actually worked. Add a `console.log(
 
 If you see `undefined` or an error, the file path is wrong. Fix it before continuing.
 
-> **With your partner:** Confirm the data is showing in the console on both machines before moving on. Don't skip this step.
+> **With your partner:** Confirm the data is showing in the console on both machines before moving on.
 
 ## Plan Your Components
 
 Your app needs a tree of components. Each level receives data from its parent and passes pieces of it further down.
 
-Here's the structure to build toward:
+> **With your partner:** Try to think though what each component file will look like before writing code. What props does it accept? What does it render? What does it pass down?
+
+<details>
+<summary>Reveal answer</summary>
+
+Here's one possible structure you could build towards:
 
 ```
 App
@@ -61,7 +66,7 @@ AlbumItem
   renders: the album title and year
 ```
 
-Try to think though what each component file will look like before writing code. What props does it accept? What does it render? What does it pass down?
+</details>
 
 ## Build One Component at a Time
 
@@ -85,7 +90,7 @@ Run `npm run deploy` to push the latest version to your live URL.
 
 Once it's live, go through your acceptance criteria one more time from the deployed URL, not just localhost. Mobile behavior in particular can differ.
 
-> **With your partner:** Get both sites live. Move your remaining stories to Done when everything checks out.
+> **With your partner:** Get your site live. Move your remaining stories to Done when everything checks out.
 
 ## Submit
 
