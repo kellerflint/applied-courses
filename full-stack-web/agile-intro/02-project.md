@@ -81,7 +81,7 @@ The client has provided their artist data. Save this as `data.json` in your proj
 
 ## Step 1: Write Your User Stories
 
-Read the client brief again. Identify the two distinct things a visitor to this page needs to be able to do. Write a user story for each one.
+Read the client brief again. Identify at least two distinct things a visitor to this page needs to be able to do. Write a user story for each one.
 
 Keep the user specific. "A visitor" is fine here since this page has no login, but "a user" is too generic. Think about who is actually coming to this page and why.
 
@@ -103,7 +103,11 @@ AI is useful for getting feedback on whether your stories and criteria are well-
 
 This is actually the same skill. When you work with AI effectively, you're doing the same kind of thinking as when you write user stories. You're defining who the AI is, what you want it to do, and what good output looks like. Vague requests get vague results, just like vague requirements produce the wrong software.
 
-Your instructor will show you how to access Google Gemini. When you open it, paste this prompt in as your first message, then follow up with your user stories and acceptance criteria.
+You are welcome to use any of the smarter AI models. Claude Sonnet / Opus, GPT 5.3 or 5.4, Gemini 3 Thinking / Pro, or equivalent.
+
+Any can work, but I usually suggest [Gemini](https://gemini.google.com/app) if you don't already have your own. Gemini has generous free limits and you can get pro for free as a student. See student signup details [here](https://publish.obsidian.md/keller-flint-courses/Shared+Resources/Gemini+Student+Signup).
+
+When you open it, paste this prompt in as your first message, then follow up with your user stories and acceptance criteria.
 
 ```
 You are reviewing user stories and acceptance criteria written by software development students. Give specific feedback on the following.
@@ -128,25 +132,27 @@ Read the feedback critically. AI is a useful reviewer but it is not always right
 
 ## Step 4: Set Up Your GitHub Project
 
-A GitHub Project is a Kanban board that lives alongside your repository. You'll use it to track your stories through development.
+A GitHub Project is a project board that lives alongside your repository. You'll use it to track your stories through development.
 
 ### Create the project
 
-1. Go to your GitHub repository page
-2. Click the **Projects** tab
-3. Click **Link a project**, then **New project**
-4. Choose the **Board** template
-5. Name it **Wavelength Records**
-6. Click **Create project**
+1. Create a GitHub repository for this pair program if you haven't already
+2. Go to your GitHub repository page
+3. Click the **Projects** tab
+4. Click **New project**
+5. Choose the **Board** template (don't worry about importing anything)
+6. Name the board **Wavelength Records** and save changes
+7. Click **Create project**
 
-You now have a board with three columns: **Todo**, **In Progress**, and **Done**. Rename **Todo** to **Backlog** by clicking the column header.
+You now have a board with three columns: **Todo**, **In Progress**, and **Done**. Rename **Todo** to **Backlog** by clicking the three dot button at the top of the column and selecting **Edit details**.
 
 ### Add your stories
 
 1. Click **+ Add item** at the bottom of the **Backlog** column
-2. Type the title of your first user story and press Enter
+2. Type the title of your first user story and press the **+** button to **Create a draft**
 3. Repeat for your second user story
+4. Once the stories are created, click into each and add the acceptance criteria you created to their respective story
 
 These cards are draft issues. They're not linked to any actual code changes, which is fine for now. The point is to have a visible record of what needs to be built before you start building it.
 
-> **With your partner:** Get both user stories into the Backlog column before moving on. Your board should show two cards in Backlog and nothing in the other columns.
+> **With your partner:** Get both user stories and all acceptance criteria into the Backlog column before moving on. Your board should show two cards in Backlog and nothing in the other columns.

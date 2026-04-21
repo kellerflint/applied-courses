@@ -61,104 +61,13 @@ AlbumItem
   renders: the album title and year
 ```
 
-Try to sketch out what each component file will look like before writing code. What props does it accept? What does it render? What does it pass down?
-
-<details>
-<summary>Show example code</summary>
-
-```jsx
-// App.jsx
-import data from './data.json'
-import ArtistList from './components/ArtistList'
-
-function App() {
-  return (
-    <div>
-      <header>
-        <h1>{data.label}</h1>
-        <p>{data.tagline}</p>
-      </header>
-      <ArtistList artists={data.artists} />
-    </div>
-  )
-}
-
-export default App
-```
-
-```jsx
-// ArtistList.jsx
-import ArtistCard from './ArtistCard'
-
-function ArtistList({ artists }) {
-  return (
-    <div className="artist-list">
-      {artists.map(artist => (
-        <ArtistCard key={artist.id} artist={artist} />
-      ))}
-    </div>
-  )
-}
-
-export default ArtistList
-```
-
-`.map()` loops over the array and returns one `ArtistCard` for each artist. The `key` prop is required on any list of elements in React. Use a unique value from your data, like `id`.
-
-```jsx
-// ArtistCard.jsx
-import AlbumItem from './AlbumItem'
-
-function ArtistCard({ artist }) {
-  return (
-    <div className="artist-card">
-      <h2>{artist.name}</h2>
-      <span>{artist.genre}</span>
-      <p>{artist.bio}</p>
-      <div className="albums">
-        {artist.albums.map(album => (
-          <AlbumItem key={album.title} album={album} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export default ArtistCard
-```
-
-```jsx
-// AlbumItem.jsx
-function AlbumItem({ album }) {
-  return (
-    <div className="album">
-      <span>{album.title}</span>
-      <span>{album.year}</span>
-    </div>
-  )
-}
-
-export default AlbumItem
-```
-
-</details>
-
-> **With your partner:** Before writing your own components, trace the path a single album title takes from the import in `App.jsx` all the way to the screen. Which components does it pass through?
+Try to think though what each component file will look like before writing code. What props does it accept? What does it render? What does it pass down?
 
 ## Build One Component at a Time
 
-Build and test each component before moving to the next. Don't try to wire up the whole tree at once.
-
-A good order:
-
-1. Get `App` rendering the label name and tagline from `data` and confirm it on screen
-2. Build `ArtistCard` and render one artist manually in `App` with hardcoded data to confirm the layout
-3. Build `ArtistList` and switch to rendering all artists from the array
-4. Build `AlbumItem` and render albums inside `ArtistCard`
+Build and test each component before moving to the next. Don't try to wire up the whole tree at once. Focus only on what is necessary for the current user story. Don't get side tracked!
 
 After each step, look at the page and verify it's showing what you expect. Fix any problems before continuing.
-
-> **With your partner:** After getting `ArtistCard` working with one hardcoded artist, swap to rendering from the array. Confirm all five artists show up before adding albums.
 
 ## Style and Check Your Criteria
 
@@ -180,7 +89,7 @@ Once it's live, go through your acceptance criteria one more time from the deplo
 
 ## Submit
 
-Submit a link to your GitHub repository and your live GitHub Pages URL on Canvas. Your GitHub Project board should show all stories in the Done column.
+Submit a link to your live GitHub Pages URL on Canvas. Include a comment with a link directly to your project board as well. Your GitHub Project board should show all stories in the Done column.
 
 ## Feedback
 
