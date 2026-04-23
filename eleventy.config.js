@@ -2,6 +2,12 @@ const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 
 module.exports = function (eleventyConfig) {
   eleventyConfig.addPlugin(syntaxHighlight);
+  // Ignore Python/Node artifacts inside testing/ that contain template-like syntax
+  eleventyConfig.ignores.add("testing/deploy/venv/**");
+  eleventyConfig.ignores.add("testing/deploy/node_modules/**");
+  eleventyConfig.ignores.add("testing/deploy2/node_modules/**");
+  eleventyConfig.ignores.add("testing/deploy_starter/node_modules/**");
+  eleventyConfig.ignores.add("applied-ai/improve-and-deploy/_archive/**");
   // Pass through activity files per course without processing as templates
   eleventyConfig.addPassthroughCopy("*/activities");
   eleventyConfig.ignores.add("*/activities/**");

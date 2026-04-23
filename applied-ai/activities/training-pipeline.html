@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Pipeline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 20px 16px 24px;
+    }
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .pipeline {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .phase-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 14px 14px 4px;
+      color: #475569;
+    }
+    .step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .step:hover, .step.open { background: #151929; }
+    .num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .blue  .num { background: #1e3a5f; color: #60a5fa; border: 1px solid #1d4ed8; }
+    .green .num { background: #14321f; color: #4ade80; border: 1px solid #15803d; }
+    .step.purple .num { background: #2e1f5e; color: #c084fc; border: 1px solid #7c3aed; }
+    .step.orange .num { background: #3a2010; color: #fb923c; border: 1px solid #c2410c; }
+    .body { flex: 1; }
+    .title { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
+    .short { font-size: 0.76rem; color: #64748b; margin-top: 2px; line-height: 1.4; }
+    .detail {
+      display: none;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.55;
+      margin-top: 8px;
+      border-left: 2px solid #1e293b;
+      padding-left: 10px;
+    }
+    .step.open .detail { display: block; }
+    .hint {
+      font-size: 0.7rem;
+      color: #334155;
+      text-align: center;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Training Pipeline</h2>
+<div class="pipeline" id="pl"></div>
+<p class="hint">Click any step to expand</p>
+
+<script>
+const data = [
+  { phase: "Data Preparation" },
+  { n: 1, color: "blue", title: "Load raw images",
+    short: "Student digit drawings, various sizes and positions",
+    detail: "Your dataset has about 1,400 images, roughly 140 per digit. Each was drawn on a canvas at some size and position. Some are small and off-center. Some fill the frame. The raw images are your starting point." },
+  { n: 2, color: "blue", title: "Bbox normalization",
+    short: "Crop to the digit, resize back to 28x28",
+    detail: "Find the bounding box of the drawn pixels, crop to that region, then resize back to 28x28. Every digit ends up centered and scaled to fill the frame regardless of how the student drew it. This gives the model a consistent starting point so it can focus on shape rather than position." },
+  { n: 3, color: "blue", title: "Data augmentation",
+    short: "Random rotation, shift, and zoom applied during training",
+    detail: "Each time an image is fed to the model during training, a random set of transforms is applied. The digit might be rotated slightly, shifted a few pixels, or zoomed in or out. Every pass through training uses a freshly transformed version, so the model learns to recognize the digit across a wider range of variation." },
+  { phase: "Training" },
+  { n: 4, color: "green", title: "Train / val / test split",
+    short: "80% training, 10% validation, 10% test",
+    detail: "The training set is what the model learns from. The validation set is checked after each epoch to detect overfitting. The test set is held out entirely, giving you an honest accuracy number at the end that reflects how the model performs on data it has never trained on." },
+  { n: 5, color: "green", title: "Train the CNN",
+    short: "Convolutional network with early stopping",
+    detail: "The model trains for up to 200 epochs. Early stopping monitors validation loss and halts training automatically when it stops improving, then restores the best checkpoint. Training ends at the right point automatically." },
+  { phase: "Export" },
+  { n: 6, color: "purple", title: "Export the model",
+    short: "Save as ONNX (for Node.js) and TF.js (for browser)",
+    detail: "ONNX is a cross-language model format. The Node.js server loads it using onnxruntime, a lightweight package. The deployment machine only needs Node.js. TF.js is a browser-compatible version that runs in JavaScript. Both formats use the same trained weights." },
+  { phase: "Deploy" },
+  { n: 7, color: "orange", title: "Deploy",
+    short: "Serve predictions from a server or run them in the browser",
+    detail: "The server-side version receives pixel data, runs it through the ONNX model, and returns a prediction. The browser-side version downloads the TF.js model once, then runs all future predictions locally. You will build both." },
+];
+
+const pl = document.getElementById("pl");
+data.forEach(item => {
+  if (item.phase) {
+    const lbl = document.createElement("div");
+    lbl.className = "phase-label";
+    lbl.textContent = item.phase;
+    pl.appendChild(lbl);
+    return;
+  }
+  const div = document.createElement("div");
+  div.className = `step ${item.color}`;
+  div.innerHTML = `
+    <div class="num">${item.n}</div>
+    <div class="body">
+      <div class="title">${item.title}</div>
+      <div class="short">${item.short}</div>
+      <div class="detail">${item.detail}</div>
+    </div>`;
+  div.addEventListener("click", () => {
+    const wasOpen = div.classList.contains("open");
+    document.querySelectorAll(".step.open").forEach(el => el.classList.remove("open"));
+    if (!wasOpen) div.classList.add("open");
+  });
+  pl.appendChild(div);
+});
+</script>
+</body>
+</html>
