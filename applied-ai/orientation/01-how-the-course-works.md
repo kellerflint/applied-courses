@@ -23,7 +23,7 @@ AI is changing how software gets written. You're software developers, and this i
 
 ## Why This Matters
 
-This is the most interesting moment in tech in a long time. You have access to tools and capabilities that simply didn't exist a few years ago. You can build things now, on your own, that would have required a large team before. The job market has real instability, and it also has real opportunity. If you take this seriously and get good at using these tools, there is a lot you can do with it.
+This is the most interesting moment in tech in a long time. You have access to tools and capabilities that simply didn't exist a few years ago. You can build things now, on your own, that would have required a large team before. The job market has real instability, and it also has real opportunity. If you take this seriously and get good at using these tools, there is a lot you can do.
 
 ## What You'll Be Doing in Class
 

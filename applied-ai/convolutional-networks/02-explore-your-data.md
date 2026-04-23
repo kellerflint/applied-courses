@@ -19,7 +19,6 @@ You can use one of the provided options or find your own.
 |---------|---------|------------|-------|
 | Fashion-MNIST | 10 | 28×28 | Clothing categories: T-shirt, trouser, dress, etc. |
 | EMNIST Letters | 26 | 28×28 | Handwritten uppercase letters |
-| Kuzushiji-MNIST | 10 | 28×28 | Classical Japanese characters. |
 
 **Fashion-MNIST** loads directly from Keras:
 
@@ -33,16 +32,15 @@ class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 ```
 
-**EMNIST Letters** and **Kuzushiji-MNIST** use `tensorflow_datasets`, which is pre-installed on Colab:
+**EMNIST Letters** uses `tensorflow_datasets`, which is pre-installed on Colab. The slice notation (`train[:10000]`) loads only a subset so it doesn't take forever:
 
 ```python
 import tensorflow_datasets as tfds
 import numpy as np
 
-# Replace 'emnist/letters' with 'kmnist' for Kuzushiji-MNIST
 (ds_train, ds_test), info = tfds.load(
     'emnist/letters',
-    split=['train', 'test'],
+    split=['train[:10000]', 'test[:2000]'],
     as_supervised=True,
     with_info=True
 )

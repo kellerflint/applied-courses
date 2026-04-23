@@ -278,7 +278,7 @@ try:
 
     (ds_train, ds_test), info = tfds.load(
         'emnist/letters',
-        split=['train', 'test'],
+        split=['train[:10000]', 'test[:2000]'],
         as_supervised=True,
         with_info=True
     )
@@ -293,27 +293,6 @@ try:
     emnist_class_names = [chr(ord('A') + i) for i in range(26)]
     results['EMNIST-Letters'] = run_pipeline(
         'EMNIST-Letters', X_tr_e, y_tr_e, X_te_e, y_te_e, emnist_class_names)
-
-except ImportError:
-    print("  SKIP — tensorflow_datasets not installed")
-    print("  Install with: pip install tensorflow-datasets")
-
-# Kuzushiji-MNIST — requires tensorflow_datasets
-print("\n>>> Loading Kuzushiji-MNIST")
-try:
-    import tensorflow_datasets as tfds
-
-    ds_train_k = tfds.load('kmnist', split='train', as_supervised=True)
-    ds_test_k  = tfds.load('kmnist', split='test',  as_supervised=True)
-    X_tr_k = np.array([x.numpy() for x, _ in ds_train_k])
-    y_tr_k = np.array([y.numpy() for _, y in ds_train_k])
-    X_te_k = np.array([x.numpy() for x, _ in ds_test_k])
-    y_te_k = np.array([y.numpy() for _, y in ds_test_k])
-
-    kmnist_class_names = ['o (お)', 'ki (き)', 'su (す)', 'tsu (つ)', 'na (な)',
-                          'ha (は)', 'ma (ま)', 'ya (や)', 're (れ)', 'wo (を)']
-    results['Kuzushiji-MNIST'] = run_pipeline(
-        'Kuzushiji-MNIST', X_tr_k, y_tr_k, X_te_k, y_te_k, kmnist_class_names)
 
 except ImportError:
     print("  SKIP — tensorflow_datasets not installed")
