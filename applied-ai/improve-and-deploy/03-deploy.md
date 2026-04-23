@@ -67,20 +67,6 @@ Open the network tab again. Draw another digit and predict. Inference happens en
 
 > **With your partner:** Compare the two pages. Both predict the same digit using the same model weights. What is different about how they work? When would you choose one approach over the other?
 
-## Trade-offs
-
-| | Server side | Browser side |
-|---|---|---|
-| **Where the model runs** | Your server | User's device |
-| **Model stays private** | Yes | No, it is downloaded |
-| **Works offline** | No | Yes, after first load |
-| **Scales with users** | Server costs go up | Scales for free |
-| **Model updates** | Instant | Requires cache-busting |
-| **User data leaves device** | Yes | No |
-| **Works on slow devices** | Yes | Depends on model size |
-
-The right choice depends on your model size, your privacy requirements, your cost constraints, and how often you update the model.
-
 ## Submit
 
 When you are done, share your notebook:
