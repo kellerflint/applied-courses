@@ -79,7 +79,7 @@ Acceptance Criteria:
 - Given the binarized image contains active pixels, when the image is rendered, then a dot is drawn at the centroid of the largest connected group.
 - Given a dot is currently displayed, when the tuning settings change and the image updates, then the dot position updates to match.
 - Given the binarized image has no active pixels, when the image is rendered, then no dot is drawn and the app does not crash.
-- Given the connected-components algorithm runs, when I inspect the implementation, then the logic matches the Java version from the 334 course.
+- Given the algorithm runs, when the implementation is inspected, then the logic matches the Java version from the 334 course.
 
 ### Submitting and Tracking Processing Jobs
 
