@@ -18,6 +18,7 @@ Be sure to note or otherwise document how the user moves between pages and what 
 
 Any of these are fine:
 
+- [wireframe.cc](https://wireframe.cc/)
 - Pen and paper (take clear photos)
 - Figma, FigJam, or Excalidraw
 - draw.io, Miro, Whimsical
