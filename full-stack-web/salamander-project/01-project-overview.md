@@ -7,7 +7,7 @@ order: 1
 
 This quarter, you'll be building a React application that interacts with a backend system developed in your 334 course. Your frontend app will allow users to detect salamanders in videos using interactive tools and visual feedback. The backend provides the core processing logic and APIs. Your focus is exclusively on the frontend: creating a responsive, user-friendly interface that follows React best practices.
 
-We'll be breaking this project into pieces over the rest of the quarter. Most of our in-class pair programs after week 6 will focus on one component or user story at a time. By the end, you'll have integrated everything into a polished app.
+We'll be breaking this project into pieces over the rest of the quarter. Many of our in-class pair programs after week 6 will focus on one component or user story at a time. By the end, you'll have integrated everything into a polished app.
 
 Below is a basic example of what some of the main parts of the application might include:
 
@@ -134,5 +134,3 @@ Your GitHub repo must contain:
 ## Demo
 
 At the end of the quarter you'll schedule a time to demo the project and answer questions about your approach and implementation. Schedule one meeting per team; both members attend. Expect it to take 10 to 15 minutes.
-
-Schedule here: [https://calendly.com/kellerflint/finals?month=2025-12](https://calendly.com/kellerflint/finals?month=2025-12)

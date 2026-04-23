@@ -5,23 +5,7 @@ order: 3
 
 Before writing any code, your team will produce wireframes for the full app. A wireframe is a low-fidelity sketch of a UI. No colors, no final styling, no polished graphics. The goal is to agree on what goes where and how the user moves through the app before you start implementing.
 
-## What to wireframe
-
-At minimum, produce a wireframe for each of the following views:
-
-1. Video Chooser page (Group A)
-    - How the list is laid out
-    - What each entry looks like
-    - Any header, nav, or branding
-
-2. Preview and Tuning page (Groups B and C)
-    - Where the thumbnail and binarized image sit relative to each other
-    - Where the color picker and threshold slider live
-    - Where the centroid dot appears
-    - Where the "Process Video with These Settings" button goes
-    - Where job status and the final CSV link show up (could be a section on this page, a modal, or a separate route, your call)
-
-3. A flow diagram showing how the user moves between pages and what triggers each transition (clicking a video, submitting a job, etc.).
+Be sure to note or otherwise document how the user moves between pages and what triggers each transition (clicking a video, submitting a job, etc.).
 
 ## What to include on each wireframe
 
