@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Controlled Input Trace</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      padding: 20px;
+      color: #1e293b;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .input-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .name-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      transition: border-color 0.15s, background 0.15s;
+      background: #fff;
+      color: #1e293b;
+    }
+
+    .name-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .name-input.locked {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+
+    .preview-line {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      text-align: center;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .muted { color: #94a3b8; font-weight: 400; }
+
+    .preview-name {
+      color: #1e293b;
+      transition: background 0.2s;
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+
+    .preview-name.flash { background: #fef3c7; }
+
+    .input-hint {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    .trace-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+      opacity: 0.35;
+    }
+
+    .step.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      opacity: 1;
+    }
+
+    .step.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+      opacity: 1;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .step.active .step-num {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .step.done .step-num {
+      background: #22c55e;
+      color: white;
+    }
+
+    .step-text {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+
+    .step-title {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .step-detail {
+      color: #64748b;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .step.active .step-detail,
+    .step.done .step-detail {
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="input-panel">
+      <h2>Controlled Input</h2>
+      <input
+        class="name-input"
+        id="name-input"
+        placeholder="Type your name..."
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <div class="preview-line">
+        <span class="muted">Hello,&nbsp;</span><span class="preview-name" id="preview-name">…</span><span class="muted">!</span>
+      </div>
+      <p class="input-hint">Click the input and press one key. Watch the trace before pressing the next.</p>
+    </div>
+
+    <div class="trace-panel">
+      <h2>What just happened</h2>
+
+      <div class="step" id="step-1">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <div class="step-title">Keystroke fired the input event</div>
+          <div class="step-detail" id="d-1">key: (waiting...)</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-2">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <div class="step-title">onChange handler ran</div>
+          <div class="step-detail">setName(e.target.value)</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <div class="step-title">State updated, re-render scheduled</div>
+          <div class="step-detail" id="d-3">name: '' → ''</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-4">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <div class="step-title">Component function re-ran</div>
+          <div class="step-detail" id="d-4">returns &lt;input value="" /&gt;</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-5">
+        <div class="step-num">5</div>
+        <div class="step-text">
+          <div class="step-title">DOM patched, screen reflects state</div>
+          <div class="step-detail" id="d-5">user sees ''</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('name-input');
+    const previewName = document.getElementById('preview-name');
+    const steps = [...document.querySelectorAll('.step')];
+    let displayName = '';
+    let isAnimating = false;
+
+    function activateStep(index) {
+      steps.forEach((s, i) => {
+        s.classList.remove('active', 'done');
+        if (i < index) s.classList.add('done');
+        else if (i === index) s.classList.add('active');
+      });
+    }
+
+    function escapeJS(s) {
+      return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (isAnimating) {
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key.length !== 1 && e.key !== 'Backspace') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const isBackspace = e.key === 'Backspace';
+      if (isBackspace && displayName === '') return;
+
+      e.preventDefault();
+
+      const nextName = isBackspace
+        ? displayName.slice(0, -1)
+        : displayName + e.key;
+      const keyLabel = isBackspace ? 'Backspace' : `'${e.key}'`;
+
+      isAnimating = true;
+      input.classList.add('locked');
+
+      document.getElementById('d-1').textContent = `key: ${keyLabel}`;
+      document.getElementById('d-3').textContent =
+        `name: '${escapeJS(displayName)}' → '${escapeJS(nextName)}'`;
+      document.getElementById('d-4').textContent =
+        `returns <input value="${escapeJS(nextName)}" />`;
+      document.getElementById('d-5').textContent =
+        `user sees '${escapeJS(nextName)}'`;
+
+      activateStep(0);
+
+      setTimeout(() => activateStep(1), 600);
+      setTimeout(() => activateStep(2), 1200);
+      setTimeout(() => activateStep(3), 1800);
+      setTimeout(() => {
+        activateStep(4);
+        displayName = nextName;
+        input.value = displayName;
+        previewName.textContent = displayName || '…';
+        previewName.classList.add('flash');
+        setTimeout(() => previewName.classList.remove('flash'), 400);
+      }, 2400);
+      setTimeout(() => {
+        steps.forEach(s => { s.classList.add('done'); s.classList.remove('active'); });
+        input.classList.remove('locked');
+        isAnimating = false;
+      }, 3000);
+    });
+
+    input.focus();
+  </script>
+</body>
+</html>

@@ -43,4 +43,4 @@ If your wireframes are in color, use your chosen palette directly. If they are b
 
 ## Deliverable
 
-Create a GitHub repository for your project and add a `wireframes/` folder containing all your wireframe images and the flow diagram. Include both team members' names in the README. Submit a link to the repository on Canvas. Each team submits once.
+Create a GitHub repository for your project and add a `wireframes/` folder containing all your wireframe images and the flow diagram. Include both team members' names in the README. Each person should submit a link to the repository on Canvas. Each team submits once.
