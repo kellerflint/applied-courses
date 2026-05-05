@@ -63,6 +63,6 @@ function exportPng() {
 
 </details>
 
-## Optional: Add Your Own Feature
+## Challenge 3: Add Your Own Feature
 
 If you finish both challenges and still have time, add a feature of your own. Some ideas if nothing comes to mind: an eraser tool, undo, save and reload to localStorage, a "fill" tool that paints all connected cells of the same color, a way to save your favorite color combinations as a custom palette. Build whatever you'd want to try.
