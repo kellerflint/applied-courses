@@ -32,4 +32,4 @@ Set up a fresh Vite + React project and build to the acceptance criteria above. 
 
 Spend at least 15 minutes attempting this from the brief before opening the walkthrough. Getting stuck is part of it. Working through "what state do I need" and "how do I render the grid from that state" is exactly the skill you're here to practice.
 
-If you've worked through it for a while and want hints on structure, the walkthrough on the next page steps through the same approach we'd take.
+If you've worked through it for a while and want hints on structure, the walkthrough on the next page steps through one possible approach.
