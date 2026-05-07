@@ -20,7 +20,7 @@ YOLO wins when the background isn't uniform (textured tank floors, leaves, debri
 
 Color masking wins when the setup is controlled, when speed matters more than flexibility, when you have no labeled data and don't have time to make any, or when the alternative would require a much larger training set than you can realistically build.
 
-The honest answer is that "better" depends on the constraints. A field study with limited data might be a color masking job. A long-term study across many tanks and conditions probably wants YOLO.
+"Better" depends on the constraints. A study with clear consistent backgrounds might be a color masking job. A study across many conditions probably wants YOLO.
 
 </details>
 
@@ -32,15 +32,16 @@ Every project hits scope limits. The cuts you made are useful information.
 
 ## Demo prep
 
-You'll either submit a 2-3 minute demo video or do a live demo in class. Either way, plan what you're going to show.
+You'll do a live demo during class in groups. Plan what you're going to show.
 
 A demo should walk through:
 
 - The app running end to end on one of the videos
-- Both metrics doing something interesting
-- A quick mention of what's under the hood (YOLO model, your dataset size, the stack)
+- All metrics you implemented
+- A quick mention of how you went about training your model
+- Any major challenges that came up
 
-Practice it once before recording or presenting. Two minutes goes faster than you think.
+Practice it once before presenting. I'm expecting about 5 minutes per team with discussion time.
 
 ## Submit
 
@@ -50,7 +51,7 @@ Push your code to GitHub. Make sure your repo includes:
 - The README with run instructions, dataset details, and the color masking comparison
 - All source code for both the backend and frontend
 
-**Both partners submit individually on Canvas** with the GitHub link and either the demo video or a note that you'll do a live demo.
+**Both partners submit individually on Canvas** with the GitHub link.
 
 ## Feedback
 
