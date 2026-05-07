@@ -1,0 +1,6 @@
+{
+  "layout": "page.njk",
+  "tags": ["page"],
+  "unitTitle": "Debugging Practice",
+  "unitOrder": 11
+}
