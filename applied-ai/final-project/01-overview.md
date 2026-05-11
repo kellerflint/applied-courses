@@ -23,7 +23,11 @@ Your project should:
 
 ## Example: a multi-component AI app
 
-Here's a project I built called [**MTGA-CV-Voice-Interface**](https://github.com/kellerflint/MTGA-CV-Voice-Interface), which lets you play Magic: The Gathering Arena entirely with voice commands. You say something like "play the lightning bolt" and the app actually moves the cursor and clicks for you. It uses four ML components stitched together with software:
+Here's a project I built called [**MTGA-CV-Voice-Interface**](https://github.com/kellerflint/MTGA-CV-Voice-Interface), which lets you play Magic: The Gathering Arena entirely with voice commands. You say something like "play the lightning bolt" and the app actually moves the cursor and clicks for you.
+
+<iframe src="https://share.descript.com/embed/JBm0aPNqqJi" width="100%" height="420" frameborder="0" allowfullscreen></iframe>
+
+It uses four ML components stitched together with software:
 
 - **STT (speech-to-text)** transcribes the spoken command when it detects the end of voice activity
 - **YOLO (object detection)**, fine-tuned on MTGA screenshots, finds cards and buttons on screen and returns class labels and bounding boxes
