@@ -36,11 +36,11 @@ You can think of the whole process as a sophisticated autocomplete. The model lo
 
 The model picked up everything it knows from the patterns in its training data, mostly text scraped from the internet plus follow-up training that nudges it toward being helpful and safe. What it learned during that training is how words relate to other words. It learned which words tend to follow which other words, what an argument structure looks like, what a polite email sounds like, what working Python code looks like. The actual concepts behind those words, the things in the real world the text was describing, mostly didn't come along for the ride. The model has the patterns. It has the meanings only as far as the patterns reveal them.
 
-That distinction matters more than it sounds like it does. The same model that can produce a clean essay on a topic might botch a five-step math problem if the surface form is unfamiliar. It can fluently explain how to solve a problem and then fumble the actual solving. It often understands the relationships between concepts without necessarily understanding the concepts themselves.
+That distinction matters a lot. The same model that can produce a clean, coherent essay on a topic might completely botch the execution on that exact same topic. It can fluently explain how to solve a problem and then fumble the actual solving. It often understands the relationships between concepts without necessarily understanding the concepts themselves.
 
 Imagine someone learning a foreign language by reading a huge amount of it without ever being told what any of the words actually mean. They could still pick up which words tend to appear together, which structures are well-formed, what arguments tend to look like. They could probably start producing fluent-looking text. That fluency would not mean they understood the underlying reality the text was describing.
 
-That picture probably undersells what LLMs can do, though. Language can describe almost anything, which means a system fluent in language can do useful work on almost any topic. Linguistic pattern matching, combined with the right tooling around it, has turned out to be enough to build genuinely impressive systems. The piece worth holding onto is what a confident-sounding answer actually tells you. **A model's confidence reflects how typical-sounding the answer is, which usually overlaps with whether it's correct, and is not the same thing.**
+That said, this picture can undersell what LLMs are capable of. Language can describe almost anything, which means a system fluent in language can do useful work on almost any topic. Linguistic pattern matching, combined with the right tooling around it, has turned out to be enough to build genuinely impressive systems. The piece worth holding onto is what a confident-sounding answer actually tells you. **A model's confidence reflects how typical-sounding the answer is, which usually overlaps with whether it's correct, but is not the same thing.**
 
 ## Implications you need to carry into the rest of this unit
 
@@ -62,7 +62,7 @@ That's why LLMs can produce confident-sounding text that turns out to be wrong. 
 
 The model can only consider so much text at once. That limit is called the **context window**. Tokens that fall outside the window simply do not influence the output. Different models have different limits, ranging from a few thousand tokens to over a million.
 
-This matters because chat history grows. A conversation that runs long enough will eventually overflow the window, and you will have to decide what to keep and what to drop. Page 4 shows two common strategies for that.
+This matters because chat history grows. A conversation that runs long enough will eventually overflow the window, and you will have to decide what to keep and what to drop. You'll see two common strategies for dealing with that in this unit.
 
 ### Temperature controls randomness
 
@@ -74,10 +74,10 @@ Different jobs want different temperatures. You want low temperature for things 
 
 Everything you're about to build is a workaround for what the model can't do on its own.
 
-- The model has no memory, so you'll build memory by replaying the whole conversation each turn.
+- The model has no memory, so you'll build memory by collecting and sending the whole conversation each turn.
 - The context window is finite, so you'll trim or summarize the history as it grows.
 - Each call produces a fixed kind of output, so when you need a more sophisticated result you'll **chain** multiple calls together and pass each one's output into the next.
 
 If any of that feels abstract right now, that's fine. The next pages turn each of these ideas into code you run.
 
-> **With your partner:** Think about a chatbot you have used recently. What evidence have you seen that it remembers earlier parts of the conversation? What evidence have you seen that it doesn't? What might be happening behind the scenes in each case?
+> **With your partner:** Think about a chatbot you have used recently. What evidence have you seen that it remembers earlier parts of the conversation? Does it ever seem to forget? What might be happening behind the scenes in each case?

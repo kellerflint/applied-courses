@@ -96,5 +96,3 @@ You can describe most chains as a sequence of intent. The brainstorming chain in
 A lot of useful tools follow that general arc: diverge to gather options, narrow down, develop the choice, polish the result. Once you start seeing it, you'll notice that single-shot prompts often work because the model is doing all of that internally in one pass. Chains make it explicit, controllable, and inspectable.
 
 > **With your partner:** Pick a task you'd reasonably ask an AI to do (write a unit test, generate study questions from notes, plan a trip, debug an error, anything). Sketch what the chain would look like as a numbered list of steps. For each step, name what kind of output it produces and roughly what temperature you'd want.
-
-Bring your sketch to page 6. That's where you'll build one for real.

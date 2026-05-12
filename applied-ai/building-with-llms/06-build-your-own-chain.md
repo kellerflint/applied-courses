@@ -3,8 +3,6 @@ title: "Build Your Own Chain"
 order: 6
 ---
 
-Pair up. You're going to design and build a small chain together, then submit it.
-
 ## The assignment
 
 Pick a problem that benefits from multiple steps. Build a chain of at least **three LLM calls** in a Colab notebook that solves it. You're welcome to start from the example notebook as boilerplate. Copy any of the helper functions you find useful and replace the story-generation chain with your own.
@@ -35,18 +33,6 @@ Your chain must include:
 
 The notebook should run top to bottom without errors. Make sure your API key is in a clearly labeled cell that a reader can replace with their own.
 
-## How to work as a pair
-
-You'll be more productive if you do this part together, not divided.
-
-**First 10 minutes.** Talk only. No code. Sketch the chain on paper or in a markdown cell: what does each step take as input, what does it return, what parameters does it use, where does the human or code intervene. Don't write any prompts until you have the shape of the whole thing.
-
-**Then alternate driver/navigator.** Whoever isn't typing is reading along, watching for issues, and thinking about the next step. Swap every step or every 10 minutes. Pair programming only works when both of you actually engage with what's happening on screen.
-
-**Test as you go.** Get step 1 working in isolation before you write step 2. Get step 2 working before you write step 3. Don't build the whole chain at once and try to debug it as a unit.
-
-**Use AI to help you build it.** This is allowed and expected. You can ask Claude, ChatGPT, or Copilot for help with syntax, prompt design, or debugging. The standard from the syllabus still applies: you have to be able to explain every line of what you submit. If I (or your partner) asks "why does this step use temperature 0.3?" you should have an answer.
-
 ## Submit
 
 Once your chain works:
@@ -56,12 +42,6 @@ Once your chain works:
 3. Copy the link.
 
 **Both partners submit individually on Canvas** with the shared notebook link. Put both partner names in the submission comment so I can find the pair.
-
-## A small encouragement
-
-This is the first time most of you have called an LLM from code. The mental model from page 1 (predict the next token, no memory, finite context), the messages list pattern from page 4, and the chain pattern from page 5 are the foundation of essentially every LLM-powered app you'll see in industry. The frameworks people use (LangChain, the OpenAI Assistants API, Anthropic's Claude SDK, agent frameworks) all sit on top of these same ideas. Once you've built a chain by hand, those frameworks become much easier to read because you already know what they're abstracting over.
-
-Have fun with it.
 
 ## Feedback
 
