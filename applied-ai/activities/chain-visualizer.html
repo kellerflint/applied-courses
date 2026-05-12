@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Single-shot vs chain</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.55rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .mode-toggle {
+    display: inline-flex;
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 2px;
+    margin-left: auto;
+    border: 1px solid #e5e7eb;
+  }
+  .mode-toggle button {
+    border: none;
+    background: transparent;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .mode-toggle button.active {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.9rem 1rem 0.5rem;
+    background: #f8f9fa;
+  }
+
+  /* Single-shot view */
+  .single-shot {
+    display: flex;
+    gap: 0.9rem;
+    align-items: stretch;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .ss-prompt, .ss-output {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .ss-arrow {
+    display: flex;
+    align-items: center;
+    color: #9ca3af;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Chain view */
+  .chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .step {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 0.75rem 0.95rem;
+    display: grid;
+    grid-template-columns: 32px 1fr 1fr;
+    gap: 0.7rem;
+    align-items: stretch;
+    transition: border-color 200ms, box-shadow 200ms;
+  }
+
+  .step.active {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  .step.done {
+    border-color: #16a34a;
+  }
+  .step.pending {
+    opacity: 0.55;
+  }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #4b5563;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .step.active .step-num { background: #2563eb; color: #fff; }
+  .step.done .step-num { background: #16a34a; color: #fff; }
+
+  .step-prompt, .step-output {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .panel-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6a737d;
+    margin-bottom: 0.3rem;
+  }
+
+  .step-prompt .body, .step-output .body, .ss-prompt .body, .ss-output .body {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #1a1a1a;
+    background: #fafbfc;
+    border: 1px solid #eef0f3;
+    border-radius: 6px;
+    padding: 0.55rem 0.7rem;
+    overflow-y: auto;
+    max-height: 200px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    flex: 1;
+  }
+
+  .ss-prompt .body, .ss-output .body { max-height: 320px; }
+
+  .step-prompt .body .ref {
+    background: #fef3c7;
+    border-radius: 3px;
+    padding: 0 3px;
+    font-weight: 600;
+    color: #92400e;
+  }
+  .step-prompt .body .human-input {
+    display: block;
+    margin-top: 0.4rem;
+    padding: 0.4rem 0.55rem;
+    background: #ecfdf5;
+    border-left: 3px solid #10b981;
+    color: #065f46;
+    font-size: 0.78rem;
+    border-radius: 4px;
+  }
+
+  .step-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+  }
+  .meta-pill {
+    font-size: 0.66rem;
+    font-weight: 600;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta-pill.temp-hi { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+  .meta-pill.temp-mid { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .meta-pill.temp-lo { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+
+  .empty-output {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 0.78rem;
+  }
+
+  .footer {
+    padding: 0.55rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e1e4e8;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  button.btn {
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button.btn:hover { background: #f3f4f6; }
+  button.btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.btn.primary:hover { background: #1d4ed8; }
+  button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .step-counter {
+    font-size: 0.78rem;
+    color: #6a737d;
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .single-shot-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 900px;
+    margin: 0 auto 0.6rem;
+    color: #6a737d;
+    font-size: 0.78rem;
+  }
+
+  @media (max-width: 720px) {
+    .single-shot { flex-direction: column; }
+    .ss-arrow { transform: rotate(90deg); justify-content: center; }
+    .step { grid-template-columns: 28px 1fr; }
+    .step-output { grid-column: 2 / 3; }
+    .step .step-prompt .body, .step .step-output .body { max-height: 160px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>Single-shot vs chain</strong>
+  <span>Same job, two structures.</span>
+  <div class="mode-toggle">
+    <button id="mode-single" class="active" data-mode="single">Single-shot</button>
+    <button id="mode-chain" data-mode="chain">Chain</button>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <!-- View injected here -->
+</div>
+
+<div class="footer">
+  <button id="btn-run" class="btn primary">Run step</button>
+  <button id="btn-reset" class="btn">Reset</button>
+  <span class="step-counter" id="step-counter"></span>
+</div>
+
+<script>
+const SINGLE_SHOT = {
+  prompt: `You are a creative storyteller. Do all of these in one response:
+
+1. Brainstorm three story ideas in different genres.
+2. Pick the most interesting and expand on it.
+3. Create a detailed outline.
+4. Write a one-paragraph back-cover summary.`,
+  meta: [
+    { label: "temp 0.8", cls: "temp-mid" },
+    { label: "max_tokens 1000", cls: "" },
+    { label: "1 API call", cls: "" },
+  ],
+  output: `1. Brainstorm:
+   - Sci-fi: A memory thief uncovers her sister's disappearance.
+   - Fantasy: A young blacksmith finds a magical forge.
+   - Dystopian: Rebels infiltrate a virtual world.
+
+2. Expanding the sci-fi one: Maya Blackwood is a memory thief...
+   (description gets going but feels rushed)
+
+3. Outline:
+   - Beginning: Maya takes the job.
+   - Middle: She discovers the truth.
+   - End: She makes a choice.
+   (output is running out of room, outline is thin)
+
+4. Pitch: A memory thief discovers her sister's secret... (cut off mid-sentence)`,
+};
+
+const CHAIN_STEPS = [
+  {
+    label: "Brainstorm",
+    prompt: `Generate three interesting story ideas in different genres. Each idea in one sentence.`,
+    meta: [
+      { label: "temp 0.9", cls: "temp-hi" },
+      { label: "max_tokens 200", cls: "" },
+    ],
+    output: `1. Sci-fi: A memory thief uncovers her sister's disappearance through stolen recollections.
+2. Fantasy: A young blacksmith discovers a magical forge that brings creations to life.
+3. Dystopian: Rebels infiltrate a virtual world to rescue a trapped hacktivist.`,
+    isHuman: false,
+  },
+  {
+    label: "Human picks",
+    prompt: `[Step in your own code, not an LLM call]
+Ask the user which idea they want to develop.`,
+    meta: [
+      { label: "no API call", cls: "" },
+    ],
+    output: `Sci-fi (the memory thief one)`,
+    isHuman: true,
+  },
+  {
+    label: "Develop",
+    prompt: `I like {chosen_idea}. Expand on it. Describe the protagonist, main plot points, and themes.`,
+    refTokens: ["{chosen_idea}"],
+    meta: [
+      { label: "temp 0.7", cls: "temp-mid" },
+      { label: "max_tokens 300", cls: "" },
+    ],
+    output: `Protagonist: Maya Blackwood, a 25-year-old memory thief working for a high-end brokerage firm.
+
+Plot: Hired to steal a memory from a powerful businessman, Maya discovers a hidden message from her missing sister inside it. She uncovers a conspiracy involving a banned technology and a shut-down government project.
+
+Themes: identity, the cost of truth, what we owe the past.`,
+    isHuman: false,
+  },
+  {
+    label: "Outline",
+    prompt: `Using the expanded idea above, create a detailed outline. Include beginning, middle, end, plus three key events or twists.`,
+    meta: [
+      { label: "temp 0.7", cls: "temp-mid" },
+      { label: "max_tokens 350", cls: "" },
+    ],
+    output: `I. Beginning
+   - Maya takes a job from a mysterious client called "The Architect."
+   - She steals a memory from businessman Marcus Reed.
+
+II. Inciting incident
+   - The memory contains an unexpected message from her sister Eve.
+
+III. Rising action
+   - Maya meets an underground broker who points to a government project.
+   - She finds evidence Eve was involved before disappearing.
+
+IV. Midpoint twist
+   - Eve's partner reveals Eve faked her own death.
+
+V. Climax
+   - Maya must choose between exposing the project and keeping Eve safe.`,
+    isHuman: false,
+  },
+  {
+    label: "Summarize",
+    prompt: `Based on the outline, write a one-paragraph back-cover summary that hooks the reader.`,
+    meta: [
+      { label: "temp 0.5", cls: "temp-lo" },
+      { label: "max_tokens 150", cls: "" },
+    ],
+    output: `When gifted memory thief Maya Blackwood is hired to steal a recollection from a powerful businessman, she finds something the client never paid for: a coded message from her missing sister. As Maya digs into the past she was paid to leave alone, she uncovers a government project that was buried for a reason, a sister who chose to disappear, and a choice no thief can outrun.`,
+    isHuman: false,
+  },
+];
+
+let mode = "single";
+let chainStep = 0; // 0..CHAIN_STEPS.length, indicates how many steps have run
+let singleRan = false;
+
+const mainEl = document.getElementById('main');
+const btnRun = document.getElementById('btn-run');
+const btnReset = document.getElementById('btn-reset');
+const counterEl = document.getElementById('step-counter');
+const btnSingle = document.getElementById('mode-single');
+const btnChain = document.getElementById('mode-chain');
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderMetaPills(meta) {
+  return meta.map(m => `<span class="meta-pill ${m.cls}">${escapeHtml(m.label)}</span>`).join('');
+}
+
+function renderSingleShot() {
+  const promptHtml = escapeHtml(SINGLE_SHOT.prompt);
+  const outputHtml = singleRan
+    ? escapeHtml(SINGLE_SHOT.output)
+    : '<span class="empty-output">Press "Run step" to see what comes back.</span>';
+
+  mainEl.innerHTML = `
+    <div class="single-shot-meta">
+      <span>One prompt, one response, one set of parameters.</span>
+      <span>${renderMetaPills(SINGLE_SHOT.meta)}</span>
+    </div>
+    <div class="single-shot">
+      <div class="ss-prompt">
+        <div class="panel-label">Prompt sent to API</div>
+        <div class="body">${promptHtml}</div>
+      </div>
+      <div class="ss-arrow">→</div>
+      <div class="ss-output">
+        <div class="panel-label">Response</div>
+        <div class="body">${outputHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function highlightRefs(text, refs) {
+  if (!refs) return escapeHtml(text);
+  let result = escapeHtml(text);
+  for (const r of refs) {
+    const esc = escapeHtml(r);
+    result = result.split(esc).join(`<span class="ref">${esc}</span>`);
+  }
+  return result;
+}
+
+function renderChain() {
+  let html = '<div class="chain">';
+  for (let i = 0; i < CHAIN_STEPS.length; i++) {
+    const s = CHAIN_STEPS[i];
+    let stateClass = 'pending';
+    if (i < chainStep) stateClass = 'done';
+    else if (i === chainStep) stateClass = 'active';
+
+    const promptBody = highlightRefs(s.prompt, s.refTokens);
+    const outputBody = i < chainStep
+      ? escapeHtml(s.output)
+      : '<span class="empty-output">Not run yet.</span>';
+
+    html += `
+      <div class="step ${stateClass}">
+        <div class="step-num">${i + 1}</div>
+        <div class="step-prompt">
+          <div class="panel-label">${escapeHtml(s.label)}${s.isHuman ? ' (no API call)' : ''}</div>
+          <div class="body">${promptBody}</div>
+          <div class="step-meta">${renderMetaPills(s.meta)}</div>
+        </div>
+        <div class="step-output">
+          <div class="panel-label">Output</div>
+          <div class="body">${outputBody}</div>
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  mainEl.innerHTML = html;
+}
+
+function render() {
+  if (mode === 'single') {
+    renderSingleShot();
+    counterEl.textContent = singleRan ? 'Done' : 'Ready';
+    btnRun.disabled = singleRan;
+    btnRun.textContent = singleRan ? 'Done' : 'Run the single shot';
+  } else {
+    renderChain();
+    counterEl.textContent = `Step ${chainStep} of ${CHAIN_STEPS.length}`;
+    btnRun.disabled = chainStep >= CHAIN_STEPS.length;
+    if (chainStep >= CHAIN_STEPS.length) {
+      btnRun.textContent = 'Chain complete';
+    } else {
+      btnRun.textContent = `Run step ${chainStep + 1}: ${CHAIN_STEPS[chainStep].label}`;
+    }
+  }
+  btnSingle.classList.toggle('active', mode === 'single');
+  btnChain.classList.toggle('active', mode === 'chain');
+}
+
+function runStep() {
+  if (mode === 'single') {
+    singleRan = true;
+  } else {
+    if (chainStep < CHAIN_STEPS.length) chainStep++;
+  }
+  render();
+}
+
+function reset() {
+  singleRan = false;
+  chainStep = 0;
+  render();
+}
+
+function setMode(m) {
+  if (m === mode) return;
+  mode = m;
+  render();
+}
+
+btnRun.addEventListener('click', runStep);
+btnReset.addEventListener('click', reset);
+btnSingle.addEventListener('click', () => setMode('single'));
+btnChain.addEventListener('click', () => setMode('chain'));
+
+render();
+</script>
+</body>
+</html>

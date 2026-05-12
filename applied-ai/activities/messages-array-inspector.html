@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What you send to the API</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 0.55rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 0.85rem;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .header strong { color: #1a1a1a; }
+
+  .mode-toggle {
+    display: inline-flex;
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 2px;
+    margin-left: auto;
+    border: 1px solid #e5e7eb;
+  }
+
+  .mode-toggle button {
+    border: none;
+    background: transparent;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .mode-toggle button.active {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .left, .right {
+    flex: 1;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .left { border-right: 1px solid #e1e4e8; }
+
+  .panel-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6a737d;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .chat {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding-right: 0.2rem;
+  }
+
+  .bubble {
+    max-width: 88%;
+    padding: 0.55rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    word-wrap: break-word;
+    animation: bubbleIn 280ms ease-out;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .bubble.user {
+    align-self: flex-end;
+    background: #2563eb;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .bubble.assistant {
+    align-self: flex-start;
+    background: #f3f4f6;
+    color: #1a1a1a;
+    border: 1px solid #e5e7eb;
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.system {
+    align-self: center;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    font-style: italic;
+  }
+
+  .bubble .role-tag {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    margin-bottom: 0.2rem;
+  }
+  .bubble.system .role-tag { display: none; }
+
+  .json-view {
+    flex: 1;
+    overflow-y: auto;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .json-view .k-bracket { color: #94a3b8; }
+  .json-view .k-key     { color: #93c5fd; }
+  .json-view .k-string  { color: #fcd34d; }
+  .json-view .k-comma   { color: #94a3b8; }
+
+  .json-view .msg-block { display: block; padding: 0.15rem 0; border-radius: 4px; }
+  .json-view .msg-block.new { background: rgba(34, 197, 94, 0.18); }
+  .json-view .msg-block.dropped {
+    color: #64748b;
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+  .json-view .msg-block.dropped .k-key,
+  .json-view .msg-block.dropped .k-string { color: #64748b; }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: #6a737d;
+    margin-top: 0.55rem;
+    flex-shrink: 0;
+  }
+  .info-row .pill {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 0.18rem 0.6rem;
+    font-weight: 600;
+    color: #374151;
+    font-variant-numeric: tabular-nums;
+  }
+  .info-row .pill.warn { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+
+  .footer {
+    padding: 0.55rem 1rem;
+    background: #fff;
+    border-top: 1px solid #e1e4e8;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  button.btn {
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #1a1a1a;
+    transition: background 0.1s;
+  }
+  button.btn:hover { background: #f3f4f6; }
+  button.btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.btn.primary:hover { background: #1d4ed8; }
+  button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .step-counter {
+    font-size: 0.78rem;
+    color: #6a737d;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 720px) {
+    .main { flex-direction: column; }
+    .left { border-right: none; border-bottom: 1px solid #e1e4e8; flex: none; height: 50%; }
+    .right { flex: none; height: 50%; }
+    .header { padding: 0.45rem 0.7rem; font-size: 0.78rem; }
+    .footer { padding: 0.45rem 0.7rem; gap: 0.4rem; }
+    .mode-toggle { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>What you send to the API</strong>
+  <span>Step through a chat and watch the messages list.</span>
+  <div class="mode-toggle">
+    <button id="mode-stateful" class="active" data-mode="stateful">Send full history</button>
+    <button id="mode-stateless" data-mode="stateless">Send only current</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left">
+    <div class="panel-label">What the user sees</div>
+    <div class="chat" id="chat"></div>
+  </div>
+  <div class="right">
+    <div class="panel-label">What gets sent to the API on the next call</div>
+    <div class="json-view" id="json-view"></div>
+    <div class="info-row">
+      <span id="mode-label">Sending full conversation history</span>
+      <span class="pill" id="msg-count">0 messages</span>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <button id="btn-next" class="btn primary">Next turn</button>
+  <button id="btn-restart" class="btn">Restart</button>
+  <span class="step-counter" id="step-counter">Turn 0 of 5</span>
+</div>
+
+<script>
+const SYSTEM_MSG = { role: "system", content: "You are a helpful assistant." };
+
+// Each turn is one user message and one assistant message.
+// The assistant message has two variants: one for stateful mode, one for stateless mode.
+const TURNS = [
+  {
+    user: "Hi, my name is Sam.",
+    stateful: "Nice to meet you, Sam! What can I help you with today?",
+    stateless: "Nice to meet you, Sam! What can I help you with today?",
+  },
+  {
+    user: "I'm planning a trip to Japan next month.",
+    stateful: "Exciting, Sam! How long are you planning to stay, and is this your first time visiting?",
+    stateless: "How long are you planning to stay, and is this your first time visiting?",
+  },
+  {
+    user: "Two weeks. What's a good first stop?",
+    stateful: "For two weeks in Japan, Tokyo is the classic first stop. You can spend several days there and then branch out to Kyoto.",
+    stateless: "A good first stop for what? I don't have context about what you're planning. Could you give me more detail?",
+  },
+  {
+    user: "What was my name again?",
+    stateful: "Your name is Sam!",
+    stateless: "I don't have any record of your name. We just started chatting and you haven't mentioned it.",
+  },
+  {
+    user: "And where did I say I was going?",
+    stateful: "You mentioned you're planning a two-week trip to Japan next month.",
+    stateless: "You haven't told me about any travel plans yet. Where are you thinking of going?",
+  },
+];
+
+let mode = "stateful"; // or "stateless"
+let stepIndex = 0;     // 0 means nothing happened yet; 1..TURNS.length means that many turns are complete.
+
+const chatEl = document.getElementById('chat');
+const jsonEl = document.getElementById('json-view');
+const msgCountEl = document.getElementById('msg-count');
+const modeLabelEl = document.getElementById('mode-label');
+const stepCounterEl = document.getElementById('step-counter');
+const btnNext = document.getElementById('btn-next');
+const btnRestart = document.getElementById('btn-restart');
+const btnStateful = document.getElementById('mode-stateful');
+const btnStateless = document.getElementById('mode-stateless');
+
+function escapeJson(s) {
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Build the visible chat (always shows the conversation so the user sees what's happened).
+function renderChat() {
+  chatEl.innerHTML = '';
+  // System message displayed at top
+  const sys = document.createElement('div');
+  sys.className = 'bubble system';
+  sys.textContent = `system: ${SYSTEM_MSG.content}`;
+  chatEl.appendChild(sys);
+
+  for (let i = 0; i < stepIndex; i++) {
+    const turn = TURNS[i];
+    const u = document.createElement('div');
+    u.className = 'bubble user';
+    u.innerHTML = `<span class="role-tag">user</span>${escapeHtml(turn.user)}`;
+    chatEl.appendChild(u);
+
+    const a = document.createElement('div');
+    a.className = 'bubble assistant';
+    const reply = mode === 'stateful' ? turn.stateful : turn.stateless;
+    a.innerHTML = `<span class="role-tag">assistant</span>${escapeHtml(reply)}`;
+    chatEl.appendChild(a);
+  }
+
+  // scroll to bottom
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// Build the messages array that would be sent on the *next* call.
+// In stateful mode: system + all prior turns + (next user message if available).
+// In stateless mode: just (next user message if available).
+function renderJson() {
+  // If there is no next turn (we're at the end), show what would have been sent for the *last* call.
+  const nextUserMsg = stepIndex < TURNS.length ? TURNS[stepIndex].user : null;
+  const newIndex = nextUserMsg ? stepIndex : -1; // which message is "new" / highlighted
+
+  let messages = [];
+  let droppedMessages = []; // for stateless mode: shown crossed-out
+
+  if (mode === 'stateful') {
+    messages.push({ ...SYSTEM_MSG });
+    for (let i = 0; i < stepIndex; i++) {
+      messages.push({ role: 'user', content: TURNS[i].user });
+      messages.push({ role: 'assistant', content: TURNS[i].stateful });
+    }
+    if (nextUserMsg) {
+      messages.push({ role: 'user', content: nextUserMsg, __new: true });
+    }
+  } else {
+    // Stateless: only the next user message gets sent. Earlier turns shown as dropped.
+    if (stepIndex > 0) {
+      droppedMessages.push({ ...SYSTEM_MSG });
+      for (let i = 0; i < stepIndex; i++) {
+        droppedMessages.push({ role: 'user', content: TURNS[i].user });
+        droppedMessages.push({ role: 'assistant', content: TURNS[i].stateless });
+      }
+    } else {
+      // No history yet, but still show what the system message would look like
+      droppedMessages.push({ ...SYSTEM_MSG });
+    }
+    if (nextUserMsg) {
+      messages.push({ role: 'user', content: nextUserMsg, __new: true });
+    }
+  }
+
+  // Render as colored, indented JSON-ish text.
+  const renderMsgBlock = (m, opts={}) => {
+    const cls = ['msg-block'];
+    if (m.__new) cls.push('new');
+    if (opts.dropped) cls.push('dropped');
+    const content = escapeJson(m.content);
+    return `<span class="${cls.join(' ')}">  <span class="k-bracket">{</span> <span class="k-key">"role"</span>: <span class="k-string">"${m.role}"</span><span class="k-comma">,</span> <span class="k-key">"content"</span>: <span class="k-string">"${escapeHtml(content)}"</span> <span class="k-bracket">}</span><span class="k-comma">,</span></span>`;
+  };
+
+  let html = '<span class="k-bracket">messages = [</span>\n';
+
+  if (mode === 'stateless' && droppedMessages.length) {
+    for (const m of droppedMessages) {
+      html += renderMsgBlock(m, { dropped: true }) + '\n';
+    }
+  }
+
+  for (const m of messages) {
+    html += renderMsgBlock(m) + '\n';
+  }
+
+  html += '<span class="k-bracket">]</span>';
+
+  if (messages.length === 0 && droppedMessages.length === 0) {
+    html = '<span class="k-bracket">messages = []</span>\n\n<span style="color:#94a3b8">// Press "Next turn" to start the conversation.</span>';
+  }
+
+  jsonEl.innerHTML = html;
+
+  // Update the counter pill
+  const total = messages.length;
+  msgCountEl.textContent = `${total} message${total === 1 ? '' : 's'} sent`;
+  if (mode === 'stateless' && stepIndex > 0) {
+    msgCountEl.classList.add('warn');
+  } else {
+    msgCountEl.classList.remove('warn');
+  }
+}
+
+function render() {
+  renderChat();
+  renderJson();
+  stepCounterEl.textContent = `Turn ${stepIndex} of ${TURNS.length}`;
+  btnNext.disabled = stepIndex >= TURNS.length;
+  btnNext.textContent = stepIndex >= TURNS.length ? 'Conversation done' : 'Next turn';
+  modeLabelEl.textContent = mode === 'stateful'
+    ? 'Sending the full conversation history each turn'
+    : 'Sending only the current message (no memory)';
+}
+
+function next() {
+  if (stepIndex >= TURNS.length) return;
+  stepIndex++;
+  render();
+}
+
+function restart() {
+  stepIndex = 0;
+  render();
+}
+
+function setMode(m) {
+  if (m === mode) return;
+  mode = m;
+  btnStateful.classList.toggle('active', m === 'stateful');
+  btnStateless.classList.toggle('active', m === 'stateless');
+  render();
+}
+
+btnNext.addEventListener('click', next);
+btnRestart.addEventListener('click', restart);
+btnStateful.addEventListener('click', () => setMode('stateful'));
+btnStateless.addEventListener('click', () => setMode('stateless'));
+
+render();
+</script>
+</body>
+</html>
