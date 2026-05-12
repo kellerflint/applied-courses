@@ -3,7 +3,7 @@ title: "Chains"
 order: 5
 ---
 
-You can ask one big question and get one big answer back. You can also break the work into a sequence of smaller asks, where each step uses the output of the previous step. That second approach is called a **chain**, and it's how a surprising amount of "intelligent" AI behavior is actually built.
+You can ask one big question and get one big answer back. You can also break the work into a sequence of smaller asks, where each step uses the output of the previous step. That second approach is called a **chain**, and it's how a lot of the more reliable AI behavior is built.
 
 This page maps to cells 17 through 20 in the notebook.
 
@@ -34,6 +34,10 @@ Run it. Read what comes back. It is fine. It does the four steps. It also has so
 **You can't swap models per step.** Maybe brainstorming runs fine on a small fast model, but the final summary really wants a smarter one. Single-shot can't do that.
 
 **A long output spends its token budget across all four steps.** The brainstorm section might be detailed, then the outline gets cut short because there are no tokens left. You can't redirect attention to where it matters.
+
+**Big asks usually go worse than small asks.** With LLMs (and frankly with software in general) asking a model to juggle many sub-tasks in one prompt is one of the most reliable ways to make every individual sub-task come out worse. Each thing the model is tracking competes for attention with every other thing. Chains let you focus the model on one well-defined job at a time. You also get to decide what context flows into each call, so you can hand step 3 the chosen idea and the expanded version, while leaving behind the two brainstormed options you rejected. With single-shot, every option the model considered is still sitting in the response, polluting whatever the model does next.
+
+*Worth flagging that this advice is less true of agentic systems like Claude Code, which can break tasks down and manage subtasks on their own. We'll cover AI coding tools later in the course. When you're calling the model directly the way you're about to, scope discipline carries a lot of weight.*
 
 **Errors compound silently.** If step 2 picks a weird idea, every later step is built on that weird foundation, and you find out only at the end.
 
