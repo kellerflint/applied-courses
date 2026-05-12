@@ -17,9 +17,3 @@ export async function postVideo(endpoint, file) {
   }
   return res.json();
 }
-
-// The backend returns video_url as a path like "/outputs/abc.mp4".
-// Prepend the API base so it loads in a <video> tag.
-export function absoluteVideoUrl(path) {
-  return `${API_BASE}${path}`;
-}

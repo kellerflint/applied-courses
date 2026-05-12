@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { postVideo, absoluteVideoUrl } from "../api.js";
+import { postVideo } from "../api.js";
 
 // "Track" page: hits POST /track on the backend. The backend uses
 // model.track() so each detection carries a stable track_id across
@@ -54,7 +54,7 @@ export default function Track() {
         <div className="results">
           <div className="video-col">
             <video
-              src={absoluteVideoUrl(data.video_url)}
+              src={data.video_url}
               controls
               playsInline
             />

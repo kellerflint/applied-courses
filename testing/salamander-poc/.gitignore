@@ -1,0 +1,16 @@
+# python
+venv/
+__pycache__/
+*.pyc
+
+# yolo
+*.pt
+runs/
+
+# generated video output
+output.mp4
+backend/outputs/
+
+# raw test footage (too large to track; keep ensantina_short.mp4 locally for iterating)
+data/ensantina.mp4
+data/ensantina_short.mp4

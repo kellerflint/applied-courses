@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { postVideo, absoluteVideoUrl } from "../api.js";
+import { postVideo } from "../api.js";
 
 // "Detect" page: hits POST /detect on the backend. Plays the annotated
 // video, shows the live coordinates of every detection in the current
@@ -82,7 +82,7 @@ export default function Detect() {
           <div className="video-col">
             <video
               ref={videoRef}
-              src={absoluteVideoUrl(data.video_url)}
+              src={data.video_url}
               controls
               playsInline
             />

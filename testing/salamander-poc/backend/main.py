@@ -41,13 +41,17 @@ from ultralytics import YOLO
 OUTPUTS_DIR = Path(__file__).parent / "outputs"
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
-# Default to the YOLO weights sitting at the poc root. When a student trains
-# their own salamander model, they swap this path for runs/detect/.../best.pt.
-MODEL_PATH = str(Path(__file__).parent.parent / "yolov8n.pt")
+# Default to the YOLO weights in ../data/. When a student trains their
+# own salamander model, they swap this path for runs/detect/.../best.pt.
+MODEL_PATH = str(Path(__file__).parent.parent / "data" / "yolov8n.pt")
 
 # Load the model once at startup so each request reuses the same instance.
 # Ultralytics auto-downloads yolov8n.pt if it isn't on disk yet.
 model = YOLO(MODEL_PATH)
+
+# Class-id -> label name. Pulled from the model (not from per-frame results)
+# because it never changes between frames.
+class_names = model.names
 
 # ---------------------------------------------------------------------------
 # App
@@ -117,9 +121,11 @@ def _make_writer(path: Path, fps: float, width: int, height: int) -> cv2.VideoWr
 
 
 def _new_output_path() -> tuple[Path, str]:
-    """Pick a unique filename in outputs/ and return (path, url)."""
+    """Pick a unique filename in outputs/ and return (path, absolute_url).
+    The URL is absolute so frontend code can drop it straight into a
+    <video src=...> tag without prepending the API host."""
     name = f"{uuid.uuid4().hex}.mp4"
-    return OUTPUTS_DIR / name, f"/outputs/{name}"
+    return OUTPUTS_DIR / name, f"http://localhost:8000/outputs/{name}"
 
 
 def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
@@ -140,7 +146,7 @@ def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
 
 
 @app.post("/detect")
-async def detect(video: UploadFile = File(...)) -> dict:
+def detect(video: UploadFile = File(...)) -> dict:
     """
     Run YOLO on each frame, draw boxes, and return per-frame detection data.
 
@@ -198,7 +204,6 @@ async def detect(video: UploadFile = File(...)) -> dict:
                     xyxy = result.boxes.xyxy.cpu().numpy()
                     confs = result.boxes.conf.cpu().numpy()
                     cls_ids = result.boxes.cls.cpu().numpy().astype(int)
-                    names = result.names  # {class_id: "label"}
                     for (x1, y1, x2, y2), conf, cls_id in zip(xyxy, confs, cls_ids):
                         detections.append({
                             "cx": int((x1 + x2) / 2),
@@ -208,7 +213,7 @@ async def detect(video: UploadFile = File(...)) -> dict:
                             "x2": int(x2),
                             "y2": int(y2),
                             "conf": float(round(conf, 3)),
-                            "label": names.get(int(cls_id), str(cls_id)),
+                            "label": class_names.get(int(cls_id), str(cls_id)),
                         })
 
                 frames.append({
@@ -243,7 +248,7 @@ async def detect(video: UploadFile = File(...)) -> dict:
 
 
 @app.post("/track")
-async def track(video: UploadFile = File(...)) -> dict:
+def track(video: UploadFile = File(...)) -> dict:
     """
     Run YOLO with tracking enabled so each detection gets a stable track_id.
     Aggregate per-track metrics across the whole video.
@@ -310,7 +315,6 @@ async def track(video: UploadFile = File(...)) -> dict:
                     xyxy = result.boxes.xyxy.cpu().numpy()
                     ids = result.boxes.id.cpu().numpy().astype(int)
                     cls_ids = result.boxes.cls.cpu().numpy().astype(int)
-                    names = result.names
                     for (x1, y1, x2, y2), tid, cls_id in zip(xyxy, ids, cls_ids):
                         cx = (x1 + x2) / 2.0
                         cy = (y1 + y2) / 2.0
@@ -321,7 +325,7 @@ async def track(video: UploadFile = File(...)) -> dict:
                             )
                         last_xy[tid] = (cx, cy)
                         frames_seen[tid] = frames_seen.get(tid, 0) + 1
-                        label_for[tid] = names.get(int(cls_id), str(cls_id))
+                        label_for[tid] = class_names.get(int(cls_id), str(cls_id))
 
                 frame_idx += 1
                 _log_progress("[track]", frame_idx, total)
