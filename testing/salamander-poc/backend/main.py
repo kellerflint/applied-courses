@@ -122,6 +122,18 @@ def _new_output_path() -> tuple[Path, str]:
     return OUTPUTS_DIR / name, f"/outputs/{name}"
 
 
+def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
+    """Print a progress line every 30 frames. flush=True so uvicorn's
+    buffered stdout shows it immediately instead of waiting for the request
+    to finish."""
+    if frame_idx % 30 == 0 or frame_idx == total:
+        if total > 0:
+            pct = (frame_idx / total) * 100
+            print(f"  {prefix} {frame_idx}/{total} ({pct:.0f}%)", flush=True)
+        else:
+            print(f"  {prefix} {frame_idx}", flush=True)
+
+
 # ---------------------------------------------------------------------------
 # /detect  -- per-frame detections, no tracking
 # ---------------------------------------------------------------------------
@@ -155,6 +167,12 @@ async def detect(video: UploadFile = File(...)) -> dict:
         cap, fps, width, height, total = _open_video(input_path)
         output_path, output_url = _new_output_path()
         writer = _make_writer(output_path, fps, width, height)
+
+        print(
+            f"[detect] {total} frames at {width}x{height} @ {fps:.1f}fps "
+            f"-> {output_path.name}",
+            flush=True,
+        )
 
         frames: list[dict] = []
         frame_idx = 0
@@ -199,9 +217,12 @@ async def detect(video: UploadFile = File(...)) -> dict:
                     "detections": detections,
                 })
                 frame_idx += 1
+                _log_progress("[detect]", frame_idx, total)
         finally:
             cap.release()
             writer.release()
+
+        print(f"[detect] done. wrote {frame_idx} frames to {output_path.name}", flush=True)
 
         return {
             "video_url": output_url,
@@ -251,6 +272,12 @@ async def track(video: UploadFile = File(...)) -> dict:
         output_path, output_url = _new_output_path()
         writer = _make_writer(output_path, fps, width, height)
 
+        print(
+            f"[track] {total} frames at {width}x{height} @ {fps:.1f}fps "
+            f"-> {output_path.name}",
+            flush=True,
+        )
+
         # Per-track aggregates we update as we walk the frames.
         # last_xy lets us compute distance from the previous frame this track
         # was seen in. frames_seen counts visible frames (converted to seconds
@@ -297,9 +324,15 @@ async def track(video: UploadFile = File(...)) -> dict:
                         label_for[tid] = names.get(int(cls_id), str(cls_id))
 
                 frame_idx += 1
+                _log_progress("[track]", frame_idx, total)
         finally:
             cap.release()
             writer.release()
+
+        print(
+            f"[track] done. wrote {frame_idx} frames, {len(frames_seen)} unique track id(s) seen",
+            flush=True,
+        )
 
         tracks = []
         for tid, count in frames_seen.items():
