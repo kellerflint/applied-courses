@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>useEffect Watcher</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 16px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      grid-template-rows: 1fr auto;
+      gap: 14px;
+      height: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    /* App panel */
+    .app-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .state-block {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-family: 'Menlo', monospace;
+      font-size: 0.85rem;
+    }
+
+    .state-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .state-label {
+      color: #64748b;
+    }
+
+    .state-value {
+      color: #1e293b;
+      font-weight: 600;
+      transition: background 0.3s;
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    .state-value.flash {
+      background: #fde68a;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button.primary {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      font-weight: 600;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    button.primary:hover { background: #2563eb; }
+
+    button.secondary {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      font-family: inherit;
+      background: white;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    button.secondary:hover { background: #f1f5f9; }
+
+    .name-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 2px solid #e2e8f0;
+      border-radius: 7px;
+      background: #fff;
+      color: #1e293b;
+      transition: border-color 0.15s;
+    }
+
+    .name-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    /* Effects panel */
+    .effects-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .effect-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .effect-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      transition: background 0.25s, border-color 0.25s, transform 0.15s;
+    }
+
+    .effect-card.flash {
+      background: #ecfccb;
+      border-color: #84cc16;
+      transform: scale(1.01);
+    }
+
+    .effect-code {
+      font-family: 'Menlo', monospace;
+      font-size: 0.72rem;
+      line-height: 1.55;
+      color: #334155;
+      flex: 1;
+      white-space: pre;
+    }
+
+    .effect-code .kw { color: #2563eb; }
+    .effect-code .fn { color: #7c3aed; }
+    .effect-code .str { color: #16a34a; }
+    .effect-code .br { color: #64748b; }
+
+    .effect-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      min-width: 64px;
+    }
+
+    .effect-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .effect-card.flash .effect-dot {
+      background: #65a30d;
+      box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.25);
+    }
+
+    .effect-count {
+      font-family: 'Menlo', monospace;
+      font-size: 0.72rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    /* Log */
+    .log-panel {
+      grid-column: 1 / -1;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      max-height: 130px;
+      display: flex;
+      flex-direction: column;
+      min-height: 110px;
+    }
+
+    .log-panel h2 {
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .log-list {
+      list-style: none;
+      font-family: 'Menlo', monospace;
+      font-size: 0.74rem;
+      line-height: 1.6;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .log-list li {
+      display: flex;
+      gap: 10px;
+      padding: 1px 0;
+    }
+
+    .log-list li.fresh {
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-4px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .log-tag {
+      color: #84cc16;
+      font-weight: 600;
+      min-width: 70px;
+    }
+
+    .log-reason {
+      color: #cbd5e1;
+    }
+
+    .log-empty {
+      color: #475569;
+      font-style: italic;
+      padding: 4px 0;
+      font-family: system-ui, sans-serif;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="app-panel">
+      <h2>Component</h2>
+      <div class="state-block">
+        <div class="state-row">
+          <span class="state-label">count</span>
+          <span class="state-value" id="count-value">0</span>
+        </div>
+        <div class="state-row">
+          <span class="state-label">name</span>
+          <span class="state-value" id="name-value">""</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="inc-count">+1 count</button>
+        <input class="name-input" id="name-input" placeholder="type to update name">
+        <div class="control-row">
+          <button class="secondary" id="rerender">Force re-render</button>
+          <button class="secondary" id="remount">Remount</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="effects-panel">
+      <h2>useEffect calls</h2>
+      <div class="effect-list">
+        <div class="effect-card" id="effect-1">
+          <pre class="effect-code"><span class="fn">useEffect</span>(() <span class="br">=&gt;</span> {
+  log(<span class="str">'every render'</span>)
+})</pre>
+          <div class="effect-side">
+            <div class="effect-dot"></div>
+            <div class="effect-count" id="count-1">0</div>
+          </div>
+        </div>
+
+        <div class="effect-card" id="effect-2">
+          <pre class="effect-code"><span class="fn">useEffect</span>(() <span class="br">=&gt;</span> {
+  log(<span class="str">'mount only'</span>)
+}, [])</pre>
+          <div class="effect-side">
+            <div class="effect-dot"></div>
+            <div class="effect-count" id="count-2">0</div>
+          </div>
+        </div>
+
+        <div class="effect-card" id="effect-3">
+          <pre class="effect-code"><span class="fn">useEffect</span>(() <span class="br">=&gt;</span> {
+  log(<span class="str">'count changed'</span>)
+}, [count])</pre>
+          <div class="effect-side">
+            <div class="effect-dot"></div>
+            <div class="effect-count" id="count-3">0</div>
+          </div>
+        </div>
+
+        <div class="effect-card" id="effect-4">
+          <pre class="effect-code"><span class="fn">useEffect</span>(() <span class="br">=&gt;</span> {
+  log(<span class="str">'name changed'</span>)
+}, [name])</pre>
+          <div class="effect-side">
+            <div class="effect-dot"></div>
+            <div class="effect-count" id="count-4">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <h2>Log</h2>
+      <ul class="log-list" id="log-list">
+        <li class="log-empty">Interact with the component on the left.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let count = 0;
+    let name = '';
+    let prevCount = null;
+    let prevName = null;
+    let isMounted = false;
+    let fireCounts = [0, 0, 0, 0];
+    let logHasContent = false;
+
+    function flashEl(el) {
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 700);
+    }
+
+    function fireEffect(num, reason) {
+      const card = document.getElementById(`effect-${num}`);
+      fireCounts[num - 1] += 1;
+      document.getElementById(`count-${num}`).textContent = fireCounts[num - 1];
+      flashEl(card);
+      addLog(num, reason);
+    }
+
+    function addLog(num, reason) {
+      const list = document.getElementById('log-list');
+      if (!logHasContent) {
+        list.innerHTML = '';
+        logHasContent = true;
+      }
+      const li = document.createElement('li');
+      li.className = 'fresh';
+      li.innerHTML = `<span class="log-tag">effect ${num}</span><span class="log-reason">${reason}</span>`;
+      list.prepend(li);
+      while (list.children.length > 10) list.lastChild.remove();
+      setTimeout(() => li.classList.remove('fresh'), 320);
+    }
+
+    function render() {
+      document.getElementById('count-value').textContent = count;
+      document.getElementById('name-value').textContent = `"${name}"`;
+
+      if (prevCount !== count) flashEl(document.getElementById('count-value'));
+      if (prevName !== name) flashEl(document.getElementById('name-value'));
+
+      const wasMount = !isMounted;
+      isMounted = true;
+
+      // Effect 1: no deps — every render
+      fireEffect(1, 'rendered');
+
+      // Effect 2: [] — mount only
+      if (wasMount) fireEffect(2, 'mounted');
+
+      // Effect 3: [count]
+      if (wasMount) {
+        fireEffect(3, `count initialized to ${count}`);
+      } else if (prevCount !== count) {
+        fireEffect(3, `count: ${prevCount} → ${count}`);
+      }
+
+      // Effect 4: [name]
+      if (wasMount) {
+        fireEffect(4, `name initialized to "${name}"`);
+      } else if (prevName !== name) {
+        fireEffect(4, `name: "${prevName}" → "${name}"`);
+      }
+
+      prevCount = count;
+      prevName = name;
+    }
+
+    document.getElementById('inc-count').onclick = () => {
+      count += 1;
+      render();
+    };
+
+    document.getElementById('name-input').oninput = (e) => {
+      name = e.target.value;
+      render();
+    };
+
+    document.getElementById('rerender').onclick = () => {
+      render();
+    };
+
+    document.getElementById('remount').onclick = () => {
+      count = 0;
+      name = '';
+      prevCount = null;
+      prevName = null;
+      isMounted = false;
+      fireCounts = [0, 0, 0, 0];
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`count-${i}`).textContent = '0';
+      }
+      document.getElementById('name-input').value = '';
+      const list = document.getElementById('log-list');
+      list.innerHTML = '<li class="log-empty">Component remounted. Watch the effects fire fresh.</li>';
+      logHasContent = false;
+      render();
+    };
+
+    render();
+  </script>
+</body>
+</html>
