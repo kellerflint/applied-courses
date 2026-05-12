@@ -30,6 +30,18 @@ Most production models sit somewhere in the middle, controlled by a setting call
 
 </details>
 
+You can think of the whole process as a sophisticated autocomplete. The model looks at the text so far, predicts what's likely to come next, and commits to it. One detail of this commit matters a lot when you're building with LLMs. **Once a token has been generated, the model cannot go back and change it.** Every new token is just appended to what came before. That's part of why a model will sometimes commit to a wrong opening (start an answer with "Yes" when the right answer was "No," or with a misread of your question) and then spend the rest of the response trying to justify it. The only move the model has is to keep going.
+
+## Pattern matching, not understanding
+
+The model picked up everything it knows from the patterns in its training data, mostly text scraped from the internet plus follow-up training that nudges it toward being helpful and safe. What it learned during that training is how words relate to other words. It learned which words tend to follow which other words, what an argument structure looks like, what a polite email sounds like, what working Python code looks like. The actual concepts behind those words, the things in the real world the text was describing, mostly didn't come along for the ride. The model has the patterns. It has the meanings only as far as the patterns reveal them.
+
+That distinction matters more than it sounds like it does. The same model that can produce a clean essay on a topic might botch a five-step math problem if the surface form is unfamiliar. It can fluently explain how to solve a problem and then fumble the actual solving. It often understands the relationships between concepts without necessarily understanding the concepts themselves.
+
+Imagine someone learning a foreign language by reading a huge amount of it without ever being told what any of the words actually mean. They could still pick up which words tend to appear together, which structures are well-formed, what arguments tend to look like. They could probably start producing fluent-looking text. That fluency would not mean they understood the underlying reality the text was describing.
+
+That picture probably undersells what LLMs can do, though. Language can describe almost anything, which means a system fluent in language can do useful work on almost any topic. Linguistic pattern matching, combined with the right tooling around it, has turned out to be enough to build genuinely impressive systems. The piece worth holding onto is what a confident-sounding answer actually tells you. **A model's confidence reflects how typical-sounding the answer is, which usually overlaps with whether it's correct, and is not the same thing.**
+
 ## Implications you need to carry into the rest of this unit
 
 Once you accept that an LLM is "predict the next token" in a loop, several useful facts fall out.
@@ -42,9 +54,9 @@ Every chatbot you have ever used handles this the same way. The app stores the c
 
 ### The model generates, it does not look up
 
-LLMs were trained on huge piles of text. During training they picked up patterns: which words go together, what arguments look like, what code looks like, what a polite email sounds like. None of that text is stored verbatim. When the model writes an answer, it is generating one likely next token at a time based on those patterns.
+The model produces text by extending patterns rather than retrieving stored facts. None of its training data is sitting in there verbatim waiting to be quoted. When the model writes an answer, it is making one likely next token after another based on the patterns it learned.
 
-That's why LLMs can produce confident-sounding text that turns out to be wrong. The technical term is **hallucination**. The model is doing the same thing it always does (picking plausible next tokens) but plausible is not the same as correct. When you build with LLMs, you assume any factual claim could be wrong and you design around it.
+That's why LLMs can produce confident-sounding text that turns out to be wrong. The technical term is **hallucination**, and mechanically it works the same as every other output the model produces. The model picks the most plausible next token. When the resulting sentence happens to be a factual claim, plausible and correct sometimes line up and sometimes don't. When you build with LLMs, you assume any factual claim could be wrong and you design around it.
 
 ### There is a hard limit on input size
 
