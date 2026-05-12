@@ -324,3 +324,20 @@ async def track(video: UploadFile = File(...)) -> dict:
         }
     finally:
         input_path.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Run the server
+# ---------------------------------------------------------------------------
+#
+# FastAPI needs an ASGI server to serve requests. Uvicorn is the standard
+# one. This block lets you start the server by just running this file:
+#
+#     python main.py
+#
+# (You could also run `uvicorn main:app --reload --port 8000` from this
+# directory if you want auto-reload during development.)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)

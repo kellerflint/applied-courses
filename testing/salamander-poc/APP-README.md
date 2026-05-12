@@ -34,12 +34,14 @@ cd testing/salamander-poc/backend
 python3 -m venv venv
 source venv/bin/activate         # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+python main.py
 ```
+
+FastAPI needs an ASGI server to actually serve requests, so `main.py` boots `uvicorn` at the bottom of the file. Run `python main.py` like any other script and you're set. If you want auto-reload during development, run `uvicorn main:app --reload --port 8000` from this same folder instead.
 
 First run downloads `yolov8n.pt` (~6 MB) if it isn't sitting at the poc root already.
 
-API check: visit <http://localhost:8000/> — should return `{"ok": true, "endpoints": ["/detect", "/track"]}`.
+API check: visit <http://localhost:8000/>. You should see `{"ok": true, "endpoints": ["/detect", "/track"]}`.
 
 Annotated videos are written to `backend/outputs/` and served at `http://localhost:8000/outputs/<name>.mp4`.
 
