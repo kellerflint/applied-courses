@@ -35,9 +35,7 @@ Run it. Read what comes back. It is fine. It does the four steps. It also has so
 
 **A long output spends its token budget across all four steps.** The brainstorm section might be detailed, then the outline gets cut short because there are no tokens left. You can't redirect attention to where it matters.
 
-**Big asks usually go worse than small asks.** With LLMs (and frankly with software in general) asking a model to juggle many sub-tasks in one prompt is one of the most reliable ways to make every individual sub-task come out worse. Each thing the model is tracking competes for attention with every other thing. Chains let you focus the model on one well-defined job at a time. You also get to decide what context flows into each call, so you can hand step 3 the chosen idea and the expanded version, while leaving behind the two brainstormed options you rejected. With single-shot, every option the model considered is still sitting in the response, polluting whatever the model does next.
-
-*Worth flagging that this advice is less true of agentic systems like Claude Code, which can break tasks down and manage subtasks on their own. We'll cover AI coding tools later in the course. When you're calling the model directly the way you're about to, scope discipline carries a lot of weight.*
+**Big asks usually go worse than small asks.** Asking a model to juggle many sub-tasks in one prompt is one of the most reliable ways to make every individual sub-task come out worse. Each thing the model is tracking competes for attention with every other thing. Chains let you focus the model on one well-defined job at a time. You also get to decide what context flows into each call, so you can hand step 3 the chosen idea and the expanded version, while leaving behind the two brainstormed options you rejected.
 
 **Errors compound silently.** If step 2 picks a weird idea, every later step is built on that weird foundation, and you find out only at the end.
 
@@ -69,9 +67,9 @@ chat = add_ai_message(chat, response)
 
 Each step is its own API call with its own prompt and its own parameters. The same `chat` list is passed in every time, so each call sees the full history (just like the chat memory pattern from page 4). The activity below shows the whole chain visually so you can see the inputs and outputs lined up.
 
-{% activity "chain-visualizer.html", "Single-shot vs chain", "680px" %}
+{% activity "chain-visualizer.html", "Single-shot vs chain", "880px" %}
 
-## Why chains are usually better
+## Why chains can be better
 
 Splitting work into steps is more code than asking once, and you still pay for the same total tokens (sometimes more). The reasons to do it anyway:
 
