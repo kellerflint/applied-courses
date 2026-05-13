@@ -12,14 +12,32 @@
       "runtimeExecutable": "/usr/local/bin/npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5173"],
       "cwd": "testing/salamander-poc/frontend",
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "api-display",
+      "runtimeExecutable": "/usr/local/bin/npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "testing/api-display",
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "usestate-demos",
+      "runtimeExecutable": "/usr/local/bin/npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "testing/usestate-demos",
+      "port": 5174,
+      "autoPort": true
     },
     {
       "name": "full-stack-salamander-app",
       "runtimeExecutable": "/usr/local/bin/npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5176"],
       "cwd": "testing/full-stack-salamander-app/salamander-tracker",
-      "port": 5176
+      "port": 5176,
+      "autoPort": true
     }
   ]
 }
