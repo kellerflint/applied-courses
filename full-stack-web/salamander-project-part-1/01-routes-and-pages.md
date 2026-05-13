@@ -70,21 +70,36 @@ This adds React Router to your dependencies. Restart the dev server with `npm ru
 
 React Router needs to wrap your whole app so any component inside it can read the current URL and render route-aware UI. The wrapper lives in `src/main.jsx`.
 
-Open `src/main.jsx` and add the import and wrapper:
+Open `src/main.jsx`. The scaffolded file looks something like this:
 
 ```jsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+```
+
+Add a `BrowserRouter` import and wrap `<App />` with it:
+
+```jsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </React.StrictMode>,
+  </StrictMode>,
 )
 ```
 
@@ -124,7 +139,7 @@ The Home page is the landing page where you explain what the app does. The Video
 
 ## Wire up the routes
 
-Open `src/App.jsx`. Replace its contents with a route table that maps URL paths to page components:
+Open `src/App.jsx`. The Vite template ships with a demo hero section, some imports, and a counter button. **Replace the entire file** (imports and all) with a route table that maps URL paths to page components:
 
 ```jsx
 import { Routes, Route, Link } from 'react-router-dom';

@@ -13,6 +13,13 @@
       "runtimeArgs": ["run", "dev", "--", "--port", "5173"],
       "cwd": "testing/salamander-poc/frontend",
       "port": 5173
+    },
+    {
+      "name": "full-stack-salamander-app",
+      "runtimeExecutable": "/usr/local/bin/npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5176"],
+      "cwd": "testing/full-stack-salamander-app/salamander-tracker",
+      "port": 5176
     }
   ]
 }
