@@ -1,6 +1,8 @@
-"""Salamander Tracker backend. POST /track runs model.track() on each
-frame and returns the annotated video plus per-individual aggregate
-metrics."""
+"""Salamander Tracker backend. POST /track kicks off a YOLO tracking job
+on the uploaded video. GET /track/{job_id} polls for progress and the
+final result. Processing happens on a background thread so the POST
+returns immediately and the browser polls instead of holding a long
+connection open."""
 
 from __future__ import annotations
 
@@ -10,6 +12,7 @@ import uuid
 from collections import defaultdict
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from threading import Thread
 
 import cv2
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -157,33 +160,24 @@ class TrackAggregator:
         return tracks
 
 
-@app.post("/track")
-def track(video: UploadFile = File(...)) -> dict:
-    """Run YOLO with tracking on each frame and return per-individual
-    aggregate metrics.
+# In-memory job store. A real app would back this with Redis/a database.
+# For a POC, a process-local dict is fine: server restart clears it.
+# Each entry looks like one of:
+#   {"status": "processing", "percent": 47}
+#   {"status": "done", "percent": 100, "result": {...}}
+#   {"status": "error", "message": "..."}
+jobs: dict[str, dict] = {}
 
-    Response shape:
-        {
-          "video_url": "http://localhost:8000/outputs/<id>.mp4",
-          "fps": 30.0,
-          "frame_count": 150,
-          "duration": 5.0,
-          "width": 1920, "height": 1080,
-          "tracks": [
-            {"track_id": 1, "total_distance_px": 482.3,
-             "time_on_screen_s": 4.7, "frames_seen": 141, "label": "salamander"},
-            ...
-          ]
-        }
-    """
-    input_path = _save_upload_to_tempfile(video)
+
+def _run_track_job(job_id: str, input_path: Path) -> None:
+    """Background worker. Updates jobs[job_id] as it processes frames."""
     try:
         cap, fps, width, height, total = _open_video(input_path)
         output_path, output_url = _new_output_path()
         writer = _make_writer(output_path, fps, width, height)
 
         print(
-            f"[track] {total} frames at {width}x{height} @ {fps:.1f}fps "
+            f"[track {job_id[:8]}] {total} frames at {width}x{height} @ {fps:.1f}fps "
             f"-> {output_path.name}",
             flush=True,
         )
@@ -204,28 +198,56 @@ def track(video: UploadFile = File(...)) -> dict:
                 aggregator.update(result)
 
                 frame_idx += 1
-                _log_progress("[track]", frame_idx, total)
+                jobs[job_id]["percent"] = int(frame_idx / total * 100) if total else 0
+                _log_progress(f"[track {job_id[:8]}]", frame_idx, total)
         finally:
             cap.release()
             writer.release()
 
         tracks = aggregator.summarize(fps)
         print(
-            f"[track] done. wrote {frame_idx} frames, {len(tracks)} unique track id(s) seen",
+            f"[track {job_id[:8]}] done. {frame_idx} frames, {len(tracks)} unique track id(s)",
             flush=True,
         )
 
-        return {
-            "video_url": output_url,
-            "fps": fps,
-            "frame_count": frame_idx,
-            "width": width,
-            "height": height,
-            "duration": round(frame_idx / fps, 2) if fps else 0.0,
-            "tracks": tracks,
+        jobs[job_id] = {
+            "status": "done",
+            "percent": 100,
+            "result": {
+                "video_url": output_url,
+                "fps": fps,
+                "frame_count": frame_idx,
+                "width": width,
+                "height": height,
+                "duration": round(frame_idx / fps, 2) if fps else 0.0,
+                "tracks": tracks,
+            },
         }
+    except Exception as e:
+        print(f"[track {job_id[:8]}] error: {e}", flush=True)
+        jobs[job_id] = {"status": "error", "message": str(e)}
     finally:
         input_path.unlink(missing_ok=True)
+
+
+@app.post("/track")
+def start_track(video: UploadFile = File(...)) -> dict:
+    """Accept the upload, register a job, return its id immediately.
+    The frontend polls GET /track/{job_id} for progress and the result."""
+    job_id = uuid.uuid4().hex
+    jobs[job_id] = {"status": "processing", "percent": 0}
+    input_path = _save_upload_to_tempfile(video)
+    Thread(target=_run_track_job, args=(job_id, input_path), daemon=True).start()
+    return {"job_id": job_id, "status": "processing"}
+
+
+@app.get("/track/{job_id}")
+def get_track(job_id: str) -> dict:
+    """Poll endpoint. Returns the current state of a job."""
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    return job
 
 
 # ---------------------------------------------------------------------------

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { postVideo } from "../api.js";
+import { postVideo, getJob } from "../api.js";
 
-// "Track" page: hits POST /track on the backend. The backend uses
-// model.track() so each detection carries a stable track_id across
-// frames. The response includes per-track aggregate metrics
-// (total distance traveled, time on screen) that we render in a table.
+const POLL_INTERVAL_MS = 1500;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export default function Track() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [percent, setPercent] = useState(0);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
@@ -17,9 +17,24 @@ export default function Track() {
     setLoading(true);
     setError(null);
     setData(null);
+    setPercent(0);
+
     try {
-      const result = await postVideo("/track", file);
-      setData(result);
+      const { job_id } = await postVideo("/track", file);
+      // Poll until the job is done or fails. No timeout: long videos just
+      // take a while, and the user can refresh to abandon.
+      while (true) {
+        await sleep(POLL_INTERVAL_MS);
+        const job = await getJob(job_id);
+        setPercent(job.percent ?? 0);
+        if (job.status === "done") {
+          setData(job.result);
+          break;
+        }
+        if (job.status === "error") {
+          throw new Error(job.message || "Backend error");
+        }
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,16 +63,18 @@ export default function Track() {
         </button>
       </form>
 
+      {loading && (
+        <p className="progress">
+          <progress value={percent} max={100} /> {percent}%
+        </p>
+      )}
+
       {error && <p className="error">{error}</p>}
 
       {data && (
         <div className="results">
           <div className="video-col">
-            <video
-              src={data.video_url}
-              controls
-              playsInline
-            />
+            <video src={data.video_url} controls playsInline />
             <p className="meta">
               {data.frame_count} frames &middot; {data.fps.toFixed(1)} fps
               &middot; {data.duration}s total

@@ -1,6 +1,6 @@
 # Salamander Tracker POC
 
-Simplest possible end-to-end version of the midterm: React frontend, FastAPI backend, YOLO doing detection. Two pages, two endpoints, one for each "mode" of using the model.
+Simplest possible end-to-end version of the midterm: React frontend, FastAPI backend, YOLO doing detection on a single page.
 
 ## Run
 
@@ -40,12 +40,18 @@ testing/salamander-poc/
     └── requirements.txt
 ```
 
-## Two pages, two endpoints
+## How it works
 
-- **`/detect` + Detect page** uses `model.predict()`. Each frame processed in isolation. Returns the annotated video plus per-frame detection data. The frontend shows live coordinates of every box in the current frame plus a small line chart of detection count over time.
-- **`/track` + Track page** uses `model.track()`. Each detection gets a stable `track_id` across frames, so the backend can compute per-individual aggregate metrics (total distance traveled, time on screen).
+The frontend uploads a video to the backend, which runs YOLO with tracking on every frame and produces an annotated copy of the video plus aggregate metrics per detected individual (total pixels traveled, time on screen, frames seen).
 
-Same model, same video, different inference call.
+Inference can take longer than the source video itself, so the backend runs the job on a background thread and the frontend polls for progress instead of holding a long HTTP connection open:
+
+- `POST /track` accepts the upload, starts the job on a thread, returns `{job_id, status: "processing"}` immediately.
+- `GET /track/{job_id}` returns the current state. Either `{"status": "processing", "percent": 47}`, `{"status": "done", "percent": 100, "result": {...}}`, or `{"status": "error", "message": "..."}`.
+
+The frontend polls every 1.5 seconds and renders a progress bar. When `status === "done"` it stops polling and shows the annotated video and metrics table.
+
+For quick iteration use `data/ensantina_short.mp4` (30 seconds, processes in ~40 seconds). The full `data/ensantina.mp4` is 8 minutes long, so processing takes around 10 minutes.
 
 ## Swapping in a trained salamander model
 
@@ -55,7 +61,7 @@ Same model, same video, different inference call.
 MODEL_PATH = str(Path(__file__).parent.parent / "data" / "yolov8n.pt")
 ```
 
-Point that at your trained `best.pt` (e.g. `runs/detect/train/weights/best.pt`) and restart `dev.sh`. Both endpoints use the same model.
+Point that at your trained `best.pt` (e.g. `runs/detect/train/weights/best.pt`) and restart `dev.sh`.
 
 ## Running just the standalone CLI
 

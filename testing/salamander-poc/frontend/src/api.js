@@ -17,3 +17,9 @@ export async function postVideo(endpoint, file) {
   }
   return res.json();
 }
+
+export async function getJob(jobId) {
+  const res = await fetch(`${API_BASE}/track/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed (${res.status})`);
+  return res.json();
+}
