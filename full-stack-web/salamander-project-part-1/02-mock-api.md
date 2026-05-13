@@ -127,7 +127,9 @@ Refresh the Videos page in your browser. Open the DevTools console. You should s
 getVideos returned: ["salamander1.mp4", "salamander2.mov", "forest_intro.mp4", "tank_view_long.mp4"]
 ```
 
-If you don't, fix it before moving on. Common issues:
+You'll probably see that line logged **twice**. That's React's `StrictMode` deliberately running every effect twice in development, to surface bugs caused by effects that aren't safe to re-run. In production it only runs once. Don't try to fix the double log; just expect it.
+
+If you don't see the log at all, fix it before moving on. Common issues:
 
 - **Import path wrong.** `from '../mockApi.js'` because `Videos.jsx` is in `src/pages/` and `mockApi.js` is in `src/`.
 - **`useEffect` dependency array missing.** Without `[]`, the effect runs on every render and you'll see the log over and over.
