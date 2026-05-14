@@ -1,6 +1,3 @@
-"""Salamander Tracker backend. POST /track starts a job. GET /track/{job_id}
-polls for progress and the final result."""
-
 import uuid
 from collections import defaultdict
 from pathlib import Path
@@ -12,12 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from ultralytics import YOLO
 
-
-OUTPUTS_DIR = Path(__file__).parent / "outputs"
-OUTPUTS_DIR.mkdir(exist_ok=True)
+VIDEOS_DIR = Path(__file__).parent / "videos"
+VIDEOS_DIR.mkdir(exist_ok=True)
 
 model = YOLO(str(Path(__file__).parent.parent / "data" / "yolov8n.pt"))
-
 
 app = FastAPI(title="Salamander Tracker POC")
 
@@ -28,21 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
-
+app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
 @app.get("/")
 def root():
     return {"ok": True}
 
-
-# In-memory job store. Server restart clears it.
-# Each entry is one of:
-#   {"status": "processing", "percent": N}
-#   {"status": "done", "percent": 100, "result": {...}}
-#   {"status": "error", "message": "..."}
 jobs = {}
-
 
 class TrackAggregator:
     """Counts how many frames each tracked individual was visible.
@@ -73,7 +60,6 @@ class TrackAggregator:
             for tid, count in self.frames_seen.items()
         ]
 
-
 def run_track_job(job_id, input_path):
     try:
         cap = cv2.VideoCapture(str(input_path))
@@ -83,7 +69,7 @@ def run_track_job(job_id, input_path):
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         output_name = f"{job_id}.mp4"
-        output_path = OUTPUTS_DIR / output_name
+        output_path = VIDEOS_DIR / output_name
 
         # Prefer H.264 (avc1) so the mp4 plays in browsers. Fall back to mp4v.
         for codec in ("avc1", "mp4v"):
@@ -106,9 +92,6 @@ def run_track_job(job_id, input_path):
             aggregator.update(result)
 
             frame_idx += 1
-            jobs[job_id]["percent"] = int(frame_idx / total * 100) if total else 0
-            if frame_idx % 30 == 0:
-                print(f"[{job_id[:8]}] {frame_idx}/{total}", flush=True)
 
         cap.release()
         writer.release()
@@ -118,7 +101,7 @@ def run_track_job(job_id, input_path):
             "status": "done",
             "percent": 100,
             "result": {
-                "video_url": f"http://localhost:8000/outputs/{output_name}",
+                "video_url": f"http://localhost:8000/videos/{output_name}",
                 "fps": fps,
                 "frame_count": frame_idx,
                 "duration": round(frame_idx / fps, 2),
@@ -130,18 +113,16 @@ def run_track_job(job_id, input_path):
         print(f"[{job_id[:8]}] error: {e}", flush=True)
         jobs[job_id] = {"status": "error", "message": str(e)}
 
-
 @app.post("/track")
 def start_track(video: UploadFile = File(...)):
     """Accept the upload, register a job, return its id. Frontend polls
     GET /track/{job_id} for progress and the result."""
     job_id = uuid.uuid4().hex
-    input_path = OUTPUTS_DIR / f"{job_id}-input.mp4"
+    input_path = VIDEOS_DIR / f"{job_id}-input.mp4"
     input_path.write_bytes(video.file.read())
     jobs[job_id] = {"status": "processing", "percent": 0}
     Thread(target=run_track_job, args=(job_id, input_path), daemon=True).start()
     return {"job_id": job_id, "status": "processing"}
-
 
 @app.get("/track/{job_id}")
 def get_track(job_id: str):
@@ -149,7 +130,6 @@ def get_track(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
     return job
-
 
 if __name__ == "__main__":
     import uvicorn

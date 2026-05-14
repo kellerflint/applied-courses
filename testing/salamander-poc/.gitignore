@@ -9,7 +9,7 @@ runs/
 
 # generated video output
 output.mp4
-backend/outputs/
+backend/videos/
 
 # raw test footage (too large to track; keep ensantina_short.mp4 locally for iterating)
 data/ensantina.mp4
