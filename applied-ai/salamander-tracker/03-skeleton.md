@@ -111,16 +111,6 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 
 Open <http://localhost:8000/> in your browser. You should see `{"ok":true}`.
 
-If you want to verify from another terminal:
-
-```bash
-curl http://localhost:8000/
-```
-
-Same response.
-
-> **With your partner:** Hit <http://localhost:8000/docs> in your browser. That's the auto-generated API documentation FastAPI gives you. What do you see? Why might this be useful as you add more endpoints?
-
 ## Frontend
 
 The browser side. You'll use **Vite** to scaffold a React project. Vite is the build tool: it serves your source files during development with hot module reload, and bundles them for production when you ship.
@@ -147,37 +137,4 @@ Open `frontend/src/App.jsx` (or wherever the entry component lives). Replace the
 
 You can use `useState` to hold the response and `useEffect` with an empty dependency array to fire the fetch once on mount. Display the JSON however you like. A `<pre>` tag with `JSON.stringify(data, null, 2)` is the lazy option. So is `<code>{JSON.stringify(data)}</code>`. Anything that gets the response on screen works.
 
-This should feel small. The whole point is verifying one thing: the frontend can reach the backend and read a response. Anything salamander-specific starts in step 2.
-
-### Run it
-
-```bash
-npm run dev
-```
-
-Vite prints something like:
-
-```
-  VITE v5.4.21  ready in 247 ms
-  ➜  Local:   http://localhost:5173/
-```
-
-Open <http://localhost:5173/>. You should see your page render with the backend's response somewhere on it. Something like:
-
-> Backend says: `{"ok":true}`
-
-If you see that, the two services are talking. CORS is configured right, the ports are right, the fetch is reaching the backend, and the response is coming back as JSON.
-
-If you see an error in the browser console about CORS, double-check the `allow_origins=["*"]` line in your backend.
-
-> **With your partner:** Stop the backend (`Ctrl-C`). Refresh the frontend. What happens? Where does the failure show up? Now restart the backend and refresh again. This is what "the frontend can't reach the backend" looks like. You'll want to recognize that error shape.
-
-## What you have
-
-Two services running on your machine, talking to each other over HTTP. That's the foundation. From here every step adds capability without changing this basic shape.
-
-## Reference
-
-The salamander-poc repo on the `salamander-step-1` branch has the working result of this step. Use it as a check if something isn't matching up, not as a copy target.
-
-Next page: [Step 2](../04-upload/). You'll add a file picker to the frontend and an upload endpoint to the backend, then play the uploaded video back in the browser.
+Run it. The point is just verifying that the frontend can reach the backend and read a response.
