@@ -14,31 +14,43 @@ That's what you're building this unit. A YOLO model trained on the same kind of 
 A web app that:
 
 - Takes a video file as input
-- Runs YOLO to detect salamanders in each frame
-- Plays the video back with bounding boxes drawn over the salamanders
-- Displays at least two metrics about what's being detected
+- Runs YOLO with tracking to detect salamanders in each frame and assign each one a stable ID across frames
+- Plays the annotated video back with bounding boxes drawn over the salamanders
+- Displays per-salamander metrics next to the video
 
 The salamander footage will be available on Canvas. If you have your own videos from the original research project, those work too.
 
 ## Stack
 
-Python backend handling the YOLO model and video processing. React frontend for the UI.
+Python backend with FastAPI handling the YOLO model and video processing. React frontend for the UI. The pieces talk to each other over HTTP.
 
-You can use Flask or FastAPI on the Python side. Both work. Flask is simpler. FastAPI is more modern. Pick one.
+## How the pieces fit together
 
-## Metrics: pick at least two
+Before you write any code, you need a mental picture of what's happening when a user clicks "upload."
 
-Your app needs to display at least two of these or you can substitute your own idea.
+1. The **frontend** is a React app served by Vite at `localhost:5173`. The user picks a video file in the browser.
+2. The frontend sends that file as a multipart upload to the **backend** at `localhost:8000/track`.
+3. The backend saves the file to disk, then runs YOLO on every frame. For each detection it gets a bounding box, a class label, and a stable `track_id`.
+4. The backend writes a new mp4 with the boxes drawn on top, and tallies per-individual metrics (like total time on screen).
+5. Because that processing takes longer than the browser is willing to wait, the backend runs the work in a **background thread** and exposes a polling endpoint the frontend can hit every second or so for progress.
+6. When the job is done, the backend's polling response includes a URL to the annotated mp4 and the metrics. The frontend renders the video and the metrics table.
 
-- **Live coordinates readout.** The bounding box centers from the current frame, shown in real time as the video plays.
-- **Path trail.** A line drawn over the video showing where each salamander has moved.
-- **Position heatmap.** A heat overlay showing where salamanders spent the most time across the whole video.
-- **Dwell time per region.** Divide the frame into regions and show how much time was spent in each.
+Both the frontend at `:5173` and the backend at `:8000` run on your machine. They talk over HTTP across those two ports. You'll have two terminals open while you work.
+
+> **With your partner:** Sketch the trip a single video takes. Where does it live at each step? What lives only in memory and what gets written to disk?
+
+## Metrics
+
+You'll be shown how to compute one metric end to end: **time on screen per individual salamander**. Once that's working, pick at least one additional metric to add yourself. Anything that pulls something meaningful out of the YOLO data counts. Some options:
+
+- **Path trail.** A line drawn over the video showing where each salamander moved.
+- **Position heatmap.** A heat overlay showing where salamanders spent the most time.
+- **Dwell time per region.** Divide the frame into regions and measure how long each one held a salamander.
 - **Detection count over time.** How many salamanders were on screen at each moment.
 - **Total distance traveled.** Per salamander, summed across the video.
-- **Time on screen.** Per salamander, how long they were visible.
+- **Max simultaneous detections.** The peak number of salamanders ever on screen at once.
 
-The last several require tracking individual salamanders across frames. Ultralytics has a `model.track()` method that handles ID assignment, so this is easier than you might think.
+Or pick your own. The bar is: it uses the data YOLO produces and shows something more interesting than the raw boxes.
 
 ## Deliverables
 
