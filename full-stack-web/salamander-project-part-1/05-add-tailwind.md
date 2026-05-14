@@ -51,13 +51,7 @@ Reload `/`. The heading should now be larger, bold, and blue. If nothing changed
 
 Now go through your app and apply Tailwind to what you've built so far. There are no required classes. Your wireframes guide what looks right.
 
-Some places to start:
-
-- **Page container.** Most pages need a max width, centered horizontally, with some padding. Try `<div className="max-w-3xl mx-auto p-6">` as the outermost wrapper.
-- **Nav.** A flex row with spacing: `<nav className="flex gap-4 p-4 border-b">`.
-- **Headings.** Bigger and bolder than the browser default: `text-3xl font-bold mb-4`.
-- **Lists of clickable items.** `space-y-2` for vertical spacing between list items, with `text-blue-600 hover:underline` on the links inside.
-- **Loading and error messages.** `text-gray-500 italic` to push them visually behind real content.
+Lean on the [Tailwind docs](https://tailwindcss.com/docs) search as you go. The categories you'll hit on almost every page: layout (flex, grid, container width), spacing (padding and margin), typography (size, weight, color), and borders. Most pages benefit from a centered max-width wrapper, a clear nav, headings that stand out from body text, and consistent spacing between items in any list.
 
 Don't try to nail it on the first pass. Ship a coherent rough version of every page, then iterate.
 
