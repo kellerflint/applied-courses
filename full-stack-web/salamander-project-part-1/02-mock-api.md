@@ -69,7 +69,7 @@ export async function submitProcessingJob(filename, targetColor, threshold) {
 
 export async function getJobStatus(jobId) {
   await delay(300);
-  // For the mock, always say the job finished successfully.
+  // Pretend the job finished successfully.
   return {
     jobId,
     status: "complete",
@@ -85,6 +85,8 @@ A few things worth noticing:
 - `getThumbnail` throws if the filename is unknown. Real APIs return errors too, and your components need to handle that. Mocking errors is part of mocking the API.
 
 You only need the functions for endpoints you're actually about to use. Adding `submitProcessingJob` and `getJobStatus` now is fine since it costs almost nothing, but skip them if you'd rather add them when you get to those user stories.
+
+> **With your partner:** This mock data serves as a starting point. You should change it or add additional data as needed. Add a few more pieces of mock data now. 
 
 ## Test it from the Videos page
 
@@ -120,4 +122,4 @@ You'll probably see that line logged **twice**. That's React's `StrictMode` deli
 
 If you don't see the log at all, fix it before moving on.
 
-> **With your partner:** Look at your `useEffect` together. What does the empty dependency array `[]` mean? What would happen if you removed it? What would happen if you put `[someState]` instead? If you're not sure, peek at the [useEffect Watcher activity](/full-stack-web/api-pair-program/01-useeffect-refresher/) from the API Data Display unit.
+> **With your partner:** Look at your `useEffect` together. What does the empty dependency array `[]` mean? What would happen if you removed it? What would happen if you put `[someState]` instead? If you're not sure, glance at the [useEffect Watcher activity](/full-stack-web/api-pair-program/01-useeffect-refresher/) from the API Data Display unit.

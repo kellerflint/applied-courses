@@ -24,9 +24,7 @@ Your wireframes might call for more pages than just Home and Videos. That's fine
 
 If you already have a repo for this project from the wireframes assignment, work in that repo. Otherwise create a new one now.
 
-Scaffold a fresh Vite + React app at the root of the repo.
-
-Open the URL Vite prints (usually `http://localhost:5173`). You should see the default Vite + React page.
+Scaffold a new Vite + React app at the root of the repo.
 
 ## React Router
 

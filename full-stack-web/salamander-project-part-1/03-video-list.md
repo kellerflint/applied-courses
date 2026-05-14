@@ -3,7 +3,7 @@ title: "First User Story: Video List"
 order: 3
 ---
 
-You have routing. You have a mock API. Time to actually build something a user could use.
+You have routing. You have a mock API. Time to actually build a feature.
 
 ## The user story
 
@@ -28,7 +28,7 @@ Every fetch is in one of three states at any moment: **loading**, **error**, or 
 
 ## Stage 1: Render the list (success path)
 
-Start with the smallest thing that satisfies criterion 1: fetch and render. No loading, no error, no navigation yet.
+Start with the smallest thing that satisfies criterion 1: fetch and render.
 
 Replace the contents of `src/pages/Videos.jsx`:
 
@@ -188,4 +188,4 @@ You tested each piece as you built it. Walk through all four criteria one more t
 3. **Click navigates to preview.** Click an entry, land on `/preview/<filename>`.
 4. **Error state on failure.** Throw in the mock temporarily and confirm the error message renders. Revert.
 
-> **With your partner:** Walk through all four checks together. If any of them fail or feel off, fix them now. Don't move on with a half-working video list.
+> **With your partner:** Walk through all four checks together. Address anything you might have missed.

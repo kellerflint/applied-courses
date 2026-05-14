@@ -22,11 +22,7 @@ If anything from that list isn't done, finish it before you submit.
 
 Make sure all your work is committed. Then push.
 
-Open the repo on GitHub in a browser and confirm your latest commits are there. Both partners should be able to see them.
-
-## Both partners pull the latest
-
-Before you split for the day, the partner who wasn't driving should pull and run the project on their own machine.
+Before you split for the day, the partner who wasn't driving most recently should pull the latest changes and run the project on their own machine.
 
 Open `/videos` and confirm the list loads. If something doesn't work on the second machine, figure out why now.
 
