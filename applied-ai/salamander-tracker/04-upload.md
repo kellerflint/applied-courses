@@ -63,26 +63,37 @@ Read the new pieces.
 
 **`VIDEOS_DIR`** is just a folder next to `main.py`. `.mkdir(exist_ok=True)` creates it if it isn't there. The folder will hold the uploaded input and (later) the annotated output.
 
-**`app.mount("/videos", StaticFiles(...))`** tells FastAPI: whenever a request comes in for a path starting with `/videos/`, look for a matching file in `VIDEOS_DIR` and serve it. The browser will use this to load the video file via a normal `<video src="...">`. The backend never has to write a custom "send me the bytes" endpoint.
+**`app.mount("/videos", StaticFiles(...))`** tells FastAPI: whenever a request comes in for a path starting with `/videos/`, look for a matching file in `VIDEOS_DIR` and serve it. The browser will use this to load the video file via a normal `<video src="...">` element.
 
 **`@app.post("/track")`** is the upload endpoint. The `video: UploadFile = File(...)` parameter tells FastAPI: this route expects a multipart form, and the field named `video` will contain a file. FastAPI parses the multipart body for you and gives you an `UploadFile` object with a `.file` you can read from.
 
-**`(VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())`** reads all the bytes from the upload and writes them to `videos/input.mp4`. Every upload overwrites the previous one. That's fine for now.
+**`(VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())`** reads all the bytes from the upload and writes them to `videos/input.mp4`. Every upload overwrites the previous one.
 
-**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` is a browser cache buster: the file on disk is always `input.mp4`, but the URL is different each upload, so the browser fetches fresh instead of showing a cached previous video.
+**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` is a browser cache buster. The file on disk is always `input.mp4`, but the URL is different each upload, so the browser fetches fresh instead of showing a cached previous video.
 
 ## Frontend
 
-The page needs to do four new things:
+The page needs to do three things: let the user pick a file, send it to the backend on submit, and render the URL the backend returns in a `<video>` tag.
 
-1. Hold the selected file in component state. Use `useState(null)` and update it from the file input's `onChange` (the file is on `e.target.files[0]`).
-2. Hold the backend's response in another piece of state. Use a separate `useState(null)`.
-3. On submit, build a `FormData` object, `append` the file under the field name `video`, and POST it to `http://localhost:8000/track`. Don't set a `Content-Type` header yourself, the browser will set it correctly with the right multipart boundary when you pass a FormData as the request body.
-4. When the response comes back, render a `<video src={data.video_url} controls />` tag using the URL from the response.
+Most of this is normal React. State for the picked file, state for the response, a form with `onSubmit`, conditional render of the video element. You've done that shape before.
 
-A file input looks like `<input type="file" accept="video/*" onChange={...} />`. The `accept="video/*"` is just a hint to the OS file picker, it doesn't enforce the file type.
+Two pieces of non-React-specific plumbing worth showing directly.
 
-Wrap the input and a submit button in a `<form>` with an `onSubmit` handler. Call `e.preventDefault()` at the top of the handler so the form doesn't try to do a regular page-navigating submission.
+**Getting a file out of a file input.** A file `<input>`'s change event has `event.target.files`, which is a `FileList`. Grab the first one:
+
+```js
+onChange={(e) => setFile(e.target.files[0])}
+```
+
+**Posting a file as multipart form data.** Build a `FormData` and pass it as the `fetch` body. Don't set a `Content-Type` header yourself. The browser sets the right one (including the multipart boundary) automatically when the body is a FormData.
+
+```js
+const form = new FormData();
+form.append("video", file);
+fetch("http://localhost:8000/track", { method: "POST", body: form });
+```
+
+Wire those into a component that picks a file, submits, and renders `<video src={data.video_url} controls />` once you have a response.
 
 ## Verify
 

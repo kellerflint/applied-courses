@@ -107,10 +107,11 @@ Walk through the new pieces.
 
 Two small additions to the page from the previous step.
 
-1. **A loading flag.** Add a `useState(false)` for `loading`. Set it to `true` at the top of your submit handler and back to `false` after the response comes back. While `loading` is true: disable the submit button, and show a "Processing" message or some indicator under the form so the user knows the page didn't break.
-2. **Render the output URL.** Same `<video>` tag, same code, but now `data.video_url` points at the annotated mp4 instead of the raw upload.
+**A loading flag.** Track whether a request is in flight. While it is, disable the submit button and show a "Processing" message under the form so the user knows the page didn't break.
 
-That's it. The form, the file input, the submit handler are all the same shape.
+**Render the output URL.** Same `<video>` tag, but `data.video_url` now points at the annotated mp4 instead of the raw upload.
+
+That's it. The form, the file input, and the submit handler are all the same shape.
 
 ## Verify
 

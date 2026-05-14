@@ -5,9 +5,7 @@ order: 3
 
 Before you upload any video, run any YOLO, or compute any metrics, you need two services that can talk to each other. A Python backend serving HTTP on one port. A React frontend running on another. A JSON payload making the round trip between them.
 
-This step gets you there. By the end you'll have both services running on your machine, and a page in your browser that shows a response coming back from the backend. The first time you'll touch a file upload is step 2.
-
-The temptation is to skip this and go straight to the interesting code. Don't. If something is going to break because of a misconfigured CORS rule or because the frontend can't reach the backend, you want to find out now, before you've built three other layers on top of it.
+This step gets you there. By the end you'll have both services running on your machine, and a page in your browser that shows a response coming back from the backend.
 
 ## Project structure
 
@@ -84,8 +82,6 @@ if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
 ```
 
-Read this top to bottom.
-
 **`FastAPI(...)`** creates the app. The `title` shows up in the auto-generated API docs FastAPI gives you for free at `/docs`.
 
 **The CORS middleware** matters because your frontend will run on a different port (5173) than the backend (8000). Browsers treat those as different origins and block cross-origin requests unless the server says it's OK. For this POC, `allow_origins=["*"]` says "any origin is fine." That's appropriate for local development and inappropriate for production. We'll leave it as is.
@@ -117,24 +113,16 @@ The browser side. You'll use **Vite** to scaffold a React project. Vite is the b
 
 ### Scaffold the project
 
-From the project root (one level above `backend/`):
+From the project root:
 
 ```bash
-npm create vite@latest frontend -- --template react
+npm create vite@latest
 cd frontend
 npm install
 ```
 
-That gives you a working React app with a sample component. You're going to replace the sample.
-
 ### What this page needs to do
 
-Open `frontend/src/App.jsx` (or wherever the entry component lives). Replace the contents with a component that:
+Open `frontend/src/App.jsx` and replace its contents with a component that fetches `http://localhost:8000/` on mount and renders the response so you can see it. Anything that gets the JSON visible on the page works (`<pre>{JSON.stringify(data, null, 2)}</pre>` is the lazy option).
 
-1. Calls `fetch("http://localhost:8000/")` when it mounts.
-2. Parses the JSON response.
-3. Renders the response somewhere on the page so you can see it.
-
-You can use `useState` to hold the response and `useEffect` with an empty dependency array to fire the fetch once on mount. Display the JSON however you like. A `<pre>` tag with `JSON.stringify(data, null, 2)` is the lazy option. So is `<code>{JSON.stringify(data)}</code>`. Anything that gets the response on screen works.
-
-Run it. The point is just verifying that the frontend can reach the backend and read a response.
+Run it. The point is just confirming the frontend can reach the backend and read a response.

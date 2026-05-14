@@ -170,15 +170,27 @@ The function is wrapped in `try/except` so an uncaught exception sets `job["stat
 
 Two real changes to the page.
 
-**Poll instead of awaiting the POST response.** The submit handler now does the POST, confirms it got accepted, and then enters a polling loop. Each iteration: wait a moment, fetch GET `/track`, read the response. Based on the response's `status`:
+**Poll instead of awaiting the POST response.** The submit handler now POSTs, confirms the response, then enters a loop that waits a moment and fetches `GET /track` until the job is `done` or `error`. The shape:
 
-- `"processing"`: read `job.percent`, update the progress bar, keep looping
-- `"done"`: read `job.result`, set it as the data to render, break out
-- `"error"`: read `job.message`, surface it as an error
+```js
+while (true) {
+  await new Promise(r => setTimeout(r, 1500));
+  const job = await (await fetch(`${API_BASE}/track`)).json();
+  if (job.status === "done") { setData(job.result); break; }
+  if (job.status === "error") throw new Error(job.message);
+  setPercent(job.percent ?? 0);
+}
+```
 
-The wait inside the loop is `await new Promise(r => setTimeout(r, 1500))` or similar. About a second and a half between polls is a good default. Too fast and you flood the backend with requests. Too slow and the progress bar feels janky.
+About 1.5 seconds between polls is a good default. Faster floods the backend, slower makes the progress bar feel janky.
 
-**Render a progress bar.** While the upload-and-polling loop is in flight, show a `<progress>` element bound to the percent value from state. HTML's `<progress value={percent} max={100} />` is the laziest possible option and looks fine.
+**Render a progress bar.** HTML has a built-in `<progress>` element. Bind it to a piece of state that gets updated from each poll response:
+
+```jsx
+<progress value={percent} max={100} />
+```
+
+Show it while the loop is running, hide it when it finishes.
 
 ## Verify
 
