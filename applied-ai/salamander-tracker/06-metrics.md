@@ -109,19 +109,17 @@ if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
 ```
 
-What's new:
+A few things to call out:
 
-**`frames_seen = defaultdict(int)`** and **`label_for = {}`** sit before the loop. `frames_seen` maps each track ID to a frame count. `defaultdict(int)` means looking up a key that doesn't exist yet returns `0`, so we can do `+= 1` without checking first. `label_for` maps each track ID to its class label (like `"salamander"`).
+**`defaultdict(int)`** means `frames_seen[some_new_id] += 1` works without an existence check. Missing keys default to `0`.
 
-**Inside the loop, after writing the annotated frame**, we look at the result's boxes. `result.boxes` is the Ultralytics object holding all the detections for this frame. It can be `None` (no detections) and `result.boxes.id` can also be `None` (detections exist but the tracker hasn't assigned IDs yet, which happens on the very first frame or two). Skip the update in either case.
+**The `None` checks.** `result.boxes` is `None` when there are no detections in a frame. `boxes.id` is `None` when there are detections but tracking hasn't assigned IDs yet (which can happen on the first frame or two). Skip both cases.
 
-When there are tracked detections, `boxes.id` and `boxes.cls` are tensors. `.tolist()` converts them to plain Python lists. We zip them together and walk through each detection: increment `frames_seen[tid]` and remember its label.
+**`.tolist()`** turns the torch tensors that `boxes.id` and `boxes.cls` hand back into plain Python lists you can iterate.
 
-**`model.names`** is the class-id-to-label dictionary that came with the trained model. If your model was trained on a single class `salamander`, this is `{0: "salamander"}`. Looking up `model.names[int(cls_id)]` turns a numeric class id into a human-readable string.
+**`model.names`** is a class-id-to-label dict from the trained model. If your model has one class it's `{0: "salamander"}`. We use it to turn the numeric class id from each box into a string.
 
-**After the loop**, the list comprehension walks the `frames_seen` dict and builds a list of result objects, one per unique track. The frame count gets converted to seconds by dividing by `fps`.
-
-**The response** now has a `tracks` field next to `status` and `video_url`.
+The list comprehension after the loop converts each track's frame count to seconds (dividing by `fps`) and pairs it with the label. That list goes in the response next to `status` and `video_url`.
 
 ## Frontend
 
