@@ -69,11 +69,7 @@ Read the new pieces.
 
 **`(VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())`** reads all the bytes from the upload and writes them to `videos/input.mp4`. Every upload overwrites the previous one. That's fine for now.
 
-**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` on the URL is a cache buster. Here's what it's doing.
-
-The file on disk is always `videos/input.mp4`. Each upload overwrites it. The server's static file mount looks up files by path on disk and ignores the query string entirely. So `?t=...` doesn't change anything on the server side, the same `input.mp4` gets served either way.
-
-The browser is different. Browsers cache fetched resources keyed by the **full URL including the query string**. Without the cache buster, the browser sees the same URL `videos/input.mp4` on every upload and assumes "I already have that one," serving the previous video from its local cache. With the timestamp baked into the query string, each upload produces a unique URL, the browser's cache misses, and it fetches the file fresh from the server.
+**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` is a browser cache buster: the file on disk is always `input.mp4`, but the URL is different each upload, so the browser fetches fresh instead of showing a cached previous video.
 
 ## Frontend
 
