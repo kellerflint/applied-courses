@@ -22,21 +22,17 @@ That's your spec. Everything you build on this page should map back to one of th
 
 > **With your partner:** Read the four criteria out loud. For each one, name the visible thing on the page that proves it works. If you can't name something visible, you don't have a way to test that criterion.
 
-## Three states of an async request
+## Three states, four stages
 
-Every fetch your app makes is in one of three states at any given time:
+Every fetch is in one of three states at any moment: **loading**, **error**, or **success**. You handled all three in the API Data Display pair program. Same shape here.
 
-- **Loading.** The request has started and hasn't come back yet. Show something so the user knows the page hasn't frozen.
-- **Error.** The request came back as a failure. Tell the user what went wrong and ideally give them a way to retry.
-- **Success.** The request came back with data. Render it.
-
-You handled this same shape in the API Data Display pair program. You'll build the success path first, verify it works, then layer on loading, error, and navigation in that order. After each layer you'll have something concrete to test before adding the next piece.
+You'll build it in four stages, with a quick verify after each: success path → loading → error → navigation. The point is to never have more than one moving piece between you and a working test.
 
 ## Stage 1: Render the list (success path)
 
-Start with the simplest version that satisfies criterion 1: fetch the videos and render them. No loading text, no error handling, no navigation yet.
+Start with the smallest thing that satisfies criterion 1: fetch and render. No loading, no error, no navigation yet.
 
-Replace the current contents of `src/pages/Videos.jsx`:
+Replace the contents of `src/pages/Videos.jsx`:
 
 ```jsx
 import { useEffect, useState } from 'react';
@@ -46,9 +42,7 @@ export default function Videos() {
   const [videos, setVideos] = useState([]);
 
   useEffect(() => {
-    getVideos().then((data) => {
-      setVideos(data);
-    });
+    getVideos().then((data) => setVideos(data));
   }, []);
 
   return (
@@ -64,163 +58,94 @@ export default function Videos() {
 }
 ```
 
-What's happening:
-
-- **`useState([])`** starts the list empty so the first render has something to map over.
-- **`useEffect` with `[]`** runs the fetch exactly once when the component mounts.
-- **`setVideos(data)`** triggers a re-render with the real list once the promise resolves.
-
-### Test it
-
-Reload `/videos` in the browser. You should see the heading and four filenames as bullet points. If you don't, fix it before moving on:
-
-- **Empty page or just the heading.** The fetch may have failed silently. Open the DevTools console and look for errors. Most likely an import path issue.
-- **Filenames render but no bullets.** That's fine for now. The `<ul>` is there; styling comes later.
+Reload `/videos`. You should see four bullet-pointed filenames. If you see the heading but no list, the fetch failed silently; check the DevTools console for an import error.
 
 ## Stage 2: Add the loading state
 
-Right now there's a tiny window between mount and resolve where the page shows "Available Videos" with an empty list. The user can't tell whether the page is broken or still working. Add a loading state to fix that.
+There's currently a brief window between mount and resolve where the page shows the heading with an empty `<ul>`. The user can't tell whether the page is broken or still working. Fix that.
 
-Update `Videos.jsx`:
+Three small additions to `Videos.jsx`:
+
+A new piece of state alongside `videos`, defaulting to `true`:
 
 ```jsx
-import { useEffect, useState } from 'react';
-import { getVideos } from '../mockApi.js';
-
-export default function Videos() {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getVideos().then((data) => {
-      setVideos(data);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
-    return <p>Loading videos...</p>;
-  }
-
-  return (
-    <div>
-      <h1>Available Videos</h1>
-      <ul>
-        {videos.map((filename) => (
-          <li key={filename}>{filename}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+const [loading, setLoading] = useState(true);
 ```
 
-The early `return` when `loading` is true keeps the rest of the function clean. By the time you reach the main return, you know the fetch is done.
+A line inside your `.then` that flips it to false once the data lands:
+
+```jsx
+setLoading(false);
+```
+
+And an early return above the main return that short-circuits while it's true:
+
+```jsx
+if (loading) {
+  return <p>Loading videos...</p>;
+}
+```
 
 ### Test it
 
-Reload `/videos` and watch closely. You might catch "Loading videos..." flicker for a fraction of a second before the list shows up. With a 400ms mock delay, it's blink-and-miss-it.
-
-To actually see it, **temporarily** bump the delay in `src/mockApi.js`:
-
-```js
-export async function getVideos() {
-  await delay(2000);
-  return videos;
-}
-```
-
-Reload `/videos`. You should see "Loading videos..." for about two seconds, then the list. Once you've confirmed it, revert the delay back to `400`.
+Reload `/videos`. The 400ms mock delay makes the loading message blink-and-miss-it. To actually see it, **temporarily** bump the delay in `src/mockApi.js` to `delay(2000)`. Confirm "Loading videos..." shows for about two seconds, then revert.
 
 ## Stage 3: Add the error state
 
-The mock always succeeds right now, so users would never see the loading message turn into a blank page if the real backend went down. Add an error state so failures are visible.
+If the real backend goes down, your loading message would just hang forever. Add a failure path.
 
-Update `Videos.jsx`:
+Same shape as the loading state. Three additions:
+
+A new state:
 
 ```jsx
-import { useEffect, useState } from 'react';
-import { getVideos } from '../mockApi.js';
-
-export default function Videos() {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    getVideos()
-      .then((data) => {
-        setVideos(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return <p>Loading videos...</p>;
-  }
-
-  if (error) {
-    return <p>Could not load videos: {error}</p>;
-  }
-
-  return (
-    <div>
-      <h1>Available Videos</h1>
-      <ul>
-        {videos.map((filename) => (
-          <li key={filename}>{filename}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+const [error, setError] = useState(null);
 ```
 
-Both `.then` and `.catch` set `loading` to `false`. Whatever happens, the loading message goes away.
+A `.catch` chained after your `.then`. **Both branches** should set `loading` to `false` so the loading message goes away no matter what:
+
+```jsx
+.catch((err) => {
+  setError(err.message);
+  setLoading(false);
+});
+```
+
+A second early return above the main one:
+
+```jsx
+if (error) {
+  return <p>Could not load videos: {error}</p>;
+}
+```
 
 ### Test it
 
-The mock isn't throwing right now, so you need to force a failure. **Temporarily** change `getVideos` in `src/mockApi.js`:
+The mock always succeeds right now, so force a failure. **Temporarily** replace the body of `getVideos` in `src/mockApi.js` with a `throw`:
 
 ```js
-export async function getVideos() {
-  await delay(400);
-  throw new Error("server unavailable");
-}
+throw new Error("server unavailable");
 ```
 
-Reload `/videos`. You should see "Could not load videos: server unavailable". Once you've confirmed it, revert the change so `getVideos` returns the array again.
+Reload `/videos`, confirm the error message renders, then revert.
 
 ## Stage 4: Add navigation
 
-The acceptance criteria say clicking a video should navigate to a preview page. That needs three things: a `Link` wrapping each filename, a Preview component, and a route registered for it.
+Three things needed: wrap each filename in a `Link`, build the Preview component, register the route.
 
-### Wrap each filename in a Link
+### 1. Wrap the filename in a Link
 
-Update the `<li>` in `Videos.jsx` (only the JSX changes; the rest of the file stays the same):
-
-```jsx
-import { Link } from 'react-router-dom';
-// ...keep the existing imports too
-```
+Add `Link` to the existing `react-router-dom` import in `Videos.jsx`, then update the `<li>`:
 
 ```jsx
-<ul>
-  {videos.map((filename) => (
-    <li key={filename}>
-      <Link to={`/preview/${filename}`}>{filename}</Link>
-    </li>
-  ))}
-</ul>
+<li key={filename}>
+  <Link to={`/preview/${filename}`}>{filename}</Link>
+</li>
 ```
 
-The template literal `` `/preview/${filename}` `` builds a URL like `/preview/salamander1.mp4` for each entry.
+The template literal builds a URL like `/preview/salamander1.mp4` per entry.
 
-### Create the Preview page
+### 2. Create the Preview page
 
 Create `src/pages/Preview.jsx`:
 
@@ -240,45 +165,21 @@ export default function Preview() {
 }
 ```
 
-`useParams` reads the dynamic segment from the URL. For `/preview/salamander1.mp4`, `filename` is `"salamander1.mp4"`. That's what makes the page reusable for any video the user clicks.
+`useParams` reads the dynamic segment from the URL. For `/preview/salamander1.mp4`, `filename` is `"salamander1.mp4"`. That's what makes one Preview component work for any video.
 
-### Register the route
+### 3. Register the route
 
-Add the Preview route in `src/App.jsx`:
+Import Preview in `src/App.jsx` and add a third `<Route>` next to the existing two:
 
 ```jsx
-import { Routes, Route, Link } from 'react-router-dom';
-import Home from './pages/Home.jsx';
-import Videos from './pages/Videos.jsx';
-import Preview from './pages/Preview.jsx';
-
-export default function App() {
-  return (
-    <div>
-      <nav>
-        <Link to="/">Home</Link>
-        {' | '}
-        <Link to="/videos">Videos</Link>
-      </nav>
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/videos" element={<Videos />} />
-        <Route path="/preview/:filename" element={<Preview />} />
-      </Routes>
-    </div>
-  );
-}
+<Route path="/preview/:filename" element={<Preview />} />
 ```
 
-The `:filename` in the path is the dynamic segment. Any URL like `/preview/anything` matches that route, and `useParams` reads whatever was in that slot.
+The `:filename` is the dynamic segment. Any URL like `/preview/anything` matches and `useParams` reads what was in that slot.
 
 ### Test it
 
-1. Reload `/videos`. The filenames should now look like links (probably underlined and a different color).
-2. Click `salamander1.mp4`. You should land on `/preview/salamander1.mp4` and see "Preview: salamander1.mp4".
-3. Click "Back to videos". You should land back on the list.
-4. Try a few different filenames. Each one should produce a Preview page with the correct filename in the heading.
+Click an entry on `/videos`. You should land on `/preview/<filename>` with the filename in the heading. "Back to videos" should bring you back. Try a few different entries.
 
 ## Final check against the criteria
 
