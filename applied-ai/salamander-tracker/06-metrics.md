@@ -5,7 +5,7 @@ order: 6
 
 The annotated video already shows you which salamanders are where. This step turns that into numbers. For each individual the tracker identified, the backend will count how many frames it was visible in, convert that to seconds, and ship the result alongside the annotated video.
 
-The lesson under the hood: `model.track()` stamps each detection with a `track_id` that stays consistent for the same individual across frames. Once you have that ID, aggregating per-individual statistics is just dict accounting.
+The lesson under the hood: `model.track()` stamps each detection with a `track_id` that stays consistent for the same individual across frames.
 
 ## Backend
 
