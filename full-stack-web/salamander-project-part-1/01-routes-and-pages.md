@@ -5,7 +5,7 @@ order: 1
 
 This is the first pair program where you start actually building the Salamander Tracker app. You'll get the project scaffolded, add routing so it can have multiple pages, build a mock API so you have data to work with, and implement your first user story.
 
-You and your partner should be at one machine, pair programming. Swap the driver every 20 or so minutes.
+You should be pair programming. Swap the driver every 20 or so minutes.
 
 ## What you're building today
 
