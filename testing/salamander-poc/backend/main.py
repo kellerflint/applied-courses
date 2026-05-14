@@ -107,12 +107,8 @@ def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
 
 
 class TrackAggregator:
-    """Builds aggregate metrics as frames stream in.
-
-    Two metrics:
-      max_simultaneous -- most detections ever on screen at once
-      frames_seen[tid] -- how many frames each tracked individual was visible
-                          (converted to seconds via fps in summarize)
+    """Counts how many frames each tracked individual was visible.
+    summarize(fps) converts those counts to seconds.
 
     Lifecycle: create, update(...) once per frame, summarize(fps) at end.
     """
@@ -120,18 +116,10 @@ class TrackAggregator:
     def __init__(self):
         self.frames_seen: dict[int, int] = defaultdict(int)
         self.label_for: dict[int, str] = {}
-        self.max_simultaneous: int = 0
 
     def update(self, result) -> None:
         boxes = result.boxes
-        if boxes is None or len(boxes) == 0:
-            return
-
-        # Most boxes ever on screen at once. Doesn't need track IDs.
-        self.max_simultaneous = max(self.max_simultaneous, len(boxes))
-
-        # Per-individual frame counts. Needs track IDs.
-        if boxes.id is None:
+        if boxes is None or len(boxes) == 0 or boxes.id is None:
             return
 
         for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
@@ -209,7 +197,6 @@ def _run_track_job(job_id: str, input_path: Path) -> None:
                 "width": width,
                 "height": height,
                 "duration": round(frame_idx / fps, 2) if fps else 0.0,
-                "max_simultaneous": aggregator.max_simultaneous,
                 "tracks": tracks,
             },
         }
