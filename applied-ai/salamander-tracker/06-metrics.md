@@ -60,8 +60,6 @@ frames_seen: {1: 454, 4: 9}
 label_for: {1: 'salamander', 4: 'salamander'}
 ```
 
-Track 1 was visible in 454 frames, track 4 in 9. Remove the prints once you've looked.
-
 ## Build the tracks list
 
 In the same spot the prints were:
@@ -106,8 +104,6 @@ return {
 
 ## Render the table on the frontend
 
-After the `<video>` tag, add a `<table>` with one row per entry in `data.tracks`. Columns: track id, label, time on screen. React's array `.map()` is the natural fit.
+After the `<video>` tag, add a `<table>` with one row per entry in `data.tracks`. Columns: track id, label, time on screen.
 
 **Check it works.** Upload through the page. You should see the video and a small table next to it, one row per tracked individual.
-
-> **With your partner:** Run the same video twice. Do you get the same track IDs both times? Why or why not?

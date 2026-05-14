@@ -8,6 +8,10 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.ignores.add("testing/**");
   eleventyConfig.ignores.add("testing");
   eleventyConfig.ignores.add("applied-ai/improve-and-deploy/_archive/**");
+  // Git worktrees live under .claude/worktrees/ and contain full repo copies.
+  // Without this ignore, every course index.md inside a worktree gets double-indexed
+  // and the home page shows each course twice while a worktree exists.
+  eleventyConfig.ignores.add(".claude/**");
   // Pass through activity files per course without processing as templates
   eleventyConfig.addPassthroughCopy("*/activities");
   eleventyConfig.ignores.add("*/activities/**");

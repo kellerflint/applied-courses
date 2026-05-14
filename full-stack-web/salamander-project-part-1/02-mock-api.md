@@ -3,20 +3,9 @@ title: "Building the Mock API"
 order: 2
 ---
 
-Your frontend needs data to display, but the backend you'll eventually call doesn't exist yet. Auberon's 334 students are building it this quarter. You're building this frontend alongside that work.
+Your frontend needs data to display, but the backend you'll eventually call doesn't exist yet.
 
 The fix is a **mock API**: a small module in your project that pretends to be the real backend. Your components call it the same way they'd call a real API. When the real backend is ready, you swap a few lines of code and everything else keeps working.
-
-## Why a module of async functions
-
-There are a few ways to mock an API. The simplest one that won't bite you later is a module that exports `async` functions which return fake data wrapped in `Promise.resolve`.
-
-This shape has two benefits:
-
-1. **Your components call it with `await` just like they'd call a real `fetch`.** No code in your components has to change when you swap to the real API.
-2. **No extra processes to manage.** You don't have to remember to start a mock server every time you work on the project.
-
-You can absolutely swap to a real mock server later (`json-server` is a popular option) if you want to practice network calls more authentically. Start with the module approach.
 
 ## What the real API will look like
 
@@ -129,21 +118,6 @@ getVideos returned: ["salamander1.mp4", "salamander2.mov", "forest_intro.mp4", "
 
 You'll probably see that line logged **twice**. That's React's `StrictMode` deliberately running every effect twice in development, to surface bugs caused by effects that aren't safe to re-run. In production it only runs once. Don't try to fix the double log; just expect it.
 
-If you don't see the log at all, fix it before moving on. Common issues:
-
-- **Import path wrong.** `from '../mockApi.js'` because `Videos.jsx` is in `src/pages/` and `mockApi.js` is in `src/`.
-- **`useEffect` dependency array missing.** Without `[]`, the effect runs on every render and you'll see the log over and over.
-- **Effect didn't run at all.** Make sure you actually imported `useEffect` from `'react'`.
+If you don't see the log at all, fix it before moving on.
 
 > **With your partner:** Look at your `useEffect` together. What does the empty dependency array `[]` mean? What would happen if you removed it? What would happen if you put `[someState]` instead? If you're not sure, peek at the [useEffect Watcher activity](/full-stack-web/api-pair-program/01-useeffect-refresher/) from the API Data Display unit.
-
-## Commit
-
-Mock API in place and verified. Commit it:
-
-```bash
-git add .
-git commit -m "Add mock API module with getVideos verified from Videos page"
-```
-
-Next you'll turn that `console.log` into a real list on the page, with loading and error states, and make each entry clickable.

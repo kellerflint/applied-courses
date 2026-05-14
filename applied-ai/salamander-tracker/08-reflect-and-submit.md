@@ -28,7 +28,7 @@ Color masking wins when the setup is controlled, when speed matters more than fl
 
 Every project hits scope limits. The cuts you made are useful information.
 
-> **With your partner:** What's the next thing you would have built if you had another week? Why didn't it make the cut for this version? Was that the right call?
+> **With your partner:** What's the next thing you would have built if you had another week? Why didn't it make the cut for this version?
 
 ## Demo prep
 
@@ -37,11 +37,9 @@ You'll do a live demo during class in groups. Plan what you're going to show.
 A demo should walk through:
 
 - The app running end to end on one of the videos
-- All metrics you implemented
+- All metrics you implemented (especially the unique one you added)
 - A quick mention of how you went about training your model
 - Any major challenges that came up
-
-Practice it once before presenting. I'm expecting about 5 minutes per team with discussion time.
 
 ## Submit
 

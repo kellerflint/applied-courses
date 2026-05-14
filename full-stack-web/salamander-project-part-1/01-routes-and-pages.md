@@ -3,9 +3,9 @@ title: "Routes and Pages"
 order: 1
 ---
 
-This is the first pair program where you start actually building the Salamander Tracker app. Today is all setup. You'll get the project scaffolded, add routing so it can have multiple pages, build a mock API so you have data to work with, and implement your first user story.
+This is the first pair program where you start actually building the Salamander Tracker app. You'll get the project scaffolded, add routing so it can have multiple pages, build a mock API so you have data to work with, and implement your first user story.
 
-You and your partner should be at one machine, pair programming. Swap the driver every 20 to 30 minutes.
+You and your partner should be at one machine, pair programming. Swap the driver every 20 or so minutes.
 
 ## What you're building today
 
@@ -20,51 +20,29 @@ Your wireframes might call for more pages than just Home and Videos. That's fine
 
 > **With your partner:** Pull up your wireframes. List every distinct page in your design and the URL path you want each one to live at. Write the list down somewhere you can reference for the rest of the session.
 
-## Why React Router
+## Create the project
+
+If you already have a repo for this project from the wireframes assignment, work in that repo. Otherwise create a new one now.
+
+Scaffold a fresh Vite + React app at the root of the repo.
+
+Open the URL Vite prints (usually `http://localhost:5173`). You should see the default Vite + React page.
+
+## React Router
 
 A React app served by Vite is a **single-page application**. The browser loads one HTML file once, and React swaps content in and out of that page as the user navigates. There is no full page reload when you go from `/` to `/videos`.
 
 To make the URL bar match what's on screen, and to let users use the back button, share links, and refresh without losing their place, you need a **client-side router**. React Router is the standard library for this. It watches the URL and renders the component you've associated with that path.
 
-## Create the project
-
-If you already have a repo for this project from the wireframes assignment, work in that repo. Otherwise create a new one now.
-
-Scaffold a fresh Vite + React app at the root of the repo:
-
-```bash
-npm create vite@latest
-```
-
-Answer the prompts:
-
-```
-◇  Project name:
-│  salamander-tracker
-│
-◇  Select a framework:
-│  React
-│
-◇  Select a variant:
-│  JavaScript
-│
-◇  Install with npm and start now?
-│  Yes
-```
-
-Open the URL Vite prints (usually `http://localhost:5173`). You should see the default Vite + React page.
-
-> **With your partner:** Get both machines cloning the repo and running `npm install && npm run dev` before continuing. If one machine can't run it, troubleshoot it now while the project is still tiny.
-
 ## Install React Router
 
-Stop the dev server (`Ctrl+C`), then:
+Stop the dev server, then:
 
 ```bash
 npm install react-router-dom
 ```
 
-This adds React Router to your dependencies. Restart the dev server with `npm run dev`.
+This adds React Router to your dependencies. Restart the dev server.
 
 ## Wrap the app in BrowserRouter
 
@@ -172,12 +150,8 @@ Before adding any nav links, prove the routes themselves work by **typing URLs d
 1. Go to `http://localhost:5173/`. You should see the Home page heading.
 2. Change the URL to `http://localhost:5173/videos` and hit Enter. The Videos page should render.
 3. Hit the browser back button. You should land back on Home.
-4. Type a path that isn't registered, like `http://localhost:5173/nope`. The page should go blank (no route matched). That's a real thing to fix later, but it confirms the router is doing what you'd expect.
 
-If any of those don't work, fix it before you add nav links. Layering UI on top of broken routing is hard to debug. The most common issues:
-
-- **Blank page or "Cannot read properties of undefined"** usually means `BrowserRouter` is missing in `main.jsx`.
-- **Refreshing on a non-root URL works in dev but fails when deployed.** That's a different problem you'll handle at deploy time. Dev is fine for now.
+If any of those don't work, fix it before you add nav links.
 
 ## Add nav links
 
@@ -210,22 +184,11 @@ export default function App() {
 
 `Link` renders an `<a>` tag, but clicking it does a client-side navigation instead of a full page reload. That keeps the app fast and preserves React state across navigations.
 
+If your wireframes call for more pages, add a `Link` for each one in the nav.
+
 ### Verify the links work
 
 1. Reload `http://localhost:5173/`. You should see the nav and the Home page.
 2. Click "Videos." The URL changes to `/videos` and the Videos page renders.
 3. Hit the browser back button. You should land on Home with the URL back to `/`.
 4. Refresh on `/videos`. The Videos page should still render.
-
-> **With your partner:** Predict what happens if you put the wrong path in a `Link` (like `to="/vidoes"`). Then try it. What renders? How would a user know they hit a typo'd link? When you're done, fix the typo.
-
-## Commit
-
-You've got a routed multi-page app. Commit it before moving on:
-
-```bash
-git add .
-git commit -m "Add React Router with Home and Videos pages"
-```
-
-Now the project has a skeleton you can hang real features on.

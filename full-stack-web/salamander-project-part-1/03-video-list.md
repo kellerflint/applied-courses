@@ -22,11 +22,9 @@ That's your spec. Everything you build on this page should map back to one of th
 
 > **With your partner:** Read the four criteria out loud. For each one, name the visible thing on the page that proves it works. If you can't name something visible, you don't have a way to test that criterion.
 
-## Three states, four stages
+## Three States
 
 Every fetch is in one of three states at any moment: **loading**, **error**, or **success**. You handled all three in the API Data Display pair program. Same shape here.
-
-You'll build it in four stages, with a quick verify after each: success path → loading → error → navigation. The point is to never have more than one moving piece between you and a working test.
 
 ## Stage 1: Render the list (success path)
 
@@ -191,14 +189,3 @@ You tested each piece as you built it. Walk through all four criteria one more t
 4. **Error state on failure.** Throw in the mock temporarily and confirm the error message renders. Revert.
 
 > **With your partner:** Walk through all four checks together. If any of them fail or feel off, fix them now. Don't move on with a half-working video list.
-
-If you have time left, talk through what the next user story will need (the thumbnail page) and sketch how you'd structure it. You don't have to build it. Just talk through what changes.
-
-> **With your partner:** Look at the second user story on the project overview page (the thumbnail one). What new pieces of state would the Preview page need? What new mock function would you call? Don't write the code; just talk it through so the next session has less ramp-up.
-
-## Commit
-
-```bash
-git add .
-git commit -m "Implement video list user story with loading, error, and navigation"
-```

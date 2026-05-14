@@ -19,37 +19,22 @@ If anything from that list isn't done, finish it before you submit.
 
 ## Push to GitHub
 
-Make sure all your work is committed:
-
-```bash
-git status
-```
-
-If you see uncommitted changes, commit them with a descriptive message. Then push:
-
-```bash
-git push
-```
+Make sure all your work is committed. Then push.
 
 Open the repo on GitHub in a browser and confirm your latest commits are there. Both partners should be able to see them.
 
 ## Both partners pull the latest
 
-Before you split for the day, the partner who wasn't driving should pull and run the project on their own machine:
-
-```bash
-git pull
-npm install
-npm run dev
+Before you split for the day, the partner who wasn't driving should pull and run the project on their own machine.
 ```
 
-Open `/videos` and confirm the list loads. If something doesn't work on the second machine, figure out why now. The most common cause is a file that didn't get committed or an `npm install` step that got skipped.
+Open `/videos` and confirm the list loads. If something doesn't work on the second machine, figure out why now.
 
 ## Submit on Canvas
 
-**One partner** submits the GitHub repo URL on Canvas. The repo's README should list both partners' names so the grader knows who's on the team.
+**One partner** submits the GitHub repo URL on Canvas. The repo's README should list both partners' names.
 
-You're submitting the repo, not a deployed site. Mock data wouldn't display anything useful on a live deploy yet, so deployment waits until later in the project.
+You're submitting the repo this time, not a deployed site.
 
 ## Feedback
 

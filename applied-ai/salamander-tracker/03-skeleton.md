@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
 **`FastAPI(...)`** creates the app. The `title` shows up in the auto-generated API docs FastAPI gives you for free at `/docs`.
 
-**The CORS middleware** matters because your frontend will run on a different port (5173) than the backend (8000). Browsers treat those as different origins and block cross-origin requests unless the server says it's OK. For this POC, `allow_origins=["*"]` says "any origin is fine." That's appropriate for local development and inappropriate for production. We'll leave it as is.
+**The CORS middleware** matters because your frontend will run on a different port (5173) than the backend (8000). Browsers treat those as different origins and block cross-origin requests unless the server says it's OK. For this POC, `allow_origins=["*"]` says "any origin is fine." This is fine for local development but inappropriate for production.
 
 **`@app.get("/")`** declares a GET route at the root path. When the browser hits `http://localhost:8000/`, FastAPI calls the `root()` function and returns whatever it returns as JSON. Right now that's the dict `{"ok": True}`.
 
@@ -110,16 +110,6 @@ Open <http://localhost:8000/> in your browser. You should see `{"ok":true}`.
 ## Frontend
 
 The browser side. You'll use **Vite** to scaffold a React project. Vite is the build tool: it serves your source files during development with hot module reload, and bundles them for production when you ship.
-
-### Scaffold the project
-
-From the project root:
-
-```bash
-npm create vite@latest
-cd frontend
-npm install
-```
 
 ### What this page needs to do
 

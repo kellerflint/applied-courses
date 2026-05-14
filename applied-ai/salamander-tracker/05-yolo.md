@@ -22,9 +22,7 @@ Drop your trained `best.pt` from the YOLO walkthrough into `backend/` next to `m
 model = YOLO("best.pt")
 ```
 
-At module scope, not inside the route. Loading parses the model file (a few MB), so you want it to happen once when the server boots, not on every request. Every request reuses the same `model` object.
-
-If you want to test the wiring before your model is ready, use `YOLO("yolov8n.pt")` instead. That's a generic object-detection model Ultralytics auto-downloads on first use. It won't find salamanders, but it'll let you confirm the inference pipeline runs.
+At module scope, not inside the route. Loading parses the model file (a few MB), so you want it to happen once when the server boots. Every request reuses the same `model` object.
 
 **Check it works.** Restart the server. You should see Ultralytics print a model summary on startup. To see what classes your model knows, temporarily add a print and restart:
 
@@ -32,7 +30,7 @@ If you want to test the wiring before your model is ready, use `YOLO("yolov8n.pt
 print(model.names)
 ```
 
-For a model trained on one class called `salamander`, you'll see `{0: 'salamander'}`. For `yolov8n.pt`, you'll see a long dict of 80 COCO classes. Remove the print after you've looked at it.
+For a model trained on one class called `salamander`, you'll see `{0: 'salamander'}`. For the default `yolov8n.pt` model, you'd see a long dict of 80 COCO classes.
 
 ## Open the uploaded video
 
@@ -79,8 +77,6 @@ writer = cv2.VideoWriter(
 )
 ```
 
-`avc1` is the H.264 codec. Browsers play H.264 reliably in `<video>` tags.
-
 ## The frame loop
 
 In place of the single-frame test you just removed:
@@ -122,10 +118,7 @@ return {
 
 ## Update the frontend
 
-Two small changes to the page from the previous step:
-
-- Track whether a request is in flight. While it is, disable the submit button and show a "Processing" message under the form so the user knows the page didn't break.
-- The `data.video_url` already points at the output, so the existing `<video>` tag works without changes.
+Track whether a request is in flight. While it is, disable the submit button and show a "Processing" message under the form so the user knows the page didn't break.
 
 **Check it works.** Upload a clip through the page. You should see the loading indicator, a 30 to 60 second wait, then the annotated video with boxes drawn on top. Notice that the browser tab is unresponsive while it waits. That's a real problem we'll fix later.
 

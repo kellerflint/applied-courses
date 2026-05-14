@@ -3,7 +3,7 @@ title: "Step 5: Async + Progress"
 order: 7
 ---
 
-The app works, and it has a real usability problem. The POST `/track` request blocks for as long as inference takes. The browser sits there, the user can't tell whether anything is happening, and on a long enough video the browser may give up entirely with a network error.
+The app works, but it has a real usability problem. The POST `/track` request blocks for as long as inference takes. The browser sits there, the user can't tell whether anything is happening, and on a long enough video the browser may give up entirely with a network error.
 
 The standard fix for long-running web jobs has three parts:
 
@@ -156,19 +156,9 @@ def run_track_job():
 
 ## Frontend: poll instead of awaiting
 
-The submit handler used to await the POST response and use it directly. Now it POSTs, confirms the response came back OK, then enters a loop that fetches `GET /track` until the job is `done` or `error`:
+The submit handler used to await the POST response and use it directly. Now it POSTs, confirms the response came back OK, then enters a loop that fetches `GET /track` until the job is `done` or `error`.
 
-```js
-while (true) {
-  await new Promise(r => setTimeout(r, 1500));
-  const job = await (await fetch(`${API_BASE}/track`)).json();
-  if (job.status === "done") { setData(job.result); break; }
-  if (job.status === "error") throw new Error(job.message);
-  setPercent(job.percent ?? 0);
-}
-```
-
-About 1.5 seconds between polls is a good default. Faster floods the backend, slower makes the progress bar feel janky.
+About 1-2 seconds between polls is a good default.
 
 ## Frontend: render a progress bar
 
@@ -184,11 +174,4 @@ If you try a longer video (a few minutes), it just works. The browser never hold
 
 ## Your turn
 
-The walkthrough showed one metric end to end: time on screen per individual. Now add at least one of your own. Some ideas:
-
-- Total pixels traveled per individual, computed from frame-to-frame centroid movement.
-- Number of unique salamanders ever seen.
-- Peak number of salamanders on screen at the same time.
-- Detection count over time, ready to plot as a line.
-
-Pick something interesting and add it: a new piece of state in the backend's loop, the right shape in the response, and a way to display it on the page.
+The walkthrough showed one metric end to end: time on screen per individual. Now add at least one of your own. Some ideas for this are listed on the first page of this unit.
