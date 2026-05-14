@@ -1,6 +1,6 @@
 ---
 title: "Reflect & Submit"
-order: 4
+order: 9
 ---
 
 Once your app is working, take time to reflect on what you built before you submit. The reflection is part of the deliverable, and the questions below are worth thinking through with your partner.
