@@ -63,13 +63,13 @@ def start_track(video: UploadFile = File(...)):
 
 The `?t={int(time.time())}` is a browser cache buster: the file on disk is always `input.mp4`, but the URL is different each upload so the browser fetches fresh instead of showing a cached previous video.
 
-**Check it works.** With the backend running, from another terminal:
+**Check it works.** With the backend running, open another terminal and `cd` into a folder that contains some video file on your machine. Then:
 
 ```bash
-curl -F "video=@some_video.mp4" http://localhost:8000/track
+curl -F "video=@your_video.mp4" http://localhost:8000/track
 ```
 
-You should get back the JSON response, and `backend/videos/input.mp4` should now exist.
+Replace `your_video.mp4` with the actual filename you have there. The `@` is curl's syntax for "send the contents of this file." You should get back the JSON response, and `backend/videos/input.mp4` should now exist.
 
 ## Build the frontend page
 
