@@ -1,16 +1,9 @@
-"""Salamander Tracker backend. POST /track kicks off a YOLO tracking job
-on the uploaded video. GET /track/{job_id} polls for progress and the
-final result. Processing happens on a background thread so the POST
-returns immediately and the browser polls instead of holding a long
-connection open."""
+"""Salamander Tracker backend. POST /track starts a job. GET /track/{job_id}
+polls for progress and the final result."""
 
-from __future__ import annotations
-
-import shutil
 import uuid
 from collections import defaultdict
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from threading import Thread
 
 import cv2
@@ -23,22 +16,14 @@ from ultralytics import YOLO
 OUTPUTS_DIR = Path(__file__).parent / "outputs"
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
-MODEL_PATH = str(Path(__file__).parent.parent / "data" / "yolov8n.pt")
-model = YOLO(MODEL_PATH)
-class_names = model.names
+model = YOLO(str(Path(__file__).parent.parent / "data" / "yolov8n.pt"))
 
 
 app = FastAPI(title="Salamander Tracker POC")
 
-# Allow the Vite dev server (and a couple of other common dev ports) to
-# call the API and load the annotated mp4.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-    ],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -47,63 +32,16 @@ app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
 
 
 @app.get("/")
-def root() -> dict:
-    return {"ok": True, "endpoints": ["/track"]}
+def root():
+    return {"ok": True}
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _save_upload_to_tempfile(upload: UploadFile) -> Path:
-    suffix = Path(upload.filename or "input.mp4").suffix or ".mp4"
-    tmp = NamedTemporaryFile(suffix=suffix, delete=False)
-    try:
-        shutil.copyfileobj(upload.file, tmp)
-    finally:
-        tmp.close()
-    return Path(tmp.name)
-
-
-def _open_video(path: Path) -> tuple[cv2.VideoCapture, float, int, int, int]:
-    cap = cv2.VideoCapture(str(path))
-    if not cap.isOpened():
-        raise HTTPException(status_code=400, detail="Could not open uploaded video")
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    return cap, fps, width, height, total
-
-
-def _make_writer(path: Path, fps: float, width: int, height: int) -> cv2.VideoWriter:
-    # Prefer H.264 (avc1) so the mp4 plays in browsers. Fall back to mp4v
-    # for OpenCV builds without H.264 support.
-    for codec in ("avc1", "mp4v"):
-        fourcc = cv2.VideoWriter_fourcc(*codec)
-        writer = cv2.VideoWriter(str(path), fourcc, fps, (width, height))
-        if writer.isOpened():
-            return writer
-    raise HTTPException(status_code=500, detail="Could not open video writer")
-
-
-def _new_output_path() -> tuple[Path, str]:
-    name = f"{uuid.uuid4().hex}.mp4"
-    return OUTPUTS_DIR / name, f"http://localhost:8000/outputs/{name}"
-
-
-def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
-    # flush=True so the line shows up immediately instead of waiting for
-    # the request to finish.
-    if frame_idx % 30 == 0 or frame_idx == total:
-        pct = (frame_idx / total) * 100 if total > 0 else 0
-        print(f"  {prefix} {frame_idx}/{total} ({pct:.0f}%)", flush=True)
-
-
-# ---------------------------------------------------------------------------
-# /track
-# ---------------------------------------------------------------------------
+# In-memory job store. Server restart clears it.
+# Each entry is one of:
+#   {"status": "processing", "percent": N}
+#   {"status": "done", "percent": 100, "result": {...}}
+#   {"status": "error", "message": "..."}
+jobs = {}
 
 
 class TrackAggregator:
@@ -114,122 +52,104 @@ class TrackAggregator:
     """
 
     def __init__(self):
-        self.frames_seen: dict[int, int] = defaultdict(int)
-        self.label_for: dict[int, str] = {}
+        self.frames_seen = defaultdict(int)
+        self.label_for = {}
 
-    def update(self, result) -> None:
+    def update(self, result):
         boxes = result.boxes
         if boxes is None or len(boxes) == 0 or boxes.id is None:
             return
-
         for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
             self.frames_seen[int(tid)] += 1
-            self.label_for[int(tid)] = class_names.get(int(cls_id), str(int(cls_id)))
+            self.label_for[int(tid)] = model.names.get(int(cls_id), str(int(cls_id)))
 
-    def summarize(self, fps: float) -> list[dict]:
+    def summarize(self, fps):
         return [
             {
                 "track_id": tid,
-                "time_on_screen_s": round(count / fps, 2) if fps else 0.0,
+                "time_on_screen_s": round(count / fps, 2),
                 "label": self.label_for[tid],
             }
             for tid, count in self.frames_seen.items()
         ]
 
 
-# In-memory job store. A real app would back this with Redis/a database.
-# For a POC, a process-local dict is fine: server restart clears it.
-# Each entry looks like one of:
-#   {"status": "processing", "percent": 47}
-#   {"status": "done", "percent": 100, "result": {...}}
-#   {"status": "error", "message": "..."}
-jobs: dict[str, dict] = {}
-
-
-def _run_track_job(job_id: str, input_path: Path) -> None:
-    """Background worker. Updates jobs[job_id] as it processes frames."""
+def run_track_job(job_id, input_path):
     try:
-        cap, fps, width, height, total = _open_video(input_path)
-        output_path, output_url = _new_output_path()
-        writer = _make_writer(output_path, fps, width, height)
+        cap = cv2.VideoCapture(str(input_path))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        print(
-            f"[track {job_id[:8]}] {total} frames at {width}x{height} @ {fps:.1f}fps "
-            f"-> {output_path.name}",
-            flush=True,
-        )
+        output_name = f"{job_id}.mp4"
+        output_path = OUTPUTS_DIR / output_name
+
+        # Prefer H.264 (avc1) so the mp4 plays in browsers. Fall back to mp4v.
+        for codec in ("avc1", "mp4v"):
+            writer = cv2.VideoWriter(str(output_path), cv2.VideoWriter_fourcc(*codec), fps, (width, height))
+            if writer.isOpened():
+                break
+
+        print(f"[{job_id[:8]}] processing {total} frames", flush=True)
 
         aggregator = TrackAggregator()
         frame_idx = 0
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
 
-        try:
-            while True:
-                ok, frame = cap.read()
-                if not ok:
-                    break
+            # persist=True keeps track IDs stable across frames.
+            result = model.track(frame, persist=True, verbose=False)[0]
+            writer.write(result.plot())
+            aggregator.update(result)
 
-                # persist=True keeps tracker state across calls so IDs stay
-                # stable across frames.
-                result = model.track(frame, persist=True, verbose=False)[0]
-                writer.write(result.plot())
-                aggregator.update(result)
+            frame_idx += 1
+            jobs[job_id]["percent"] = int(frame_idx / total * 100) if total else 0
+            if frame_idx % 30 == 0:
+                print(f"[{job_id[:8]}] {frame_idx}/{total}", flush=True)
 
-                frame_idx += 1
-                jobs[job_id]["percent"] = int(frame_idx / total * 100) if total else 0
-                _log_progress(f"[track {job_id[:8]}]", frame_idx, total)
-        finally:
-            cap.release()
-            writer.release()
+        cap.release()
+        writer.release()
 
         tracks = aggregator.summarize(fps)
-        print(
-            f"[track {job_id[:8]}] done. {frame_idx} frames, {len(tracks)} unique track id(s)",
-            flush=True,
-        )
-
         jobs[job_id] = {
             "status": "done",
             "percent": 100,
             "result": {
-                "video_url": output_url,
+                "video_url": f"http://localhost:8000/outputs/{output_name}",
                 "fps": fps,
                 "frame_count": frame_idx,
-                "width": width,
-                "height": height,
-                "duration": round(frame_idx / fps, 2) if fps else 0.0,
+                "duration": round(frame_idx / fps, 2),
                 "tracks": tracks,
             },
         }
+        print(f"[{job_id[:8]}] done. {len(tracks)} unique track id(s)", flush=True)
     except Exception as e:
-        print(f"[track {job_id[:8]}] error: {e}", flush=True)
+        print(f"[{job_id[:8]}] error: {e}", flush=True)
         jobs[job_id] = {"status": "error", "message": str(e)}
-    finally:
-        input_path.unlink(missing_ok=True)
 
 
 @app.post("/track")
-def start_track(video: UploadFile = File(...)) -> dict:
-    """Accept the upload, register a job, return its id immediately.
-    The frontend polls GET /track/{job_id} for progress and the result."""
+def start_track(video: UploadFile = File(...)):
+    """Accept the upload, register a job, return its id. Frontend polls
+    GET /track/{job_id} for progress and the result."""
     job_id = uuid.uuid4().hex
+    input_path = OUTPUTS_DIR / f"{job_id}-input.mp4"
+    input_path.write_bytes(video.file.read())
     jobs[job_id] = {"status": "processing", "percent": 0}
-    input_path = _save_upload_to_tempfile(video)
-    Thread(target=_run_track_job, args=(job_id, input_path), daemon=True).start()
+    Thread(target=run_track_job, args=(job_id, input_path), daemon=True).start()
     return {"job_id": job_id, "status": "processing"}
 
 
 @app.get("/track/{job_id}")
-def get_track(job_id: str) -> dict:
-    """Poll endpoint. Returns the current state of a job."""
+def get_track(job_id: str):
     job = jobs.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
     return job
 
-
-# ---------------------------------------------------------------------------
-# Run the server
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn

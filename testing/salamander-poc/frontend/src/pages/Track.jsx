@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { postVideo, getJob } from "../api.js";
 
-const POLL_INTERVAL_MS = 1500;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const API_BASE = "http://localhost:8000";
 
 export default function Track() {
   const [file, setFile] = useState(null);
@@ -20,12 +18,19 @@ export default function Track() {
     setPercent(0);
 
     try {
-      const { job_id } = await postVideo("/track", file);
-      // Poll until the job is done or fails. No timeout: long videos just
-      // take a while, and the user can refresh to abandon.
+      // Kick off the job. The backend returns immediately with a job_id.
+      const form = new FormData();
+      form.append("video", file);
+      const startRes = await fetch(`${API_BASE}/track`, { method: "POST", body: form });
+      if (!startRes.ok) throw new Error(`Start failed (${startRes.status})`);
+      const { job_id } = await startRes.json();
+
+      // Poll for progress every 1.5s until the job is done or fails.
       while (true) {
-        await sleep(POLL_INTERVAL_MS);
-        const job = await getJob(job_id);
+        await new Promise((r) => setTimeout(r, 1500));
+        const jobRes = await fetch(`${API_BASE}/track/${job_id}`);
+        if (!jobRes.ok) throw new Error(`Poll failed (${jobRes.status})`);
+        const job = await jobRes.json();
         setPercent(job.percent ?? 0);
         if (job.status === "done") {
           setData(job.result);
@@ -44,12 +49,10 @@ export default function Track() {
 
   return (
     <div className="page">
-      <h1>Track (per-individual metrics)</h1>
+      <h1>Salamander Tracker</h1>
       <p className="lede">
-        Same model, different mode. <code>model.track()</code> assigns each
-        detection a stable ID across frames, so the backend can compute
-        per-salamander metrics: total pixels traveled and total time on
-        screen.
+        Upload a video. The backend runs YOLO with tracking on each frame, then
+        returns the annotated video and how long each individual was on screen.
       </p>
 
       <form onSubmit={handleSubmit} className="uploader">
@@ -73,41 +76,29 @@ export default function Track() {
 
       {data && (
         <div className="results">
-          <div className="video-col">
-            <video src={data.video_url} controls playsInline />
-            <p className="meta">
-              {data.frame_count} frames &middot; {data.fps.toFixed(1)} fps
-              &middot; {data.duration}s total
-            </p>
-          </div>
-
-          <div className="metrics-col">
-            <section className="card">
-              <h2>Per-salamander metrics</h2>
-              {data.tracks.length === 0 ? (
-                <p className="muted">No tracks recorded.</p>
-              ) : (
-                <table className="coords">
-                  <thead>
-                    <tr>
-                      <th>track id</th>
-                      <th>label</th>
-                      <th>time on screen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.tracks.map((t) => (
-                      <tr key={t.track_id}>
-                        <td>{t.track_id}</td>
-                        <td>{t.label}</td>
-                        <td>{t.time_on_screen_s}s</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
-          </div>
+          <video src={data.video_url} controls playsInline />
+          <p className="meta">
+            {data.frame_count} frames &middot; {data.fps.toFixed(1)} fps &middot;{" "}
+            {data.duration}s
+          </p>
+          <table className="metrics">
+            <thead>
+              <tr>
+                <th>track id</th>
+                <th>label</th>
+                <th>time on screen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.tracks.map((t) => (
+                <tr key={t.track_id}>
+                  <td>{t.track_id}</td>
+                  <td>{t.label}</td>
+                  <td>{t.time_on_screen_s}s</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
