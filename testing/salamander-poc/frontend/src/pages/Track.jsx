@@ -84,6 +84,9 @@ export default function Track() {
           <div className="metrics-col">
             <section className="card">
               <h2>Per-salamander metrics</h2>
+              <p className="muted">
+                Peak: <strong>{data.max_simultaneous}</strong> on screen at once.
+              </p>
               {data.tracks.length === 0 ? (
                 <p className="muted">No tracks recorded.</p>
               ) : (
@@ -92,9 +95,7 @@ export default function Track() {
                     <tr>
                       <th>track id</th>
                       <th>label</th>
-                      <th>distance (px)</th>
                       <th>time on screen</th>
-                      <th>frames seen</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -102,9 +103,7 @@ export default function Track() {
                       <tr key={t.track_id}>
                         <td>{t.track_id}</td>
                         <td>{t.label}</td>
-                        <td>{t.total_distance_px}</td>
                         <td>{t.time_on_screen_s}s</td>
-                        <td>{t.frames_seen}</td>
                       </tr>
                     ))}
                   </tbody>

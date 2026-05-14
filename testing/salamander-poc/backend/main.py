@@ -6,7 +6,6 @@ connection open."""
 
 from __future__ import annotations
 
-import math
 import shutil
 import uuid
 from collections import defaultdict
@@ -108,56 +107,46 @@ def _log_progress(prefix: str, frame_idx: int, total: int) -> None:
 
 
 class TrackAggregator:
-    """Builds per-track aggregate metrics as frames stream in.
+    """Builds aggregate metrics as frames stream in.
 
-    For each track_id seen across frames, accumulates:
-      distance     -- total pixels traveled (sum of frame-to-frame moves)
-      frames_seen  -- how many frames the track was visible
-      label        -- its class name
+    Two metrics:
+      max_simultaneous -- most detections ever on screen at once
+      frames_seen[tid] -- how many frames each tracked individual was visible
+                          (converted to seconds via fps in summarize)
 
     Lifecycle: create, update(...) once per frame, summarize(fps) at end.
     """
 
     def __init__(self):
-        self.distance: dict[int, float] = defaultdict(float)
         self.frames_seen: dict[int, int] = defaultdict(int)
-        self.last_xy: dict[int, tuple[float, float]] = {}
         self.label_for: dict[int, str] = {}
+        self.max_simultaneous: int = 0
 
     def update(self, result) -> None:
         boxes = result.boxes
-        if boxes is None or len(boxes) == 0 or boxes.id is None:
+        if boxes is None or len(boxes) == 0:
             return
 
-        xyxy = boxes.xyxy.cpu().numpy()
-        ids = boxes.id.cpu().numpy().astype(int)
-        cls_ids = boxes.cls.cpu().numpy().astype(int)
+        # Most boxes ever on screen at once. Doesn't need track IDs.
+        self.max_simultaneous = max(self.max_simultaneous, len(boxes))
 
-        for (x1, y1, x2, y2), tid, cls_id in zip(xyxy, ids, cls_ids):
-            cx = (x1 + x2) / 2.0
-            cy = (y1 + y2) / 2.0
+        # Per-individual frame counts. Needs track IDs.
+        if boxes.id is None:
+            return
 
-            if tid in self.last_xy:
-                px, py = self.last_xy[tid]
-                self.distance[tid] += math.hypot(cx - px, cy - py)
-
-            self.last_xy[tid] = (cx, cy)
-            self.frames_seen[tid] += 1
-            self.label_for[tid] = class_names.get(int(cls_id), str(cls_id))
+        for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
+            self.frames_seen[int(tid)] += 1
+            self.label_for[int(tid)] = class_names.get(int(cls_id), str(int(cls_id)))
 
     def summarize(self, fps: float) -> list[dict]:
-        tracks = [
+        return [
             {
-                "track_id": int(tid),
-                "total_distance_px": round(self.distance[tid], 1),
+                "track_id": tid,
                 "time_on_screen_s": round(count / fps, 2) if fps else 0.0,
-                "frames_seen": int(count),
-                "label": self.label_for.get(tid, "?"),
+                "label": self.label_for[tid],
             }
             for tid, count in self.frames_seen.items()
         ]
-        tracks.sort(key=lambda t: t["frames_seen"], reverse=True)
-        return tracks
 
 
 # In-memory job store. A real app would back this with Redis/a database.
@@ -220,6 +209,7 @@ def _run_track_job(job_id: str, input_path: Path) -> None:
                 "width": width,
                 "height": height,
                 "duration": round(frame_idx / fps, 2) if fps else 0.0,
+                "max_simultaneous": aggregator.max_simultaneous,
                 "tracks": tracks,
             },
         }
