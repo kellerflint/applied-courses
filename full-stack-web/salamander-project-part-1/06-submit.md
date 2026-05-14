@@ -1,17 +1,18 @@
 ---
 title: "Submit"
-order: 4
+order: 6
 ---
 
 ## What you should have
 
-If you got through the first three pages, your repo has:
+If you got through the first five pages, your repo has:
 
 - A Vite + React project with React Router set up
 - A Home page and a Videos page (and any extra pages your wireframes call for)
 - A Preview page that renders the filename from the URL
 - A `src/mockApi.js` module with at least `getVideos` working
 - The video list user story implemented with loading, error, and navigation working
+- Tailwind installed and applied across your pages so the app looks deliberate
 
 If anything from that list isn't done, finish it before you submit.
 
@@ -26,7 +27,6 @@ Open the repo on GitHub in a browser and confirm your latest commits are there. 
 ## Both partners pull the latest
 
 Before you split for the day, the partner who wasn't driving should pull and run the project on their own machine.
-```
 
 Open `/videos` and confirm the list loads. If something doesn't work on the second machine, figure out why now.
 
