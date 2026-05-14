@@ -5,7 +5,7 @@ order: 1
 
 By the end of the last unit you had a chatbot that could remember a conversation and chain calls together. It is missing something important though. It only knows what the model knows. Ask it about courses at your school, customers in your database, or the document your team wrote yesterday, and it has nothing to say. The model's training data ended at some date in the past, and your data was never in it to begin with.
 
-This unit fixes that. You'll connect an LLM to a real database and let it answer questions grounded in that data. You will see two different patterns for doing it, and you will get the start of an academic advising bot that actually knows the courses, students, and instructors you give it.
+In this unit, you'll connect an LLM to a real database and let it answer questions grounded in that data. You will see two different patterns for doing it, and you will get the start of an academic advising bot that actually knows the courses, students, and instructors you give it.
 
 ## Why the model can't answer questions about your data
 
@@ -29,8 +29,6 @@ The notebook for this unit shows two patterns for handing data to a model. They 
 
 **Tools (also called function calling).** You describe a handful of functions to the model and let the model pick which one to call. Your code runs the chosen function, hands the result back, and the model writes the final answer. Tools are more flexible than RAG because the model can route different questions to different data sources.
 
-Both patterns share the same underlying trick from earlier units. Whatever the model needs to know has to show up in the messages list before you ask the question. The difference is who decides what shows up.
-
 > **With your partner:** Pick a question a hypothetical academic advising bot might get ("What courses does Susan teach?" or "Has Mei passed her data structures class?"). For each one, sketch in plain English what data the bot would need to answer. Would you want to dump all of it into every prompt, or only fetch what the question needs?
 
 ## What you'll build
@@ -44,8 +42,6 @@ By the end of the unit you'll also extend the tool-using bot with at least one o
 
 ## Open the notebook
 
-Open the example notebook here: [RAG and Tools notebook (Colab)](https://colab.research.google.com/).
+Open the example notebook here: [RAG and Tools notebook (Colab)](https://colab.research.google.com/drive/1abcEOrlUk2LhC7EmBzRpC03K-7Wem0T7).
 
 Just like last unit, click **File → Save a copy in Drive** so you have your own editable copy. Drop your Groq API key into the `api_key` cell. The rest of this unit walks the notebook section by section, with explanations of what each part is doing and why. Keep both the notebook and these lesson pages open as you work.
-
-Once your copy is open and your API key is in, head to page 2 and we'll plug the model into a database.

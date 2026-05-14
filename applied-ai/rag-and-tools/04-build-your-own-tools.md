@@ -105,7 +105,7 @@ Once your bot works:
 2. Under "General access," change it to **"Anyone with the link"** and set the role to **Viewer**.
 3. Copy the link.
 
-**Both partners submit individually on Canvas** with the shared notebook link. Put both partner names in the submission comment so I can find the pair.
+**Both partners submit individually on Canvas** with the shared notebook link.
 
 ## Feedback
 

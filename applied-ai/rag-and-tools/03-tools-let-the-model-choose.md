@@ -3,7 +3,7 @@ title: "Tools: Let the Model Choose"
 order: 3
 ---
 
-The RAG bot from page 2 had a fixed retrieval step. It always pulled courses, whether the user asked about courses or not. This page swaps that fixed step for one where the model itself picks which function to call. That capability is called **tool use** (some APIs call it **function calling**). It is the same idea behind the way ChatGPT can suddenly run Python or browse the web mid-conversation.
+This page swaps that fixed step for one where the model itself picks which function to call. That capability is called **tool use** (some APIs call it **function calling**). It is the same idea behind the way ChatGPT can run Python or browse the web mid-conversation.
 
 We're walking through cells 13 through 19 in the notebook.
 
@@ -143,7 +143,7 @@ def execute_tool(tool_name):
 
 Look up the Python function in the dispatch map and call it. This step is pure Python with the model sitting out. The model gave you a string, you turned it into a function call.
 
-The `ValueError` branch matters more than it looks. The model is allowed to invent function names that don't exist. A defensive check stops a fabricated tool name from crashing the whole app.
+The `ValueError` branch matters more than it looks. The model could invent function names that don't exist. A defensive check stops a fabricated tool name from crashing the whole app.
 
 ### Step 3: send results back to the model for the final answer
 
@@ -210,7 +210,7 @@ Each one should print the chosen tool, then the rows that came back, then a clea
 <details>
 <summary>Reveal answer</summary>
 
-The model still tries to pick a tool. For the weather, it might pick `get_courses` or `get_instructors` essentially at random, then write a final answer that says something like "I don't have weather information." For the grades question, the model picks something close (`get_courses` or `get_students`) but the data it gets back doesn't include grades, so the final answer is wrong or evasive. The model can only do as well as the tools you've given it. A question outside the available data is the most common failure mode of a tool-using bot, and it's the reason you're going to add a grades tool on page 4.
+The model still tries to pick a tool. For the weather, it might pick `get_courses` or `get_instructors` essentially at random, then write a final answer that says something like "I don't have weather information." For the grades question, the model picks something close (`get_courses` or `get_students`) but the data it gets back doesn't include grades, so the final answer is wrong or evasive. The model can only do as well as the tools you've given it.
 
 </details>
 
@@ -235,5 +235,3 @@ Tool use is a powerful pattern, and it still has real costs and limits worth kno
 **The model can still pick wrong.** If your descriptions are vague, the model will guess. Write descriptions as if you were writing docs for another developer who hasn't seen the code.
 
 **Multi-tool flows are harder.** This notebook calls exactly one tool per request. Real apps often need the model to call tool A, look at the result, then decide to also call tool B. That's the realm of **agents**, and it's its own can of worms. Same building blocks, more orchestration.
-
-For now, the single-tool-call pattern is the right starting point. Page 4 is where you stretch it.

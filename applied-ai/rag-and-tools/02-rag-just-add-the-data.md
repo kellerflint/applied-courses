@@ -7,7 +7,7 @@ This page walks through cells 1 through 12 in the notebook. Cells 1 through 8 ar
 
 ## A fake backend: the in-memory database
 
-Cell 10 sets up a tiny **SQLite** database that lives entirely in RAM. SQLite is a real SQL database that runs inside your Python process, no server required. The `:memory:` argument tells it to skip the file system entirely and just keep the data in memory for the life of the notebook.
+Cell 10 sets up a tiny **SQLite** database that lives entirely in RAM. SQLite is a real SQL database that runs inside your Python process. The `:memory:` argument tells it to skip the file system entirely and just keep the data in memory for the life of the notebook.
 
 ```python
 conn = sqlite3.connect(":memory:")
@@ -81,9 +81,9 @@ Four things are happening in that function. Walk through them in order.
 
 **Format.** Turn the rows into plain text the model can read. The loop produces lines like `name: Machine Learning, description: ..., instructor: Susan Uland, quarter: Winter`. There is nothing magical about this format. You could use a CSV, a JSON dump, a bullet list, or a table. What matters is that the model can read it.
 
-**Stuff it into the prompt.** Use an f-string to drop the formatted context into a prompt template along with the user's question. Notice the **shape** of the prompt: role assignment first ("You are an academic advising assistant"), then the data the model is allowed to use, then the user's actual question. That order helps the model understand the data is reference material, not part of the question.
+**Stuff it into the prompt.** Use an f-string to drop the formatted context into a prompt template along with the user's question. Notice the **shape** of the prompt: role assignment first ("You are an academic advising assistant"), then the data the model is allowed to use, then the user's actual question. That order helps the model understand the data is reference material.
 
-**Generate.** Send the whole thing to the model with `temperature=0.2`. This is a job where you want consistent, grounded answers. Low temperature is the right pick. Brainstorming is not happening here.
+**Generate.** Send the whole thing to the model with `temperature=0.2`.
 
 ## Try it
 
@@ -117,14 +117,3 @@ This pattern is fast to build and works surprisingly well, but the cracks show u
 **It can't take actions.** The bot can describe the data, but it can't update a record, send an email, or trigger a workflow. Read-only by design.
 
 Real RAG systems get around the first two limits by doing smart retrieval. They use embeddings, keyword search, or filtering rules to pull only the rows that are relevant to the question. That is a topic for a later unit. The third and fourth limits (one-shaped, read-only) are what the next page solves.
-
-> **With your partner:** Imagine you added a `retrieve_students()` function alongside `retrieve_courses()`, and the advising bot stuffed both into every prompt. What kinds of questions would it now answer that it couldn't before? What problems would that introduce?
-
-<details>
-<summary>Reveal answer</summary>
-
-It would handle questions like "Who is Mei's advisor?" or "Which students take Web Development?" because the student data would now be in the prompt. The downside is every call now sends every course **and** every student, even if the user just asked about quarters. Prompts get longer, calls get slower, and you pay for tokens you didn't need. The brute-force approach (dump every table) does not extend cleanly. You'd want a way to fetch only what each question actually needs.
-
-</details>
-
-That brings us to the next pattern.
