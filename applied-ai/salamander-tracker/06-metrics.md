@@ -3,134 +3,111 @@ title: "Step 4: Per-Track Metrics"
 order: 6
 ---
 
-The annotated video already shows you which salamanders are where. This step turns that into numbers. For each individual the tracker identified, the backend will count how many frames it was visible in, convert that to seconds, and ship the result alongside the annotated video.
+The annotated video shows where the salamanders are. This step turns that into numbers per individual: how many frames each tracked salamander was visible in, converted to seconds.
 
-The lesson under the hood: `model.track()` stamps each detection with a `track_id` that stays consistent for the same individual across frames.
+The mechanism: `model.track()` stamps each detection with a `track_id` that stays consistent for the same individual across frames. We collect data keyed by that id.
 
-## Backend
+## Import defaultdict
 
-The frame loop stays the same shape. Add two dicts before it, four lines inside it, and a list comprehension after it.
+At the top of `main.py`:
 
 ```python
-import time
 from collections import defaultdict
-from pathlib import Path
-
-import cv2
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from ultralytics import YOLO
-
-
-VIDEOS_DIR = Path(__file__).parent / "videos"
-VIDEOS_DIR.mkdir(exist_ok=True)
-
-model = YOLO(str(Path(__file__).parent.parent / "data" / "yolov8n.pt"))
-
-
-app = FastAPI(title="Salamander Tracker POC")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
-
-
-@app.get("/")
-def root():
-    return {"ok": True}
-
-
-@app.post("/track")
-def start_track(video: UploadFile = File(...)):
-    input_path = VIDEOS_DIR / "input.mp4"
-    output_path = VIDEOS_DIR / "output.mp4"
-    input_path.write_bytes(video.file.read())
-
-    cap = cv2.VideoCapture(str(input_path))
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-    writer = cv2.VideoWriter(
-        str(output_path),
-        cv2.VideoWriter_fourcc(*"avc1"),
-        fps,
-        (width, height),
-    )
-
-    print(f"processing {total} frames", flush=True)
-
-    frames_seen = defaultdict(int)
-    label_for = {}
-
-    for frame_idx in range(total):
-        ok, frame = cap.read()
-        if not ok:
-            break
-
-        result = model.track(frame, persist=True, verbose=False)[0]
-        writer.write(result.plot())
-
-        boxes = result.boxes
-        if boxes is not None and boxes.id is not None:
-            for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
-                frames_seen[int(tid)] += 1
-                label_for[int(tid)] = model.names[int(cls_id)]
-
-    cap.release()
-    writer.release()
-
-    tracks = [
-        {
-            "track_id": tid,
-            "time_on_screen_s": round(count / fps, 2),
-            "label": label_for[tid],
-        }
-        for tid, count in frames_seen.items()
-    ]
-    print(f"done. {len(tracks)} unique track id(s)", flush=True)
-
-    return {
-        "status": "done",
-        "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
-        "tracks": tracks,
-    }
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
 ```
 
-A few things to call out:
+It's a dict that returns a default value for missing keys, which makes counting much simpler than checking "is this key already there?" every time.
 
-**`defaultdict(int)`** means `frames_seen[some_new_id] += 1` works without an existence check. Missing keys default to `0`.
+## Initialize the per-track state
 
-**The `None` checks.** `result.boxes` is `None` when there are no detections in a frame. `boxes.id` is `None` when there are detections but tracking hasn't assigned IDs yet (which can happen on the first frame or two). Skip both cases.
+Inside the `/track` handler, right before the frame loop:
 
-**`.tolist()`** turns the torch tensors that `boxes.id` and `boxes.cls` hand back into plain Python lists you can iterate.
+```python
+frames_seen = defaultdict(int)
+label_for = {}
+```
 
-**`model.names`** is a class-id-to-label dict from the trained model. If your model has one class it's `{0: "salamander"}`. We use it to turn the numeric class id from each box into a string.
+`frames_seen` will count how many frames each track id appeared in. `label_for` will store each track id's class label (like `"salamander"`).
 
-The list comprehension after the loop converts each track's frame count to seconds (dividing by `fps`) and pairs it with the label. That list goes in the response next to `status` and `video_url`.
+## Update state inside the loop
 
-## Frontend
+Inside the frame loop, after `writer.write(result.plot())`:
 
-Render the tracks. After the `<video>` element, add a `<table>` with one row per entry in `data.tracks`. Columns: `track_id`, `label`, `time_on_screen_s`. React's array `.map()` is the natural fit for rendering rows.
+```python
+boxes = result.boxes
+if boxes is not None and boxes.id is not None:
+    for tid, cls_id in zip(boxes.id.tolist(), boxes.cls.tolist()):
+        frames_seen[int(tid)] += 1
+        label_for[int(tid)] = model.names[int(cls_id)]
+```
 
-You can use the table styles in `styles.css` from earlier templates if you have them, or write your own. Functionality is what matters.
+`result.boxes` is `None` when there were no detections in this frame. `boxes.id` is `None` when there are detections but tracking hasn't assigned IDs yet, which can happen on the first frame or two. Skip both cases.
 
-## Verify
+`boxes.id` and `boxes.cls` come back as torch tensors. `.tolist()` turns them into plain Python lists you can iterate.
 
-Upload a short clip. After processing, you should see the annotated video plus a small table next to it. Each row is one tracked individual, with how many seconds it was on screen.
+`model.names` is a dict that maps class index to label string. If your model has one class, it's `{0: "salamander"}`.
 
-If the table is empty, the tracker didn't find anything across the whole video. Open the JSON response in the browser's network tab and confirm `tracks` is `[]`. Try a different clip or check that the model you loaded actually detects the thing you're looking at.
+**Check it works.** After the loop and the `release()` calls, before the `return`, add:
 
-> **With your partner:** Run the same video twice. Do you get the same track IDs both times? Why or why not? What does that tell you about how stable `model.track()` is across separate sessions?
+```python
+print("frames_seen:", dict(frames_seen))
+print("label_for:", label_for)
+```
+
+Upload a clip and watch the terminal. After the loop finishes, you should see something like:
+
+```
+frames_seen: {1: 454, 4: 9}
+label_for: {1: 'salamander', 4: 'salamander'}
+```
+
+Track 1 was visible in 454 frames, track 4 in 9. Remove the prints once you've looked.
+
+## Build the tracks list
+
+In the same spot the prints were:
+
+```python
+tracks = [
+    {
+        "track_id": tid,
+        "time_on_screen_s": round(count / fps, 2),
+        "label": label_for[tid],
+    }
+    for tid, count in frames_seen.items()
+]
+```
+
+This turns `frames_seen` into a list of one dict per unique track id, converting frame count to seconds using the source video's `fps`.
+
+## Add it to the response
+
+Update the return:
+
+```python
+return {
+    "status": "done",
+    "video_url": f"http://localhost:8000/videos/output.mp4?t={int(time.time())}",
+    "tracks": tracks,
+}
+```
+
+**Check it works.** Upload via the existing frontend, then look at the network tab. The JSON response should now include a `tracks` array like:
+
+```json
+{
+  "status": "done",
+  "video_url": "http://localhost:8000/videos/output.mp4?t=...",
+  "tracks": [
+    {"track_id": 1, "time_on_screen_s": 18.94, "label": "salamander"},
+    {"track_id": 4, "time_on_screen_s": 0.38, "label": "salamander"}
+  ]
+}
+```
+
+## Render the table on the frontend
+
+After the `<video>` tag, add a `<table>` with one row per entry in `data.tracks`. Columns: track id, label, time on screen. React's array `.map()` is the natural fit.
+
+**Check it works.** Upload through the page. You should see the video and a small table next to it, one row per tracked individual.
+
+> **With your partner:** Run the same video twice. Do you get the same track IDs both times? Why or why not?

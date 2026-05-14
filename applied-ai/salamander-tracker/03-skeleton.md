@@ -123,6 +123,6 @@ npm install
 
 ### What this page needs to do
 
-Open `frontend/src/App.jsx` and replace its contents with a component that fetches `http://localhost:8000/` on mount and renders the response so you can see it. Anything that gets the JSON visible on the page works (`<pre>{JSON.stringify(data, null, 2)}</pre>` is the lazy option).
+Open `frontend/src/App.jsx` and replace its contents with a component that fetches `http://localhost:8000/` on mount and renders the response so you can see it. Anything that gets the JSON visible on the page works (such as `<pre>{JSON.stringify(data, null, 2)}</pre>`).
 
 Run it. The point is just confirming the frontend can reach the backend and read a response.
