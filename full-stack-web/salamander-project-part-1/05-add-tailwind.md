@@ -55,12 +55,12 @@ Lean on the [Tailwind docs](https://tailwindcss.com/docs) search as you go. The 
 
 Don't try to nail it on the first pass. Ship a coherent rough version of every page, then iterate.
 
-> **With your partner:** Look at your wireframes. What's the overall feel? Clean and minimal? Bold and friendly? Technical and dense? Pick a direction together before you start applying styles. Otherwise you'll spend the session undoing each other's work.
+> **With your partner:** Look at your wireframes. What's the overall feel? Clean and minimal? Bold and friendly? Pick a direction together before you start applying styles.
 
-> **With your partner:** Sketch a tiny color palette. One background, one body text color, one or two accent colors. The Tailwind docs have a [color reference](https://tailwindcss.com/docs/colors) you can pick from. You can change them later. Pick once now so your pages feel like they belong to the same app.
+> **With your partner:** Figure out a specific color palette if you haven't already. The Tailwind docs have a [color reference](https://tailwindcss.com/docs/colors) you can pick from. You can change them later.
 
 ## What "done enough" looks like
 
-For this pair program, "done enough" means each page reads as deliberate. Headings stand out, links are clearly clickable, content has breathing room, the palette is consistent across pages. You're not aiming for polished or pixel-perfect. You're aiming for *this looks intentional* instead of *this is unstyled HTML*.
+For this pair program, "done enough" means each page reads as deliberate. Headings stand out, links are clearly clickable, content has breathing room, the palette is consistent across pages. You're aiming for *this looks intentional* instead of *this is unstyled HTML*.
 
-Iterate until you and your partner both agree it's at that bar. Then commit and head to the submit page.
+Iterate until you and your partner both agree it's at that bar.

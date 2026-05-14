@@ -52,6 +52,6 @@ You don't memorize the utilities. You search for them. The [official Tailwind do
 
 ## The rule going forward
 
-Apply styles at the component level wherever possible. Reach for Tailwind first. When you genuinely need something Tailwind doesn't have, write component-scoped CSS (a `.module.css` file or a small CSS file imported by that component) rather than dumping rules into a global stylesheet. The global stylesheet is for app-wide concerns like fonts and base colors, not "the card on the Videos page."
+Apply styles at the component level wherever possible. Reach for Tailwind first. When you genuinely need something Tailwind doesn't have, write component-scoped CSS (a small CSS file imported by that component) rather than dumping rules into a global stylesheet. The global stylesheet is for app-wide concerns like fonts and base colors, not "the card on the Videos page."
 
-> **With your partner:** Open the [Tailwind docs](https://tailwindcss.com/docs) and use the search to find the utilities for these three things: centering an item horizontally on the page, putting space between items in a list, and changing a button's background color on hover. You don't need to write code yet. Just practice the lookup. This is how you'll work with Tailwind from now on.
+> **With your partner:** Open the [Tailwind docs](https://tailwindcss.com/docs) and use the search to find the utilities for these three things: centering an item horizontally on the page, putting space between items in a list, and changing a button's background color on hover. You don't need to write code yet. Just practice the lookup. LLMs can also be super helpful here in finding the tailwind version of what you're looking for.
