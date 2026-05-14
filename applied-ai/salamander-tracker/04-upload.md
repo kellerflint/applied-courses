@@ -3,7 +3,7 @@ title: "Step 2: Upload & Playback"
 order: 4
 ---
 
-Now the app does something. The user picks a video file in the browser, the frontend ships it to the backend, the backend writes it to disk, and the frontend plays it back. No YOLO yet. The point of this step is to confirm the file actually moves between the two services and ends up somewhere you can read it from.
+Next, the user will be able to pick a video file in the browser, the frontend ships it to the backend, the backend writes it to disk, and the frontend plays it back. No YOLO yet. The point of this step is to confirm the file actually moves between the two services and ends up somewhere you can read it from.
 
 ## Backend
 
@@ -69,9 +69,11 @@ Read the new pieces.
 
 **`(VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())`** reads all the bytes from the upload and writes them to `videos/input.mp4`. Every upload overwrites the previous one. That's fine for now.
 
-**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` on the URL is a cache buster. Without it, when the user uploads a different video to the same `input.mp4` path, the browser would happily show the previous cached one. Appending the current timestamp makes the URL different every time, so the browser fetches fresh.
+**The response** is a small JSON object with the URL the frontend should use to play the video back. The `?t={int(time.time())}` on the URL is a cache buster. Here's what it's doing.
 
-If you try this and get an error like "Form data requires 'python-multipart' to be installed," you missed it in `requirements.txt`. Add it and reinstall.
+The file on disk is always `videos/input.mp4`. Each upload overwrites it. The server's static file mount looks up files by path on disk and ignores the query string entirely. So `?t=...` doesn't change anything on the server side, the same `input.mp4` gets served either way.
+
+The browser is different. Browsers cache fetched resources keyed by the **full URL including the query string**. Without the cache buster, the browser sees the same URL `videos/input.mp4` on every upload and assumes "I already have that one," serving the previous video from its local cache. With the timestamp baked into the query string, each upload produces a unique URL, the browser's cache misses, and it fetches the file fresh from the server.
 
 ## Frontend
 
