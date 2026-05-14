@@ -58,6 +58,10 @@ Running multiple ML components in one app gets expensive fast if you're not care
 - **Azure** has a huge catalog of AI services with significant free credits for students. Worth using for vision, speech, language, and search components specifically.
 - **Local inference** for vision models (YOLO, OCR) is often free and fast enough on your laptop. No API calls needed.
 
+This video walks through using an Azure API. It's a little dated, but the process still works similarly today and should give you a sense of what calling these services looks like.
+
+<iframe src="https://share.descript.com/embed/rcDe67fWhBF?t=170.478947&autoplay=1" width="100%" height="420" frameborder="0" allowfullscreen></iframe>
+
 Pick infrastructure per component. Mix providers wherever it makes sense, one for vision, another for the LLM, local for the rest.
 
 ## Form your teams
