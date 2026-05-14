@@ -16,13 +16,15 @@ OpenCV reads and writes video files frame by frame. The `YOLO` class loads the m
 
 ## Load the model at startup
 
-Below your app setup:
+Drop your trained `best.pt` from the YOLO walkthrough into `backend/` next to `main.py`. Then below your app setup:
 
 ```python
-model = YOLO(str(Path(__file__).parent.parent / "data" / "yolov8n.pt"))
+model = YOLO("best.pt")
 ```
 
-At module scope, not inside the route. The model file is roughly 6 MB and loading it isn't free, so you want it to happen once when the server boots. Every request reuses the same `model` object. Point the path at your trained `best.pt`.
+At module scope, not inside the route. Loading parses the model file (a few MB), so you want it to happen once when the server boots, not on every request. Every request reuses the same `model` object.
+
+If you want to test the wiring before your model is ready, use `YOLO("yolov8n.pt")` instead. That's a generic object-detection model Ultralytics auto-downloads on first use. It won't find salamanders, but it'll let you confirm the inference pipeline runs.
 
 **Check it works.** Restart the server. You should see Ultralytics print a model summary on startup. To see what classes your model knows, temporarily add a print and restart:
 
@@ -30,7 +32,7 @@ At module scope, not inside the route. The model file is roughly 6 MB and loadin
 print(model.names)
 ```
 
-For a model trained on one class called `salamander`, you'll see `{0: 'salamander'}`. For the default `yolov8n.pt` (the generic COCO model), you'll see a long dict of 80 classes. Remove the print after you've looked at it.
+For a model trained on one class called `salamander`, you'll see `{0: 'salamander'}`. For `yolov8n.pt`, you'll see a long dict of 80 COCO classes. Remove the print after you've looked at it.
 
 ## Open the uploaded video
 
