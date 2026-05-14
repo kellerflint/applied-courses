@@ -18,17 +18,16 @@ export default function Track() {
     setPercent(0);
 
     try {
-      // Kick off the job. The backend returns immediately with a job_id.
+      // Kick off the job. The backend returns immediately.
       const form = new FormData();
       form.append("video", file);
       const startRes = await fetch(`${API_BASE}/track`, { method: "POST", body: form });
       if (!startRes.ok) throw new Error(`Start failed (${startRes.status})`);
-      const { job_id } = await startRes.json();
 
       // Poll for progress every 1.5s until the job is done or fails.
       while (true) {
         await new Promise((r) => setTimeout(r, 1500));
-        const jobRes = await fetch(`${API_BASE}/track/${job_id}`);
+        const jobRes = await fetch(`${API_BASE}/track`);
         if (!jobRes.ok) throw new Error(`Poll failed (${jobRes.status})`);
         const job = await jobRes.json();
         setPercent(job.percent ?? 0);
