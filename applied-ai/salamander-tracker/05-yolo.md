@@ -91,15 +91,19 @@ if __name__ == "__main__":
 
 Walk through the new pieces.
 
-**`model = YOLO(...)`** at module scope, not inside the route. The model file is roughly 6 MB and loading it parses a fair amount of data. You want this to happen once when the server boots, not once per upload. Every request reuses the same `model` object. Point the path at your trained `best.pt` from the YOLO walkthrough. For development you can swap in `yolov8n.pt` (a generic COCO-classes model that auto-downloads) just to confirm the wiring works, but obviously it won't recognize salamanders specifically.
+**`model = YOLO(...)`** at module scope, not inside the route. The model file is roughly 6 MB and loading it parses a fair amount of data. You want this to happen once when the server boots. Every request reuses the same `model` object. Point the path at your trained `best.pt` from the YOLO walkthrough.
 
-**`cv2.VideoCapture(...)`** opens the input file for reading. The `.get(cv2.CAP_PROP_*)` calls pull metadata: frame rate, dimensions, frame count. You'll use these in two places: the writer needs the matching fps and dimensions so the output video plays back at the right speed, and `total` gives you a loop bound.
+**`cv2.VideoCapture(...)`** opens the input video for reading. The `.get(cv2.CAP_PROP_*)` calls pull metadata you need next: fps and dimensions to set up the writer, and `total` to use as the loop bound.
 
-**`cv2.VideoWriter(...)`** is the output side. The four arguments are: path to write to, codec, fps, and dimensions. The codec is encoded as a four-character code (a "fourcc"). `avc1` is H.264. Browsers play H.264 reliably in `<video>` tags. Other codecs may not.
+**`cv2.VideoWriter(...)`** opens the output mp4 for writing. Its fps and dimensions match the input so the result plays back at the right speed. `avc1` is the H.264 codec. Browsers play H.264 reliably in `<video>` tags.
 
-**The frame loop.** `cap.read()` returns a pair: a success flag and the frame itself as a numpy array. When the video ends or there's a read error, `ok` becomes false and we break out. `model.track(frame, persist=True, verbose=False)` runs YOLO and returns a list of results, one per input image (we passed in one, so we take `[0]`). The `persist=True` argument is the difference between `track` and `predict`: it tells the tracker to keep its state between calls, so the same salamander gets the same `track_id` from frame to frame. `result.plot()` draws the bounding boxes onto the frame and returns the annotated image. That's what we write to the output.
+**The frame loop.** `cap.read()` returns `(ok, frame)`. When the video ends, `ok` is `False` and the loop breaks.
 
-**`cap.release()` and `writer.release()`** are not optional. The writer in particular has to be released to flush the mp4's metadata (specifically the "moov atom" that tells players where things are inside the file). If you skip the release, the file on disk may technically exist but won't play.
+`model.track(frame, persist=True, verbose=False)` runs YOLO and returns a list (one result per input frame, so we take `[0]`). The `persist=True` is what makes this `track` instead of `predict`: the tracker keeps state between calls, so the same salamander keeps the same `track_id` across frames.
+
+`result.plot()` returns the frame with bounding boxes drawn on top. That's what gets written to the output.
+
+**`cap.release()` and `writer.release()`** flush their resources. Without releasing the writer, the output mp4 gets created but won't play.
 
 **The response** points at `videos/output.mp4` now, not `input.mp4`. Same cache buster pattern.
 
