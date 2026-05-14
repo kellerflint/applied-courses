@@ -39,7 +39,7 @@ list loads.
 ## Notes captured while validating
 
 Three places where the lesson needed updating against current Vite 8 /
-React 19 / React Router 7 (all applied in this commit):
+React 19 / React Router 7 (all applied):
 
 1. **`main.jsx`** uses the modern `import { StrictMode }` /
    `createRoot` style. Lesson updated to show students editing what's
@@ -50,3 +50,17 @@ React 19 / React Router 7 (all applied in this commit):
 3. **StrictMode double-invocation** in dev means the page-2 console.log
    shows twice. Page 2 now preempts that confusion with a one-paragraph
    explanation.
+
+### Staged-test restructure
+
+A second pass added incremental verify points so students test each
+piece as they build it instead of waiting until the end:
+
+- **Page 1: Routes and Pages** — routes are now wired before the nav
+  links, so students verify routing by typing `/` and `/videos` in
+  the address bar before any UI exists for navigation. Adding nav
+  links is its own step with its own verify.
+- **Page 3: Video List** — split into four stages with a test after
+  each: render the success path → add loading state → add error state
+  → add navigation. Students see something working at each step
+  instead of building everything blind and debugging the result.

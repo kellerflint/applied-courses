@@ -105,6 +105,8 @@ createRoot(document.getElementById('root')).render(
 
 `BrowserRouter` uses the browser's real URL bar (so `localhost:5173/videos` works as you'd expect). Anything inside it can use the routing hooks and components.
 
+**Quick check.** Save the file and look at the browser. The default Vite + React page should still render exactly the same as before. `BrowserRouter` is invisible until something inside it actually uses routing. If the page went blank or threw an error in the console, fix that here before moving on.
+
 ## Create your page components
 
 Make a `src/pages/` folder. Inside it, create one file per page. At minimum you need `Home.jsx` and `Videos.jsx`. If your wireframes call for more pages, create those too (a Preview page, a Results page, whatever you sketched).
@@ -142,6 +144,48 @@ The Home page is the landing page where you explain what the app does. The Video
 Open `src/App.jsx`. The Vite template ships with a demo hero section, some imports, and a counter button. **Replace the entire file** (imports and all) with a route table that maps URL paths to page components:
 
 ```jsx
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home.jsx';
+import Videos from './pages/Videos.jsx';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/videos" element={<Videos />} />
+    </Routes>
+  );
+}
+```
+
+What's happening:
+
+- `Routes` is the container that decides which `Route` to render based on the current URL.
+- Each `Route` ties a `path` to an `element` (the component to render).
+
+If your wireframes call for more pages, add a `Route` for each one.
+
+### Verify the routes work
+
+Before adding any nav links, prove the routes themselves work by **typing URLs directly in the browser address bar**:
+
+1. Go to `http://localhost:5173/`. You should see the Home page heading.
+2. Change the URL to `http://localhost:5173/videos` and hit Enter. The Videos page should render.
+3. Hit the browser back button. You should land back on Home.
+4. Type a path that isn't registered, like `http://localhost:5173/nope`. The page should go blank (no route matched). That's a real thing to fix later, but it confirms the router is doing what you'd expect.
+
+If any of those don't work, fix it before you add nav links. Layering UI on top of broken routing is hard to debug. The most common issues:
+
+- **Blank page or "Cannot read properties of undefined"** usually means `BrowserRouter` is missing in `main.jsx`.
+- **Refreshing on a non-root URL works in dev but fails when deployed.** That's a different problem you'll handle at deploy time. Dev is fine for now.
+
+## Add nav links
+
+Now that the routes work, give users a way to move between them without typing URLs.
+
+Update `src/App.jsx` to add a `nav` with `Link` components:
+
+```jsx
 import { Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Videos from './pages/Videos.jsx';
@@ -164,22 +208,14 @@ export default function App() {
 }
 ```
 
-A few things are happening here:
+`Link` renders an `<a>` tag, but clicking it does a client-side navigation instead of a full page reload. That keeps the app fast and preserves React state across navigations.
 
-- `Routes` is the container that decides which `Route` to render based on the current URL.
-- Each `Route` ties a `path` to an `element` (the component to render).
-- `Link` renders an `<a>` tag, but clicking it does a client-side navigation instead of a full page reload. That keeps the app fast and preserves React state across navigations.
+### Verify the links work
 
-If your wireframes call for more pages, add a `Route` for each one and a corresponding `Link` in the nav.
-
-## Verify it works
-
-Go to `http://localhost:5173/`. You should see the Home page. Click the Videos link. The URL changes to `/videos` and the Videos page renders. The browser back button takes you back to Home. Refreshing the page on `/videos` still shows the Videos page.
-
-If any of that doesn't work, fix it before you move on. The most common issues:
-
-- **Blank page or "Cannot read properties of undefined"** usually means `BrowserRouter` is missing in `main.jsx`.
-- **Refreshing on a non-root URL works in dev but fails when deployed.** That's a different problem you'll handle at deploy time. Dev is fine for now.
+1. Reload `http://localhost:5173/`. You should see the nav and the Home page.
+2. Click "Videos." The URL changes to `/videos` and the Videos page renders.
+3. Hit the browser back button. You should land on Home with the URL back to `/`.
+4. Refresh on `/videos`. The Videos page should still render.
 
 > **With your partner:** Predict what happens if you put the wrong path in a `Link` (like `to="/vidoes"`). Then try it. What renders? How would a user know they hit a typo'd link? When you're done, fix the typo.
 
