@@ -11,6 +11,16 @@ The repo walks you through capturing images, labeling them, training a YOLO mode
 
 You'll copy that `best.pt` into your project later and the backend will load it from there.
 
+## Capturing your own data
+
+You don't need to use the Canvas footage. The plastic salamanders work great for capturing your own data. The walkthrough repo has two scripts for this:
+
+**`scripts/capture.py`** snaps individual frames (press SPACE on each one). This is what you'll feed into Label Studio for training. Position the salamander, snap, reposition, snap again. Vary angles, distances, lighting, and backgrounds. Aim for 50+ frames across a good range of setups.
+
+**`scripts/record.py`** records video clips (press R to start, R again to stop). You don't label video frames, but you do need a video to upload to the tracker app once you've built it. Record a clip where you move a salamander around the frame, or move the camera around it. You want actual motion to track.
+
+A model trained only on still-image captures still works on video at inference time. YOLO runs on one frame at a time regardless of whether the source was an image or a video, so a still-image training set is fine for a video-inference target.
+
 ## A few notes specific to the salamander case
 
 **Use rectangle (axis-aligned) bounding boxes in Label Studio. Do not rotate them.** YOLO supports a separate "oriented bounding box" mode that uses a different model variant and a different label format. If you rotate your boxes in Label Studio while training a regular YOLO model, the labels and the model don't match and you can encounter issues during training. Stick to plain axis-aligned rectangles.
