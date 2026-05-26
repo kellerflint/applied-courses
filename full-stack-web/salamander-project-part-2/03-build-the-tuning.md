@@ -13,7 +13,7 @@ You'll build this in five stages:
 4. Draw the image onto the canvas.
 5. Binarize the pixels.
 
-By the end of stage 4, you'll see the thumbnail rendered through the canvas (just a copy of the original). Stage 5 is where it becomes binarization.
+By the end of stage 4 you'll see the thumbnail rendered through the canvas (just a copy of the original). Stage 5 wires up the read/write pixel pipeline that your binarization algorithm from 334 will plug into.
 
 ## Stage 1: The controls
 
@@ -124,59 +124,30 @@ Two things worth noticing:
 
 Reload the page. The canvas should now show the same image as the `<img>` next to it. Drag the slider and pick a new color. The canvas doesn't change yet (the inputs don't drive any logic), but the effect *is* re-running on each change. You can confirm by temporarily adding `console.log('redrawing')` at the top of the effect and watching it fire on every slider tick.
 
-## Stage 5: Binarize
+## Stage 5: Wire up the pixel pipeline
 
-The last piece. Replace the body of the redraw effect with code that reads the pixels, applies the binarization rule, and writes them back.
-
-The placeholder algorithm: for each pixel, compute how far its RGB color is from the picked target color. If it's close (within the tolerance), it's a match and gets drawn white. Otherwise it's drawn black. The picked color is the salamander's color; matching pixels become the visible silhouette.
+This page isn't going to teach you the binarization algorithm. That's the work you've done (or are doing) in your 334 course. This step is just the React-side plumbing that your algorithm will plug into.
 
 Below your existing `ctx.drawImage(img, 0, 0)` line, add:
 
 ```jsx
 const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-const px = data.data;
-
-const tr = parseInt(color.slice(1, 3), 16);
-const tg = parseInt(color.slice(3, 5), 16);
-const tb = parseInt(color.slice(5, 7), 16);
-
-for (let i = 0; i < px.length; i += 4) {
-  const dr = px[i]     - tr;
-  const dg = px[i + 1] - tg;
-  const db = px[i + 2] - tb;
-  const distance = Math.sqrt(dr * dr + dg * dg + db * db);
-  const matches = distance <= tolerance;
-  px[i]     = matches ? 255 : 0;
-  px[i + 1] = matches ? 255 : 0;
-  px[i + 2] = matches ? 255 : 0;
-}
-
+// Your algorithm from 334 goes here.
 ctx.putImageData(data, 0, 0);
 ```
 
-What's happening:
-
-- `getImageData` returns a `Uint8ClampedArray` of pixel bytes in `RGBARGBARGBA...` order, four bytes per pixel.
-- The `for` loop walks four bytes at a time: index `i` is red, `i+1` green, `i+2` blue, `i+3` alpha. Alpha is left untouched.
-- The picked color is parsed from its `#rrggbb` string into integer components `tr`, `tg`, `tb` once, outside the loop.
-- For each pixel, `distance` is the straight-line distance from this pixel's color to the target color in RGB space. Small distance = similar colors; large distance = very different.
-- If the distance is within `tolerance`, the pixel becomes white (matches the target). Otherwise it becomes black (background).
-- `putImageData` writes the modified pixel array back to the canvas.
-
-This is a placeholder algorithm. RGB distance is the simplest possible color-match rule and produces obviously imperfect masks. Your 334 course will give you a real algorithm; when you have it, replace the body of the `for` loop with your real logic and the rest of this scaffolding keeps working.
+`getImageData` reads the canvas pixels into `data.data`, a flat byte array in RGBA order (four bytes per pixel). `putImageData` writes a byte array back to the canvas. Your algorithm is the `for` loop you'll add between them: walk the array four bytes at a time, look at the current pixel, look at `color` and `tolerance`, and decide what the pixel should be.
 
 ### Verify
 
-1. Reload the page. The canvas should now show a black-and-white silhouette: white where pixels are close enough to the target color, black where they aren't.
-2. Drag the tolerance slider. The amount of white area should grow as tolerance goes up (more pixels qualify as a match) and shrink as it goes down. At tolerance 0, the image should be nearly entirely black. At tolerance 255+, mostly white.
-3. Change the target color. Pick something close to the salamander (a brown). The silhouette should appear. Pick something far off (bright blue). The salamander disappears.
+Reload the page. The canvas should still look exactly like the original thumbnail. That's expected. You're reading the pixels and writing them right back without modifying them, so the canvas matches the source. The pipeline is wired up; the algorithm slot is just empty.
 
-> **With your partner:** Pick a target color close to the salamander's actual color in the original thumbnail. Adjust tolerance until just the salamander shows up as a clean silhouette. What other pixels light up at higher tolerances? Talk through why.
+The slider and color picker still don't visibly change anything either. They will once your algorithm uses them.
 
 ## What you just built
 
-A live image processing pipeline. Inputs in React state. Image data in a ref. Canvas DOM element in a ref. Re-render triggered by input change. Effect dependency array is the wiring that ties them together.
+A live image processing pipeline. Inputs in React state. Image data in a ref. Canvas DOM element in a ref. Re-render triggered by input change. Effect dependency array is the wiring that ties them together. The algorithm is the only piece you'll fill in yourself.
 
 When a future pair program adds the centroid-dot user story, it slots into this same redraw effect. After `putImageData`, you'll add a few lines that find the largest "on" region, compute its centroid, and draw a dot on the canvas with `ctx.arc(...); ctx.fill()`. Same effect, same deps, same shape.
 
-When you swap the placeholder body for your real algorithm, the rest of the file doesn't change. The scaffolding *is* the lesson. The algorithm is yours.
+When you add your algorithm, the rest of the file doesn't change. The scaffolding *is* the lesson.

@@ -45,12 +45,9 @@ export default function Preview() {
   }, [thumbnailUrl]);
 
   // 3. Redraw whenever the image is loaded OR any tuning input changes.
-  //    This is the real-time-update mechanism. The body of this effect is
-  //    intentionally tiny + naive color masking: for each pixel, compare it
-  //    to the picked target color; if the RGB distance is below the
-  //    tolerance, mark it as a match (white), else mark it as background
-  //    (black). NOT the real algorithm from Auberon's course. Students
-  //    replace this body with their own.
+  //    The pixel pipeline is in place (getImageData + putImageData) but the
+  //    algorithm itself is empty: pixels are read and written back unchanged.
+  //    Drop your algorithm from 334 into the for-loop slot below.
   useEffect(() => {
     if (!imageReady) return;
     const img = imgRef.current;
@@ -63,25 +60,9 @@ export default function Preview() {
     ctx.drawImage(img, 0, 0);
 
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const px = data.data;
-
-    // Parse #rrggbb -> r,g,b ints. This is the target color the salamander
-    // is supposed to be close to.
-    const tr = parseInt(color.slice(1, 3), 16);
-    const tg = parseInt(color.slice(3, 5), 16);
-    const tb = parseInt(color.slice(5, 7), 16);
-
-    for (let i = 0; i < px.length; i += 4) {
-      const dr = px[i]     - tr;
-      const dg = px[i + 1] - tg;
-      const db = px[i + 2] - tb;
-      const distance = Math.sqrt(dr * dr + dg * dg + db * db);
-      const matches = distance <= tolerance;
-      px[i]     = matches ? 255 : 0;
-      px[i + 1] = matches ? 255 : 0;
-      px[i + 2] = matches ? 255 : 0;
-      // alpha (px[i + 3]) left as-is
-    }
+    // Your algorithm from 334 goes here.
+    // It would walk data.data four bytes at a time (RGBA per pixel), look at
+    // color and tolerance, and decide each pixel's new value.
     ctx.putImageData(data, 0, 0);
   }, [imageReady, color, tolerance]);
 
@@ -108,7 +89,7 @@ export default function Preview() {
               <img src={thumbnailUrl} alt={`Thumbnail for ${filename}`} className="border" />
             </figure>
             <figure>
-              <figcaption className="text-sm text-gray-500 mb-1">Binarized (live)</figcaption>
+              <figcaption className="text-sm text-gray-500 mb-1">Canvas (algorithm output)</figcaption>
               <canvas ref={canvasRef} className="border" />
             </figure>
           </div>
