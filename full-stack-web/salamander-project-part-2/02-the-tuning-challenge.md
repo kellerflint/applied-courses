@@ -57,18 +57,18 @@ const canvasRef = useRef(null);
 return <canvas ref={canvasRef} />;
 ```
 
-`useRef(null)` gives you back a small container object. It has one property: `.current`, which starts as `null`. When you pass that container to a JSX element via the `ref` prop, **React assigns `canvasRef.current = (that DOM element)` after it mounts the element**. From then on, `canvasRef.current` is the actual `<canvas>` DOM node and you can call its native methods on it:
+`useRef(null)` gives you back a small container object that React keeps around for you across re-renders. The container has one property: `.current`, which starts as `null`. When you pass that container to a JSX element via the `ref` prop, **React assigns `canvasRef.current = (that DOM element)` after it mounts the element**. From then on, `canvasRef.current` is the actual `<canvas>` DOM node, and you can call its native methods on it:
 
 ```jsx
 canvasRef.current.getContext('2d').fillRect(20, 20, 100, 100);
 ```
 
-Same `getContext` call as in the plain HTML version. The only difference is how you got a handle to the canvas: `useRef` + the `ref` prop instead of `document.getElementById`.
+Same `getContext` call as in the plain HTML version. The only difference is how you got a handle to the canvas: `useRef` + the `ref` prop instead of `document.getElementById`. And because the drawing happens through a direct method call on the DOM element, it doesn't go through React's render cycle. The pixels just appear. React isn't involved in the drawing at all.
 
-A few useful notes about `useRef`:
+The activity below shows that pattern in motion. Code on the left with three numbered callouts on the parts that matter; live canvas on the right.
 
-- The container persists across re-renders. React hands you back the same object every time the component renders.
-- Changing `.current` does *not* trigger a re-render. It's outside React's render cycle. That's the whole point.
-- `useRef` is also used to hold arbitrary mutable values (timer IDs, the previous value of a prop, game state). For canvas, you're using it for the DOM-element case described above. Both uses share the same hook because both want the same thing: a container that survives re-renders without causing them.
+{% activity "useref-canvas.html", "useRef + Canvas", "500px" %}
 
-That's everything you need to know. The next page walks you through using it.
+> **With your partner:** Read the three numbered callouts together. Click "Draw a circle" a few times. Talk through what each callout is doing in your own words. If one doesn't click yet, sit with it side by side with the canvas behavior until it does.
+
+The next page walks you through using this pattern in your own app.
