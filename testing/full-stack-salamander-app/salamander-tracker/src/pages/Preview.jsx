@@ -36,7 +36,7 @@ export default function Preview() {
   useEffect(() => {
     if (!thumbnailUrl) return;
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // img.crossOrigin = 'anonymous';
     img.onload = () => {
       imgRef.current = img;
       setImageReady(true);

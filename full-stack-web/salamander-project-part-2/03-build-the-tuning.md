@@ -3,8 +3,6 @@ title: "Build the Tuning"
 order: 3
 ---
 
-Time to wire it up. Same staged pattern as Part 1: build one piece, verify it works, then add the next piece.
-
 You'll build this in five stages:
 
 1. Add the controls and their state.
@@ -13,22 +11,11 @@ You'll build this in five stages:
 4. Draw the image onto the canvas.
 5. Binarize the pixels.
 
-By the end of stage 4 you'll see the thumbnail rendered through the canvas (just a copy of the original). Stage 5 wires up the read/write pixel pipeline that your binarization algorithm from 334 will plug into.
-
 ## Stage 1: The controls
 
-Add two new pieces of state to `Preview.jsx` and render the inputs. No canvas yet.
+Add two new pieces of state to `Preview.jsx` and render the inputs. You need `color` and `tolerance`
 
-The state:
-
-```jsx
-const [color, setColor] = useState('#6b4423'); // a brown, near salamander color
-const [tolerance, setTolerance] = useState(80);
-```
-
-The inputs go in your JSX somewhere below the thumbnail. A color picker is `<input type="color">`; a slider is `<input type="range">`. Both fire `onChange` with `e.target.value`. The range value comes back as a string, so wrap it in `Number(...)` before setting state.
-
-> **With your partner:** Build these two inputs together. Add a small `console.log` in each `onChange` handler so you can confirm the state actually updates when you drag.
+A color picker is `<input type="color">`; a slider is `<input type="range">`. Both fire `onChange` with `e.target.value`. Add a small `console.log` in each `onChange` handler so you can confirm the state actually updates when you drag.
 
 ### Verify
 
@@ -56,7 +43,7 @@ The element gets the ref via the `ref` prop:
 
 ### Verify
 
-Open the page. The canvas is invisible right now (it's 300x150 white by default, on a white background, with no content). To prove it exists, briefly add a temporary {% raw %}`style={{ border: '1px solid red' }}`{% endraw %} to the `<canvas>` and reload. You should see a red rectangle. Remove the temp style when you're done.
+Open the page. The canvas is invisible right now (it's 300x150 white by default, on a white background, with no content). To prove it exists, you can add a temporary border to the `<canvas>` and reload. Remove the temp style when you're done.
 
 ## Stage 3: Load the image into a ref
 
@@ -91,7 +78,7 @@ useEffect(() => {
 
 The `setImageReady(false)` at the top covers the case where the user navigates from one preview page to another with a different filename. You reset, then flip back to true once the new image loads.
 
-**Why `img.crossOrigin = 'anonymous'`?** When you load an image from a different origin and then try to read its pixels (which is exactly what stage 5 does), the browser will refuse with a "tainted canvas" error if the image was loaded without CORS. Setting `crossOrigin = 'anonymous'` before assigning `.src` tells the browser to make the request CORS-style. For images served from your own origin (like `public/salamander1.jpg`) this is irrelevant. For anything cross-origin it's required.
+**Why `img.crossOrigin = 'anonymous'`?** When you load an image from a different origin and then try to read its pixels, the browser will refuse with an error. For images served from your own origin (like `public/salamander1.jpg`) this is irrelevant, but the placeholder images in the mock data come from a different origin.
 
 ### Verify
 
@@ -155,11 +142,13 @@ ctx.putImageData(data, 0, 0);
 
 The `for` loop walks that array 4 bytes at a time. Each iteration's `i` lands on the start of the next pixel. `px[i]` is its red, `px[i+1]` its green, `px[i+2]` its blue, `px[i+3]` its alpha. Your algorithm reads those, decides what the pixel should look like, and writes the new values back to the same positions. When the loop finishes, `putImageData` pushes the whole modified array back onto the canvas in one shot.
 
-### Verify
+### Now port your algorithm
 
-Reload the page. The canvas should still look exactly like the original thumbnail. That's expected. The loop runs but doesn't change anything (you haven't added the body of your algorithm yet), so the pixels go in and out unchanged. The pipeline is wired up; the algorithm slot is just empty.
+You wrote a binarization algorithm in 334, in Java. Port that logic into the body of the for loop. Same shape you used there: walk the pixels, compare each to the target color and the tolerance, decide its new value, write it back. The only thing different here is the language and where you're reading and writing from.
 
-The slider and color picker still don't visibly change anything either. They will once your algorithm uses them.
+Once it's in, reload the page. The canvas should turn into a black-and-white silhouette. Drag the tolerance slider; the silhouette grows or shrinks. Change the target color; the silhouette tracks the color you picked.
+
+That's the user story. Everything you just built on this page is the React side. The algorithm itself is the work you already did in 334.
 
 ## What you just built
 
