@@ -49,19 +49,32 @@ The whole point of the next section is figuring out how to do the equivalent ins
 
 Inside a React component, you can't write `document.getElementById('myCanvas')` at the top of the function, because **when your component function runs, the DOM elements in your JSX don't exist yet**. There's nothing to find. You need a way to grab the canvas element *after* React has mounted it.
 
-That way is the `useRef` hook. Two lines do the whole thing:
+That way is the `useRef` hook. Here's the whole pattern in one component:
 
 ```jsx
-const canvasRef = useRef(null);
+import { useRef } from 'react';
 
-return <canvas ref={canvasRef} />;
+function CanvasDemo() {
+  const canvasRef = useRef(null);
+
+  function draw() {
+    canvasRef.current.getContext('2d').fillRect(20, 20, 100, 100);
+  }
+
+  return (
+    <>
+      <canvas ref={canvasRef} />
+      <button onClick={draw}>Draw</button>
+    </>
+  );
+}
 ```
 
-`useRef(null)` gives you back a small container object that React keeps around for you across re-renders. The container has one property: `.current`, which starts as `null`. When you pass that container to a JSX element via the `ref` prop, **React assigns `canvasRef.current = (that DOM element)` after it mounts the element**. From then on, `canvasRef.current` is the actual `<canvas>` DOM node, and you can call its native methods on it:
+Three things are happening:
 
-```jsx
-canvasRef.current.getContext('2d').fillRect(20, 20, 100, 100);
-```
+1. `useRef(null)` gives you back a small container object that React keeps around for you across re-renders. The container has one property: `.current`, which starts as `null`.
+2. Passing the container to a JSX element via the `ref` prop (`ref={canvasRef}`) tells React: **after you mount this element, assign `canvasRef.current = (that DOM element)`**.
+3. After mount, `canvasRef.current` is the actual `<canvas>` DOM node. So anywhere code runs later (like the `draw` function on a button click), `canvasRef.current.getContext('2d')` gives you the drawing API, and you call its native methods.
 
 Same `getContext` call as in the plain HTML version. The only difference is how you got a handle to the canvas: `useRef` + the `ref` prop instead of `document.getElementById`. And because the drawing happens through a direct method call on the DOM element, it doesn't go through React's render cycle. The pixels just appear. React isn't involved in the drawing at all.
 
