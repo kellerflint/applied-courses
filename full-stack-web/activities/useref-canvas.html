@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>useRef + Canvas</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -11,16 +14,14 @@
       background: #f8fafc;
       color: #1e293b;
       padding: 16px;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
     }
 
     .layout {
       display: grid;
       grid-template-columns: 1.3fr 1fr;
       gap: 14px;
-      height: 100%;
-      max-width: 1000px;
+      max-width: 1050px;
       margin: 0 auto;
     }
 
@@ -40,21 +41,19 @@
       padding: 16px;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      gap: 12px;
     }
 
     .code-panel pre {
-      flex: 1;
       margin: 0;
       font-family: 'Menlo', 'Monaco', monospace;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       line-height: 1.55;
       color: #1e293b;
-      overflow: auto;
-      white-space: pre;
       background: #f8fafc;
       border-radius: 8px;
       padding: 12px 14px;
+      overflow-x: auto;
     }
     .code-panel .kw { color: #c026d3; }
     .code-panel .fn { color: #2563eb; }
@@ -77,46 +76,6 @@
       vertical-align: text-top;
     }
 
-    .demo-panel {
-      gap: 12px;
-    }
-    .canvas-host {
-      flex: 1;
-      background: #f1f5f9;
-      border: 2px dashed #cbd5e1;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-    }
-    button {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid #cbd5e1;
-      background: #2563eb;
-      color: white;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button.secondary {
-      background: white;
-      color: #334155;
-    }
-    button:hover { filter: brightness(0.95); }
-
     .legend {
       font-size: 0.78rem;
       color: #475569;
@@ -125,105 +84,209 @@
       line-height: 1.55;
     }
     .legend .row { margin-top: 4px; }
+
+    .canvas-host {
+      background: #f1f5f9;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #475569;
+      font-family: 'Menlo', 'Monaco', monospace;
+    }
+    .stat-row .label { color: #64748b; }
+    .stat-row .value {
+      color: #0f172a;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button.secondary {
+      background: white;
+      color: #334155;
+    }
+    button:hover { filter: brightness(0.95); }
+
+    .log {
+      background: #0f172a;
+      color: #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'Menlo', 'Monaco', monospace;
+      font-size: 0.76rem;
+      height: 100px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+    .log .entry { padding: 1px 0; }
+    .log .entry.null { color: #fbbf24; }
+    .log .entry.dom { color: #4ade80; }
+    .log .empty { color: #475569; font-style: italic; }
   </style>
 </head>
 <body>
-<div class="layout">
-  <section class="panel code-panel">
-    <h2>The component</h2>
-<pre><span class="kw">function</span> <span class="fn">CanvasDemo</span>() {
-  <span class="callout">1</span><span class="kw">const</span> canvasRef = <span class="fn">useRef</span>(<span class="kw">null</span>);
+<div id="root"></div>
 
-  <span class="kw">function</span> <span class="fn">drawCircle</span>() {
-    <span class="callout">3</span><span class="kw">const</span> ctx = canvasRef.current.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
-    ctx.fillStyle = <span class="fn">randomColor</span>();
-    ctx.<span class="fn">beginPath</span>();
-    ctx.<span class="fn">arc</span>(<span class="fn">randomX</span>(), <span class="fn">randomY</span>(), <span class="str">20</span>, <span class="str">0</span>, <span class="str">2 * Math.PI</span>);
-    ctx.<span class="fn">fill</span>();
-  }
-
-  <span class="kw">return</span> (
-    &lt;&gt;
-      <span class="callout">2</span>&lt;<span class="tag">canvas</span> ref={canvasRef} /&gt;
-      &lt;<span class="tag">button</span> onClick={drawCircle}&gt;Draw a circle&lt;/<span class="tag">button</span>&gt;
-    &lt;/&gt;
-  );
-}</pre>
-
-    <div class="legend">
-      <div class="row"><span class="callout">1</span> <code>useRef(null)</code> creates a ref object with a <code>.current</code> property. React keeps the same object across re-renders.</div>
-      <div class="row"><span class="callout">2</span> Putting <code>ref={canvasRef}</code> on a JSX element tells React: when this element mounts, fill <code>canvasRef.current</code> with the DOM node.</div>
-      <div class="row"><span class="callout">3</span> <code>canvasRef.current</code> is now the actual <code>&lt;canvas&gt;</code> element, so we can call its native methods directly.</div>
-    </div>
-  </section>
-
-  <section class="panel demo-panel">
-    <h2>Live demo</h2>
-    <div class="canvas-host">
-      <canvas id="canvas"></canvas>
-    </div>
-    <div class="controls">
-      <button id="draw">Draw a circle</button>
-      <button class="secondary" id="clear">Clear</button>
-    </div>
-  </section>
-</div>
-
-<script>
-  // The activity is vanilla JS that simulates what the React component above
-  // would do. The useRef + ref={} dance doesn't have a meaningful vanilla
-  // equivalent (you just have the element directly), so we're showing the
-  // *effect*: a button that, when clicked, reaches into the canvas DOM
-  // element and calls its methods.
-
-  const canvas = document.getElementById('canvas');
-  const draw = document.getElementById('draw');
-  const clear = document.getElementById('clear');
-
-  // Match drawing surface to the host's pixel size so circles land where
-  // they should.
-  function sizeCanvas() {
-    const host = canvas.parentElement.getBoundingClientRect();
-    canvas.width = host.width;
-    canvas.height = host.height;
-  }
+<script type="text/babel">
+  const { useRef, useState, useEffect } = React;
 
   function randomColor() {
     const palette = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
     return palette[Math.floor(Math.random() * palette.length)];
   }
-  const randomX = () => 24 + Math.random() * (canvas.width - 48);
-  const randomY = () => 24 + Math.random() * (canvas.height - 48);
+
+  function CanvasDemo() {
+    // The ref that holds the canvas DOM element. Starts as null; React
+    // fills it in after the <canvas> mounts.
+    const canvasRef = useRef(null);
+
+    // A render-count ref so we can show the user how often this component
+    // is actually re-rendering. Refs themselves don't trigger re-renders,
+    // so incrementing this doesn't loop.
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+
+    // Logging panel state.
+    const [log, setLog] = useState([]);
+    const append = (text, kind) => setLog((l) => [...l.slice(-4), { text, kind }]);
+
+    // Show the lifecycle: what canvasRef.current is right now (top of render)
+    // and what it becomes after mount.
+    if (renderCount.current === 1 && canvasRef.current === null && log.length === 0) {
+      // Log this once on first render so students see the "null at top of render" state.
+      queueMicrotask(() => append('first render, top of function: canvasRef.current is null', 'null'));
+    }
+    useEffect(() => {
+      // This fires after mount. canvasRef.current is now the DOM canvas element.
+      append('after mount, in useEffect: canvasRef.current is ' + describe(canvasRef.current), 'dom');
+    }, []);
+
+    function describe(value) {
+      if (value === null) return 'null';
+      if (value instanceof HTMLCanvasElement) return `<canvas width=${value.width} height=${value.height}>`;
+      return String(value);
+    }
+
+    function drawCircle() {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.fillStyle = randomColor();
+      ctx.beginPath();
+      const r = 16;
+      const x = r + Math.random() * (canvasRef.current.width - 2 * r);
+      const y = r + Math.random() * (canvasRef.current.height - 2 * r);
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    function clearCanvas() {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+
+    function logTheRef() {
+      append('Log the ref clicked: canvasRef.current is ' + describe(canvasRef.current), canvasRef.current ? 'dom' : 'null');
+    }
+
+    return (
+      <>
+        <section className="panel code-panel">
+          <h2>The component</h2>
+<pre>{
+`function CanvasDemo() {
+  `}<span className="callout">1</span>{`const canvasRef = `}<span className="fn">useRef</span>{`(`}<span className="kw">null</span>{`);
 
   function drawCircle() {
-    const ctx = canvas.getContext('2d');
+    `}<span className="callout">3</span>{`const ctx = canvasRef.current.`}<span className="fn">getContext</span>{`(`}<span className="str">'2d'</span>{`);
     ctx.fillStyle = randomColor();
-    ctx.beginPath();
-    ctx.arc(randomX(), randomY(), 20, 0, 2 * Math.PI);
-    ctx.fill();
+    ctx.`}<span className="fn">beginPath</span>{`();
+    ctx.`}<span className="fn">arc</span>{`(randomX(), randomY(), 16, 0, 2 * Math.PI);
+    ctx.`}<span className="fn">fill</span>{`();
   }
 
-  function clearCanvas() {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  return (
+    <>
+      `}<span className="callout">2</span>{`<`}<span className="tag">canvas</span>{` ref={canvasRef} />
+      <`}<span className="tag">button</span>{` onClick={drawCircle}>Draw a circle</`}<span className="tag">button</span>{`>
+    </>
+  );
+}`}</pre>
+          <div className="legend">
+            <div className="row"><span className="callout">1</span> <code>useRef(null)</code> creates a ref container with <code>.current === null</code>. Same container is returned every render.</div>
+            <div className="row"><span className="callout">2</span> <code>ref={'{canvasRef}'}</code> tells React to assign <code>canvasRef.current</code> to the DOM node after mount.</div>
+            <div className="row"><span className="callout">3</span> After mount, <code>canvasRef.current</code> is the actual <code>&lt;canvas&gt;</code>. Call its native methods directly.</div>
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Live demo</h2>
+          <div className="canvas-host">
+            <canvas ref={canvasRef} width="320" height="200" />
+          </div>
+          <div className="stat-row">
+            <span className="label">render count</span>
+            <span className="value">{renderCount.current}</span>
+          </div>
+          <div className="controls">
+            <button onClick={drawCircle}>Draw a circle</button>
+            <button className="secondary" onClick={clearCanvas}>Clear</button>
+            <button className="secondary" onClick={logTheRef}>Log the ref</button>
+          </div>
+          <Log entries={log} />
+        </section>
+      </>
+    );
   }
 
-  // Size the canvas to its host whenever the host changes size. The
-  // ResizeObserver fires once on subscribe, which handles initial layout.
-  // When resizing, we snapshot the existing pixels and restore them so
-  // student-drawn circles aren't wiped by a window resize.
-  const ro = new ResizeObserver(() => {
-    const ctx = canvas.getContext('2d');
-    const snapshot = canvas.width && canvas.height
-      ? ctx.getImageData(0, 0, canvas.width, canvas.height)
-      : null;
-    sizeCanvas();
-    if (snapshot) ctx.putImageData(snapshot, 0, 0);
-  });
-  ro.observe(canvas.parentElement);
+  function Log({ entries }) {
+    if (entries.length === 0) {
+      return <div className="log"><span className="empty">(events will appear here)</span></div>;
+    }
+    return (
+      <div className="log">
+        {entries.map((e, i) => (
+          <div key={i} className={'entry ' + (e.kind || '')}>{e.text}</div>
+        ))}
+      </div>
+    );
+  }
 
-  draw.addEventListener('click', drawCircle);
-  clear.addEventListener('click', clearCanvas);
+  function App() {
+    return <div className="layout"><CanvasDemo /></div>;
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>

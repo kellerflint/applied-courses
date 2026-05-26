@@ -91,6 +91,8 @@ useEffect(() => {
 
 The `setImageReady(false)` at the top covers the case where the user navigates from one preview page to another with a different filename. You reset, then flip back to true once the new image loads.
 
+**Why `img.crossOrigin = 'anonymous'`?** When you load an image from a different origin and then try to read its pixels (which is exactly what stage 5 does), the browser will refuse with a "tainted canvas" error if the image was loaded without CORS. Setting `crossOrigin = 'anonymous'` before assigning `.src` tells the browser to make the request CORS-style. For images served from your own origin (like `public/salamander1.jpg`) this is irrelevant. For anything cross-origin it's required.
+
 ### Verify
 
 Add a temporary `console.log('image loaded:', imgRef.current.naturalWidth, 'x', imgRef.current.naturalHeight)` inside the `onload` callback. Reload the preview page. The console should print the image dimensions once. Remove the log when you're done.
@@ -115,7 +117,7 @@ useEffect(() => {
 
 Two things worth noticing:
 
-- **`canvas.width` and `canvas.height` get set inside the effect**, not via CSS. This is the "drawing surface vs display size" gotcha from page 2. We're sizing the drawing buffer to match the source image.
+- **`canvas.width` and `canvas.height` get set inside the effect**, not via CSS. A canvas has two different sizes: its CSS dimensions (how big it looks on the page) and its intrinsic dimensions (how many pixels are in its drawing buffer). If you only set the CSS size, everything you draw gets stretched. Setting `canvas.width` and `canvas.height` to the image's dimensions makes the drawing buffer match the image 1:1.
 - **The dependency array includes `color` and `threshold`** even though this effect doesn't use them yet. That's deliberate. Adding them now means the redraw is already wired to re-run on input changes; in stage 5 you just add the logic that uses them.
 
 ### Verify
