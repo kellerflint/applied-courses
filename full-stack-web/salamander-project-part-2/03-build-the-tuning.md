@@ -113,7 +113,7 @@ Reload the page. The canvas should now show the same image as the `<img>` next t
 
 ## Stage 5: Wire up the pixel pipeline
 
-This page isn't going to teach you the binarization algorithm. That's the work you've done (or are doing) in your 334 course. This step is just the React-side plumbing that your algorithm will plug into.
+This page isn't going to teach you the binarization algorithm. That's the work you've done (or are doing) in your 334 course. This step is just the React-side info you'll need to convert your algorithm.
 
 Below your existing `ctx.drawImage(img, 0, 0)` line, add:
 
@@ -144,16 +144,8 @@ The `for` loop walks that array 4 bytes at a time. Each iteration's `i` lands on
 
 ### Now port your algorithm
 
-You wrote a binarization algorithm in 334, in Java. Port that logic into the body of the for loop. Same shape you used there: walk the pixels, compare each to the target color and the tolerance, decide its new value, write it back. The only thing different here is the language and where you're reading and writing from.
+You wrote a binarization algorithm in 334 in Java. Port that logic into the body of the for loop. The only thing different here is the language and where you're reading and writing from.
 
-Once it's in, reload the page. The canvas should turn into a black-and-white silhouette. Drag the tolerance slider; the silhouette grows or shrinks. Change the target color; the silhouette tracks the color you picked.
+Once it's in, reload the page. The canvas should turn into a black-and-white silhouette. Drag the tolerance slider and the silhouette grows or shrinks. Change the target color and the silhouette tracks the color you picked.
 
-That's the user story. Everything you just built on this page is the React side. The algorithm itself is the work you already did in 334.
-
-## What you just built
-
-A live image processing pipeline. Inputs in React state. Image data in a ref. Canvas DOM element in a ref. Re-render triggered by input change. Effect dependency array is the wiring that ties them together. The algorithm is the only piece you'll fill in yourself.
-
-When a future pair program adds the centroid-dot user story, it slots into this same redraw effect. After `putImageData`, you'll add a few lines that find the largest "on" region, compute its centroid, and draw a dot on the canvas with `ctx.arc(...); ctx.fill()`. Same effect, same deps, same shape.
-
-When you add your algorithm, the rest of the file doesn't change. The scaffolding *is* the lesson.
+When in the future you add the centroid-dot user story, it slots into this same redraw effect. After `putImageData`, you'll add a few lines that find the largest "on" region, compute its centroid, and draw a dot on the canvas with `ctx.arc(...); ctx.fill()`.
