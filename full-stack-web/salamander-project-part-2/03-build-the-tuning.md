@@ -69,7 +69,7 @@ const imgRef = useRef(null);
 const [imageReady, setImageReady] = useState(false);
 ```
 
-A second `useRef`, same pattern as the canvas ref. This one holds the loaded `Image` object instead of a DOM element. The image isn't visible on the page (we draw its pixels onto the canvas instead), so it doesn't need to be in state. A ref is a fine place to hang onto it across renders.
+A second `useRef`, same pattern as the canvas ref. This one holds a decoded `Image` object that you'll use to read pixel data when you draw onto the canvas in stage 4. (The user-visible original thumbnail is still rendered via a regular `<img>` tag from `thumbnailUrl`, side-by-side with the canvas. This separate `Image` object is just a pixel source for the canvas drawing API; the user never sees it.)
 
 The `imageReady` boolean is a tiny piece of state whose only job is to trigger a re-render when the image finishes loading, so the redraw effect (next stage) knows the image is available.
 
