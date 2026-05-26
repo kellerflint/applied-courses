@@ -22,8 +22,8 @@ Add two new pieces of state to `Preview.jsx` and render the inputs. No canvas ye
 The state:
 
 ```jsx
-const [color, setColor] = useState('#00ff00');
-const [threshold, setThreshold] = useState(128);
+const [color, setColor] = useState('#6b4423'); // a brown, near salamander color
+const [tolerance, setTolerance] = useState(80);
 ```
 
 The inputs go in your JSX somewhere below the thumbnail. A color picker is `<input type="color">`; a slider is `<input type="range">`. Both fire `onChange` with `e.target.value`. The range value comes back as a string, so wrap it in `Number(...)` before setting state.
@@ -112,13 +112,13 @@ useEffect(() => {
   canvas.height = img.naturalHeight;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
-}, [imageReady, color, threshold]);
+}, [imageReady, color, tolerance]);
 ```
 
 Two things worth noticing:
 
 - **`canvas.width` and `canvas.height` get set inside the effect**, not via CSS. A canvas has two different sizes: its CSS dimensions (how big it looks on the page) and its intrinsic dimensions (how many pixels are in its drawing buffer). If you only set the CSS size, everything you draw gets stretched. Setting `canvas.width` and `canvas.height` to the image's dimensions makes the drawing buffer match the image 1:1.
-- **The dependency array includes `color` and `threshold`** even though this effect doesn't use them yet. That's deliberate. Adding them now means the redraw is already wired to re-run on input changes; in stage 5 you just add the logic that uses them.
+- **The dependency array includes `color` and `tolerance`** even though this effect doesn't use them yet. That's deliberate. Adding them now means the redraw is already wired to re-run on input changes; in stage 5 you just add the logic that uses them.
 
 ### Verify
 
@@ -128,22 +128,27 @@ Reload the page. The canvas should now show the same image as the `<img>` next t
 
 The last piece. Replace the body of the redraw effect with code that reads the pixels, applies the binarization rule, and writes them back.
 
+The placeholder algorithm: for each pixel, compute how far its RGB color is from the picked target color. If it's close (within the tolerance), it's a match and gets drawn white. Otherwise it's drawn black. The picked color is the salamander's color; matching pixels become the visible silhouette.
+
 Below your existing `ctx.drawImage(img, 0, 0)` line, add:
 
 ```jsx
 const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 const px = data.data;
 
-const r = parseInt(color.slice(1, 3), 16);
-const g = parseInt(color.slice(3, 5), 16);
-const b = parseInt(color.slice(5, 7), 16);
+const tr = parseInt(color.slice(1, 3), 16);
+const tg = parseInt(color.slice(3, 5), 16);
+const tb = parseInt(color.slice(5, 7), 16);
 
 for (let i = 0; i < px.length; i += 4) {
-  const brightness = (px[i] + px[i + 1] + px[i + 2]) / 3;
-  const on = brightness > threshold;
-  px[i]     = on ? r : 0;
-  px[i + 1] = on ? g : 0;
-  px[i + 2] = on ? b : 0;
+  const dr = px[i]     - tr;
+  const dg = px[i + 1] - tg;
+  const db = px[i + 2] - tb;
+  const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+  const matches = distance <= tolerance;
+  px[i]     = matches ? 255 : 0;
+  px[i + 1] = matches ? 255 : 0;
+  px[i + 2] = matches ? 255 : 0;
 }
 
 ctx.putImageData(data, 0, 0);
@@ -153,19 +158,20 @@ What's happening:
 
 - `getImageData` returns a `Uint8ClampedArray` of pixel bytes in `RGBARGBARGBA...` order, four bytes per pixel.
 - The `for` loop walks four bytes at a time: index `i` is red, `i+1` green, `i+2` blue, `i+3` alpha. Alpha is left untouched.
-- The picked color is parsed from its `#rrggbb` string into integer components once, outside the loop.
-- Each pixel's average brightness is compared against the threshold. Above threshold pixels become the picked color; everything else goes to black.
+- The picked color is parsed from its `#rrggbb` string into integer components `tr`, `tg`, `tb` once, outside the loop.
+- For each pixel, `distance` is the straight-line distance from this pixel's color to the target color in RGB space. Small distance = similar colors; large distance = very different.
+- If the distance is within `tolerance`, the pixel becomes white (matches the target). Otherwise it becomes black (background).
 - `putImageData` writes the modified pixel array back to the canvas.
 
-This is a placeholder algorithm. It uses brightness because that's the simplest possible rule that demonstrates "image responds to slider." In your 334 course, you (will) write a real color-masking algorithm that compares each pixel to the target color rather than just looking at brightness. When you have that, replace the body of the `for` loop with your real logic and the rest of this scaffolding keeps working.
+This is a placeholder algorithm. RGB distance is the simplest possible color-match rule and produces obviously imperfect masks. Your 334 course will give you a real algorithm; when you have it, replace the body of the `for` loop with your real logic and the rest of this scaffolding keeps working.
 
 ### Verify
 
-1. Reload the page. The canvas should now show a two-color version of the image: the picked color where pixels are above the threshold, black where they're below.
-2. Drag the threshold slider. The amount of colored area should change immediately as you drag. Above threshold 255, the image should be entirely black. Below threshold 0, entirely colored.
-3. Change the color picker. The "on" color should switch immediately.
+1. Reload the page. The canvas should now show a black-and-white silhouette: white where pixels are close enough to the target color, black where they aren't.
+2. Drag the tolerance slider. The amount of white area should grow as tolerance goes up (more pixels qualify as a match) and shrink as it goes down. At tolerance 0, the image should be nearly entirely black. At tolerance 255+, mostly white.
+3. Change the target color. Pick something close to the salamander (a brown). The silhouette should appear. Pick something far off (bright blue). The salamander disappears.
 
-> **With your partner:** Set the slider so the salamander silhouette is clearly visible. Talk about what's happening at the pixel level. Why does the salamander show up at *low* threshold values rather than high ones?
+> **With your partner:** Pick a target color close to the salamander's actual color in the original thumbnail. Adjust tolerance until just the salamander shows up as a clean silhouette. What other pixels light up at higher tolerances? Talk through why.
 
 ## What you just built
 

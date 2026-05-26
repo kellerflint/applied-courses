@@ -9,9 +9,10 @@ export default function Preview() {
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
   const [thumbnailError, setThumbnailError] = useState(null);
 
-  // Tuning state (second user story: adjust color + threshold, see live result).
-  const [color, setColor] = useState('#00ff00');
-  const [threshold, setThreshold] = useState(128);
+  // Tuning state (second user story: adjust color + tolerance, see live result).
+  // Default target color is a brown so the salamander matches by default.
+  const [color, setColor] = useState('#6b4423');
+  const [tolerance, setTolerance] = useState(80);
 
   // Refs for canvas + the loaded image element. Refs (not state) because we
   // don't want re-renders just because the image finished loading; we'll
@@ -45,9 +46,11 @@ export default function Preview() {
 
   // 3. Redraw whenever the image is loaded OR any tuning input changes.
   //    This is the real-time-update mechanism. The body of this effect is
-  //    intentionally tiny + naive: per-pixel brightness threshold, with the
-  //    picked color used as the "above-threshold" output. NOT the real
-  //    color-masking algorithm. Students replace this body with their own.
+  //    intentionally tiny + naive color masking: for each pixel, compare it
+  //    to the picked target color; if the RGB distance is below the
+  //    tolerance, mark it as a match (white), else mark it as background
+  //    (black). NOT the real algorithm from Auberon's course. Students
+  //    replace this body with their own.
   useEffect(() => {
     if (!imageReady) return;
     const img = imgRef.current;
@@ -62,21 +65,25 @@ export default function Preview() {
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const px = data.data;
 
-    // Parse #rrggbb -> r,g,b ints.
-    const r = parseInt(color.slice(1, 3), 16);
-    const g = parseInt(color.slice(3, 5), 16);
-    const b = parseInt(color.slice(5, 7), 16);
+    // Parse #rrggbb -> r,g,b ints. This is the target color the salamander
+    // is supposed to be close to.
+    const tr = parseInt(color.slice(1, 3), 16);
+    const tg = parseInt(color.slice(3, 5), 16);
+    const tb = parseInt(color.slice(5, 7), 16);
 
     for (let i = 0; i < px.length; i += 4) {
-      const brightness = (px[i] + px[i + 1] + px[i + 2]) / 3;
-      const on = brightness > threshold;
-      px[i]     = on ? r : 0;
-      px[i + 1] = on ? g : 0;
-      px[i + 2] = on ? b : 0;
+      const dr = px[i]     - tr;
+      const dg = px[i + 1] - tg;
+      const db = px[i + 2] - tb;
+      const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+      const matches = distance <= tolerance;
+      px[i]     = matches ? 255 : 0;
+      px[i + 1] = matches ? 255 : 0;
+      px[i + 2] = matches ? 255 : 0;
       // alpha (px[i + 3]) left as-is
     }
     ctx.putImageData(data, 0, 0);
-  }, [imageReady, color, threshold]);
+  }, [imageReady, color, tolerance]);
 
   if (thumbnailError) {
     return (
@@ -116,16 +123,16 @@ export default function Preview() {
               />
             </label>
             <label className="flex items-center gap-2 flex-1">
-              Brightness threshold
+              Color tolerance
               <input
                 type="range"
                 min="0"
                 max="255"
-                value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
+                value={tolerance}
+                onChange={(e) => setTolerance(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="w-10 text-right tabular-nums">{threshold}</span>
+              <span className="w-10 text-right tabular-nums">{tolerance}</span>
             </label>
           </div>
         </>

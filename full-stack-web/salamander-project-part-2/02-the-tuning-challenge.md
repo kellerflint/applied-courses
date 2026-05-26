@@ -21,7 +21,7 @@ Play with the activity below. Drag the slider and watch the image on the right c
 
 > **With your partner:** Find a threshold value where the salamander is clearly visible as a separate shape from the background. What happens at threshold 0? At 255? Talk about what the percentage-of-pixels-above number means.
 
-The thing you just did with the slider is what your app needs to do in React, except your version will also let the user pick a color (which becomes the "on" pixel color) on top of the threshold.
+The activity uses brightness as its rule because it's the simplest one to show. Your app uses a different rule: instead of brightness, it compares each pixel to a picked **target color** (the color you expect the salamander to be) and marks it "on" if the colors are close enough. The on/off shape is the same; the matching rule is the only thing that changes. You'll wire all of that up on the next page.
 
 ## Canvas in plain HTML
 

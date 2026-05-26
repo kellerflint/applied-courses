@@ -8,7 +8,7 @@ order: 4
 If you got through the first three pages, your repo has:
 
 - A Preview page that fetches and displays the selected video's thumbnail with loading and error states.
-- A color picker and brightness threshold slider on the Preview page.
+- A color picker and tolerance slider on the Preview page.
 - A `<canvas>` next to the thumbnail showing a binarized version that updates in real time as the controls change.
 - A `useRef` for the canvas element and a `useRef` for the loaded `Image` object.
 - A sample salamander frame at `public/salamander1.jpg` so at least one of the videos shows real footage.
