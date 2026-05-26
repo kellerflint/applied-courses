@@ -60,9 +60,22 @@ export default function Preview() {
     ctx.drawImage(img, 0, 0);
 
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    // Your algorithm from 334 goes here.
-    // It would walk data.data four bytes at a time (RGBA per pixel), look at
-    // color and tolerance, and decide each pixel's new value.
+    const px = data.data;
+
+    for (let i = 0; i < px.length; i += 4) {
+      // px[i]     = red channel of this pixel (0-255)
+      // px[i + 1] = green channel
+      // px[i + 2] = blue channel
+      // px[i + 3] = alpha (transparency, usually leave alone)
+      //
+      // Your algorithm from 334 goes here. Read the pixel above, look at
+      // `color` and `tolerance`, decide the pixel's new value, and write it
+      // back the same way:
+      //   px[i]     = newRed;
+      //   px[i + 1] = newGreen;
+      //   px[i + 2] = newBlue;
+    }
+
     ctx.putImageData(data, 0, 0);
   }, [imageReady, color, tolerance]);
 

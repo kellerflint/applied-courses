@@ -132,15 +132,32 @@ Below your existing `ctx.drawImage(img, 0, 0)` line, add:
 
 ```jsx
 const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-// Your algorithm from 334 goes here.
+const px = data.data;
+
+for (let i = 0; i < px.length; i += 4) {
+  // px[i]     = red channel of this pixel (0-255)
+  // px[i + 1] = green channel
+  // px[i + 2] = blue channel
+  // px[i + 3] = alpha (transparency, usually leave alone)
+  //
+  // Your algorithm from 334 goes here. Look at the pixel above,
+  // look at `color` and `tolerance`, decide the pixel's new value,
+  // and write it back the same way:
+  //   px[i]     = newRed;
+  //   px[i + 1] = newGreen;
+  //   px[i + 2] = newBlue;
+}
+
 ctx.putImageData(data, 0, 0);
 ```
 
-`getImageData` reads the canvas pixels into `data.data`, a flat byte array in RGBA order (four bytes per pixel). `putImageData` writes a byte array back to the canvas. Your algorithm is the `for` loop you'll add between them: walk the array four bytes at a time, look at the current pixel, look at `color` and `tolerance`, and decide what the pixel should be.
+`getImageData` reads every pixel on the canvas into `data.data`, a flat array of bytes. The layout is RGBA, packed end-to-end: 4 bytes per pixel. For an image that's 480 × 424 pixels, that's 480 × 424 × 4 = 813,760 bytes in `data.data`. The first 4 bytes are the top-left pixel. The next 4 are the pixel right of it. And so on, row by row.
+
+The `for` loop walks that array 4 bytes at a time. Each iteration's `i` lands on the start of the next pixel. `px[i]` is its red, `px[i+1]` its green, `px[i+2]` its blue, `px[i+3]` its alpha. Your algorithm reads those, decides what the pixel should look like, and writes the new values back to the same positions. When the loop finishes, `putImageData` pushes the whole modified array back onto the canvas in one shot.
 
 ### Verify
 
-Reload the page. The canvas should still look exactly like the original thumbnail. That's expected. You're reading the pixels and writing them right back without modifying them, so the canvas matches the source. The pipeline is wired up; the algorithm slot is just empty.
+Reload the page. The canvas should still look exactly like the original thumbnail. That's expected. The loop runs but doesn't change anything (you haven't added the body of your algorithm yet), so the pixels go in and out unchanged. The pipeline is wired up; the algorithm slot is just empty.
 
 The slider and color picker still don't visibly change anything either. They will once your algorithm uses them.
 
