@@ -9,13 +9,13 @@ You'll be working through an **agentic editor**. That's an AI that lives inside 
 
 Any of these work. Use whatever you already have access to.
 
-**Claude Code** (Sonnet or Opus). In my experience these are the strongest models available right now for this kind of work. They are not free, so reach for this if you already pay for it or have credits.
+**Claude Code** (Sonnet or Opus). In my experience these are the strongest models available right now for this kind of work. They are not free, so use it only if you already pay for it or have credits.
 
 **GitHub Copilot** in VS Code. You may already have access through GitHub's student benefits, and the agent mode is solid.
 
 **Cursor.** A popular standalone agentic editor. Word is they offer a free student plan, so it's worth checking whether you qualify.
 
-**Antigravity.** This is my suggestion if you don't already pay for one. Sign up for the Google student AI plan and connect that account. You get a lot of use of their fast Flash model for free, plus a smaller allowance of their smarter models.
+**Antigravity.** This is a good option if you don't already pay for one. You get a decent amount of use of their fast Flash model for free, plus a smaller allowance of their smarter models.
 
 ## A note on burning through your allowance
 
