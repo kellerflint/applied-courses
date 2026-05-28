@@ -3,41 +3,19 @@ title: "Reflect & Submit"
 order: 4
 ---
 
-Stop building and pull up your field notebook. Before you write anything public, talk through what you saw.
-
 ## What the agent was good and bad at
 
-> **With your partner:** Sort your observations into two piles. Where was the agent genuinely useful, and where did it consistently let you down? Try to name the *categories* of each, not just one-off moments.
-
-<details>
-<summary>Reveal answer</summary>
-
-There's no single right answer, since it depends on your idea, your tool, and your model. Patterns a lot of people land on:
-
-Agents tend to do well at setup and boilerplate, wiring up well-documented APIs, explaining a compiler error, and producing a first draft of a common pattern. They tend to struggle with anything spatial or visual, with "feel" (movement that's smooth, timing that's satisfying), with holding the whole project in their head as it grows, and with bugs they reintroduce after fixing.
-
-The useful insight is that the failures cluster. Once you can predict where the agent will fall down, you know where to watch it closely and where to let it run.
-
-</details>
+Sort your observations into two piles. Where was the agent genuinely useful, and where did it consistently let you down?
 
 ## What would have helped
 
-> **With your partner:** Think about your worst moment in the session. What could *you* have done differently to get a better result? More specific prompts, smaller steps, committing sooner, switching models, giving it more context up front?
-
-<details>
-<summary>Reveal answer</summary>
-
-Open question, but the honest answer for most people is some mix of: breaking the work into smaller pieces, committing more often so resets were cheap, feeding the agent exact errors instead of vague complaints, and stopping bad loops earlier instead of letting the agent thrash.
-
-This is the whole point of the activity. You couldn't write the Rust, but the quality of your result still depended heavily on how you directed the tool. That gap, between directing it blindly and directing it well, only gets bigger once you're working in a stack you actually understand.
-
-</details>
+Think about your worst moment in the session. What could you have done differently to get a better result?
 
 ## The discussion post
 
 Write up your project on the Canvas discussion board. Your post must include three things:
 
-1. **A link to your repository.** Push your code to GitHub first, with your commit history intact so people can see how it came together.
+1. **A link to your repository.** Push your code to GitHub.
 2. **A screenshot of your game embedded in the post.** Use Canvas's image button in the post editor to upload it directly so it shows inline, rather than just linking to it. People should be able to see what your thing ended up looking like without leaving the page.
 3. **A short write-up** that covers:
    - What you were trying to build
@@ -45,15 +23,13 @@ Write up your project on the Canvas discussion board. Your post must include thr
    - What you found effective or helpful when working with the agent
    - One idea for what you could do or add to your process to get better results next time
 
-Keep the write-up tight. A few honest paragraphs beats a wall of text. Your field notebook is the raw material, so pull from it.
+Keep the write-up clean and concise.
 
 ## Reply to a classmate
 
 After you post, read through a few others and **reply substantively to at least one**.
 
-A substantive reply adds something. Make a specific observation, raise a follow-up question, offer a different approach, or connect their experience to your own. "Cool game" and "I agree" don't count, and neither does generic praise. The bar is that your reply extends the other person's thinking or brings your own perspective to it.
-
-> **With your partner:** Before you reply to anyone, say out loud what made one classmate's experience different from yours. That difference is usually the seed of a good reply.
+A substantive reply adds something. Raise a follow-up question, offer a different approach, or connect their experience to your own. Replies to the effect of "Cool game" and "I agree" don't count, and neither does generic praise. The bar is that your reply extends the other person's thinking or brings your own perspective to it.
 
 ## Submit
 
@@ -61,6 +37,12 @@ Everything happens on the Canvas discussion board:
 
 - Post your write-up with the repo link and the embedded screenshot.
 - Reply substantively to at least one classmate's post.
+
+## Where this goes next
+
+This is the start of learning how to direct and manage an AI agent. Without being any better at the code itself, there are things we can do to give it a better shot at getting what we want. 
+
+There's also a lot more we can do once we actually know what we're talking about, in languages and frameworks we have experience in. That's what we'll spend these next few weeks on.
 
 ## Feedback
 

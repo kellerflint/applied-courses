@@ -5,24 +5,25 @@ order: 4
 
 ## Your Presentation
 
-You have 5 to 10 minutes. Structure it like this:
+You will have 5 to 10 minutes. Structure it like this:
 
-1. **What it is.** One or two sentences. Assume the class has never heard of it.
+1. **What it is.** Introduce the topic. Assume the class has never heard of it.
 2. **Why and when you'd use it.** The problem it solves. What it makes easy that used to be hard or annoying.
-3. **Live demo.** Show it working and narrate what is happening as you click. The demo is what makes the topic real for everyone watching.
-4. **One thing that surprised you or tripped you up.** The honest "here is what was weird about this" is often the most useful part for the rest of the class, because it is exactly what they would hit too.
+3. **Live demo.** Show it working and narrate what is happening as you click.
+4. **How it works.** Walk us though and explain the code that makes it happen.
+5. **One thing that surprised you or tripped you up.** The honest "here is what was weird about this" is often the most useful part for the rest of the class because it is exactly what they would hit too.
 
 ## Tips
 
-- **Both partners speak.** Split it however you like. You both did the work, so you both present.
-- **Have the demo already running** before you start talking, with the right tab open. Fumbling to start a dev server eats your minutes and your nerves.
-- **Rehearse once.** A single run-through out loud catches the "wait, how do I explain this" moments while you still have time to fix them.
+- **Both partners speak.** Roughly equal speaking time for each partner.
+- **Have the demo already running** before you start talking, with the right tab open.
+- **Rehearse beforehand.** Even a single run-through out loud catches the "wait, how do I explain this" moments while you still have time to fix them.
 
 > **With your partner:** Decide who covers what, then run through the whole thing once start to finish and time it. If you are over ten minutes, cut something.
 
 ## Submit
 
-Push your code and submit your repository link on Canvas. If you deployed it, include the live URL too.
+Push your code and post the link to your repository on the Canvas discussion for this assignment along with a few sentence explaination of the topic you chose and an embedded screenshot of the demo application you built. If you deployed it, include the live URL too.
 
 ## Feedback
 
