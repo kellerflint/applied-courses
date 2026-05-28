@@ -42,7 +42,7 @@ Submit to the Canvas discussion board for this assignment.
 
 This is the start of learning how to direct and manage an AI agent. Without being any better at the code itself, there are things we can do to give it a better shot at getting what we want. 
 
-There's also a lot more we can do once we actually know what we're talking about, in languages and frameworks we have experience in. That's what we'll spend these next few weeks on.
+There's also a lot more we can do when we actually know what we're talking about in languages and frameworks we have experience in. That's what we'll spend these next few weeks on.
 
 ## Feedback
 
