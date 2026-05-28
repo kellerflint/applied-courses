@@ -33,7 +33,7 @@ A substantive reply adds something. Raise a follow-up question, offer a differen
 
 ## Submit
 
-Everything happens on the Canvas discussion board:
+Submit to the Canvas discussion board for this assignment.
 
 - Post your write-up with the repo link and the embedded screenshot.
 - Reply substantively to at least one classmate's post.

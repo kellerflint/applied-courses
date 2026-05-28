@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ title }}{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.min.css" media="(prefers-color-scheme: light)">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css" media="(prefers-color-scheme: dark)">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -177,9 +175,42 @@
       padding: 1.1em 1.25em;
       overflow-x: auto;
       margin: 1.25em 0;
+      background: var(--code-bg);
     }
-    .prose pre:not([class*="language-"]) { background: var(--code-bg); }
     .prose pre code { background: none; padding: 0; font-size: 0.875rem; }
+
+    /* ── Syntax highlighting (inlined, no CDN) ──
+       Token colors are loaded with the page so highlighting never depends on a
+       reachable CDN or on the OS reporting a light/dark preference. Light is the
+       default; dark mode overrides below. Palettes mirror Prism "default" and
+       "tomorrow" so code looks the same as before. */
+    .prose code[class*="language-"],
+    .prose pre[class*="language-"] { color: var(--text); }
+    .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #708090; }
+    .token.punctuation { color: #999; }
+    .token.namespace { opacity: 0.7; }
+    .token.property, .token.tag, .token.boolean, .token.number,
+    .token.constant, .token.symbol, .token.deleted { color: #905; }
+    .token.selector, .token.attr-name, .token.string, .token.char,
+    .token.builtin, .token.inserted { color: #690; }
+    .token.operator, .token.entity, .token.url,
+    .language-css .token.string, .style .token.string { color: #9a6e3a; }
+    .token.atrule, .token.attr-value, .token.keyword { color: #07a; }
+    .token.function, .token.class-name { color: #dd4a68; }
+    .token.regex, .token.important, .token.variable { color: #e90; }
+    .token.important, .token.bold { font-weight: bold; }
+    .token.italic { font-style: italic; }
+
+    @media (prefers-color-scheme: dark) {
+      .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #999; }
+      .token.punctuation { color: #ccc; }
+      .token.tag, .token.attr-name, .token.namespace, .token.deleted { color: #e2777a; }
+      .token.boolean, .token.number, .token.function { color: #f08d49; }
+      .token.property, .token.class-name, .token.constant, .token.symbol { color: #f8c555; }
+      .token.selector, .token.important, .token.atrule, .token.keyword, .token.builtin { color: #cc99cd; }
+      .token.string, .token.char, .token.attr-value, .token.regex, .token.variable { color: #7ec699; }
+      .token.operator, .token.entity, .token.url { color: #67cdcc; }
+    }
     .prose blockquote {
       border-left: 3px solid var(--accent);
       padding-left: 1em;
