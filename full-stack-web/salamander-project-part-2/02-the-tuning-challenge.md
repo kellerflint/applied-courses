@@ -5,7 +5,7 @@ order: 2
 
 Next user story is the bulk of this pair program:
 
-> As a researcher, I want to adjust a color target and brightness threshold and see the binarized image update immediately so that I can set good detection settings before running a full processing job.
+> As a researcher, I want to adjust a color target and threshold and see the binarized image update immediately so that I can set good detection settings before running a full processing job.
 
 Two new ideas in that story: **what binarization actually does to an image**, and **how to draw on a `<canvas>` from inside a React component**. This page covers the concepts. The next page is where you build it.
 

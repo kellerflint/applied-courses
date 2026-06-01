@@ -62,7 +62,7 @@ Acceptance Criteria:
 
 #### Tune detection settings and see the binarized result live
 
-> As a researcher, I want to adjust a color target and brightness threshold and see the binarized image update immediately so that I can set good detection settings before running a full processing job.
+> As a researcher, I want to adjust a color target and threshold and see the binarized image update immediately so that I can set good detection settings before running a full processing job.
 
 Acceptance Criteria:
 
