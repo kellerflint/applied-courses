@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Client, Server, and the Proxy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 16px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+    .controls button {
+      padding: 9px 16px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .controls button:hover { filter: brightness(0.95); }
+    .controls button:disabled { opacity: 0.5; cursor: default; }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle input { width: 16px; height: 16px; cursor: pointer; }
+    .toggle .state { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+
+    .stage {
+      position: relative;
+      flex: 1;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      min-height: 0;
+    }
+
+    .node {
+      position: absolute;
+      width: 24%;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      background: #f8fafc;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    .node.browser  { left: 3%; }
+    .node.frontend { left: 38%; }
+    .node.backend  { right: 3%; }
+    .node .title { font-weight: 700; font-size: 0.95rem; }
+    .node .sub   { font-size: 0.74rem; color: #64748b; margin-top: 3px; }
+    .node .port  {
+      display: inline-block;
+      margin-top: 8px;
+      font-family: 'Menlo', monospace;
+      font-size: 0.72rem;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .node.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+    .node.blocked {
+      border-color: #dc2626;
+      background: #fef2f2;
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+    }
+
+    /* The moving request/response packet */
+    .packet {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      margin: -9px 0 0 -9px;
+      border-radius: 50%;
+      background: #2563eb;
+      box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.18);
+      opacity: 0;
+      transition: left 0.6s linear, top 0.6s linear, background 0.2s, opacity 0.2s;
+      z-index: 5;
+    }
+    .packet.response { background: #16a34a; box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.18); }
+
+    /* CORS blocked marker, sits just outside the browser */
+    .block-mark {
+      position: absolute;
+      top: 50%;
+      left: 30%;
+      transform: translate(-50%, -50%) scale(0.6);
+      font-size: 2rem;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 6;
+    }
+    .block-mark.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    .log {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: 'Menlo', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      min-height: 84px;
+    }
+    .log .line { color: #475569; }
+    .log .req  { color: #2563eb; font-weight: 700; }
+    .log .res  { color: #16a34a; font-weight: 700; }
+    .log .err  { color: #dc2626; font-weight: 700; }
+    .log .hint { color: #94a3b8; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="controls">
+    <button id="send">Send request: GET /api/videos</button>
+    <label class="toggle">
+      <input type="checkbox" id="proxy" checked>
+      Dev proxy
+      <span class="state" id="proxyState">on</span>
+    </label>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="node browser" id="nBrowser">
+      <div class="title">Browser</div>
+      <div class="sub">your React app</div>
+      <div class="port">page from :5173</div>
+    </div>
+
+    <div class="node frontend" id="nFrontend">
+      <div class="title">Vite dev server</div>
+      <div class="sub">serves the app + proxy</div>
+      <div class="port">localhost:5173</div>
+    </div>
+
+    <div class="node backend" id="nBackend">
+      <div class="title">Backend</div>
+      <div class="sub">the salamander API</div>
+      <div class="port">localhost:3000</div>
+    </div>
+
+    <div class="packet" id="packet"></div>
+    <div class="block-mark" id="blockMark">🚫</div>
+  </div>
+
+  <div class="log" id="log">
+    <div class="line hint">Press “Send request” to watch a GET travel to the backend and a response come back. Toggle the proxy off to see what the browser does with a direct cross-origin request.</div>
+  </div>
+
+</div>
+
+<script>
+  // This activity simulates the request flow between a browser, a Vite dev
+  // server, and a backend. Nothing real is fetched. The point is the path the
+  // request takes and what the browser's same-origin policy does about it.
+
+  const sendBtn = document.getElementById('send');
+  const proxy = document.getElementById('proxy');
+  const proxyState = document.getElementById('proxyState');
+  const packet = document.getElementById('packet');
+  const blockMark = document.getElementById('blockMark');
+  const log = document.getElementById('log');
+
+  const nBrowser = document.getElementById('nBrowser');
+  const nFrontend = document.getElementById('nFrontend');
+  const nBackend = document.getElementById('nBackend');
+
+  // Horizontal centers of each node, as a percent of the stage width.
+  const POS = { browser: 15, frontend: 50, backend: 85 };
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function resetVisuals() {
+    [nBrowser, nFrontend, nBackend].forEach((n) => n.classList.remove('active', 'blocked'));
+    blockMark.classList.remove('show');
+    packet.style.opacity = '0';
+    packet.classList.remove('response');
+  }
+
+  function logLines(lines) {
+    log.innerHTML = lines.map((l) => `<div class="${l.cls}">${l.text}</div>`).join('');
+  }
+
+  async function movePacket(toPercent, fromTop) {
+    packet.style.top = (fromTop ?? 50) + '%';
+    packet.style.left = toPercent + '%';
+    await wait(650);
+  }
+
+  proxy.addEventListener('change', () => {
+    proxyState.textContent = proxy.checked ? 'on' : 'off';
+  });
+
+  async function runWithProxy() {
+    logLines([
+      { cls: 'req',  text: 'Browser → Vite (:5173):  GET /api/videos' },
+      { cls: 'hint', text: 'Same origin as the page, so the browser sends it happily.' },
+    ]);
+    packet.style.opacity = '1';
+    nBrowser.classList.add('active');
+    await movePacket(POS.browser);
+
+    // Browser to frontend
+    nFrontend.classList.add('active');
+    await movePacket(POS.frontend);
+
+    logLines([
+      { cls: 'req',  text: 'Vite forwards →  Backend (:3000):  GET /api/videos' },
+      { cls: 'hint', text: 'The proxy quietly relays the request. The browser never sees :3000.' },
+    ]);
+    nBackend.classList.add('active');
+    await movePacket(POS.backend);
+
+    // Response travels back
+    packet.classList.add('response');
+    logLines([
+      { cls: 'res',  text: 'Backend → Vite → Browser:  200 OK' },
+      { cls: 'line', text: '["salamander1.mp4","salamander2.mov","forest_intro.mp4"]' },
+    ]);
+    await movePacket(POS.frontend);
+    await movePacket(POS.browser);
+    packet.style.opacity = '0';
+    await wait(300);
+    nBrowser.classList.remove('active');
+    nFrontend.classList.remove('active');
+    nBackend.classList.remove('active');
+  }
+
+  async function runWithoutProxy() {
+    // For a simple GET, the browser DOES send the request to the backend. It
+    // tags it with an Origin header and the backend answers normally. The
+    // block happens when the response comes back: the browser checks for an
+    // approval header, doesn't find one, and discards the response before the
+    // page's JavaScript can read it.
+    logLines([
+      { cls: 'req',  text: 'Browser → Backend (:3000):  GET /api/videos' },
+      { cls: 'hint', text: 'Different origin, but the browser sends it anyway, tagged with Origin: localhost:5173.' },
+    ]);
+    packet.style.opacity = '1';
+    nBrowser.classList.add('active');
+    await movePacket(POS.browser, 50);
+    // Straight to the backend, up and over the proxy. The proxy isn't involved.
+    await movePacket(POS.browser, 12);
+    await movePacket(POS.backend, 12);
+    nBackend.classList.add('active');
+    await movePacket(POS.backend, 50);
+
+    // The backend answers normally. It has no idea CORS exists.
+    packet.classList.add('response');
+    logLines([
+      { cls: 'res',  text: 'Backend → Browser:  200 OK  (no Access-Control-Allow-Origin)' },
+      { cls: 'hint', text: 'The backend answered fine. It does not know or care about CORS.' },
+    ]);
+    await movePacket(POS.backend, 12);
+    await movePacket(28, 12);
+
+    // Back at the browser, no approval header means the response is thrown out.
+    packet.style.opacity = '0';
+    nBackend.classList.remove('active');
+    nBrowser.classList.add('blocked');
+    blockMark.style.left = '24%';
+    blockMark.style.top = '22%';
+    blockMark.classList.add('show');
+    logLines([
+      { cls: 'err',  text: 'CORS error: the browser discarded the response' },
+      { cls: 'hint', text: 'The request reached the backend and came back. With no header approving localhost:5173, the browser refuses to let your fetch() read the response.' },
+      { cls: 'hint', text: 'Turn the proxy on, or add CORS headers on the backend so it approves this origin.' },
+    ]);
+  }
+
+  sendBtn.addEventListener('click', async () => {
+    sendBtn.disabled = true;
+    resetVisuals();
+    await wait(150);
+    if (proxy.checked) {
+      await runWithProxy();
+    } else {
+      await runWithoutProxy();
+    }
+    sendBtn.disabled = false;
+  });
+</script>
+</body>
+</html>
