@@ -3,7 +3,7 @@ title: "Connect Your Front End"
 order: 3
 ---
 
-Both programs are running. You can hit the backend directly. Now you'll point your React app at it. The work has two parts: set up the proxy so requests are allowed through, and swap your mock functions for real `fetch` calls.
+Now you'll point your React app at the backend. The work has two parts: set up the proxy so requests are allowed through, and swap your mock functions for real `fetch` calls.
 
 ## Set up the dev proxy
 

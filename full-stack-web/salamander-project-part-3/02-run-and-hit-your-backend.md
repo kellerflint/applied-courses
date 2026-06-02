@@ -3,13 +3,13 @@ title: "Run Your Backend and Prove You Can Hit It"
 order: 2
 ---
 
-Before you touch a single line of React, get your backend running and confirm you can reach it on its own. Debugging the connection is ten times harder when you don't know whether the problem is the backend, the frontend, or the wiring between them. Prove the backend works in isolation first, then add the frontend.
+Before you touch React, get your backend running and confirm you can reach it on its own. Debugging the connection is much harder when you don't know whether the problem is the backend, the frontend, or the wiring between them. Prove the backend works in isolation first, then add the frontend.
 
-Everyone's backend is a little different. Some of you built a Java service in 334, some wrapped it differently, some are using a stand-in. That's fine. The steps are the same regardless of stack: start it, find its address, hit its endpoints, read the responses.
+Everyone's backend is a little different. That's fine. The steps are the same regardless of stack: start it, find its address, hit its endpoints, read the responses.
 
 ## Start the backend
 
-Open a **second terminal**. Leave your Vite dev server running in the first one. You're going to have two long-running programs now, one per terminal, and that's normal for full-stack work.
+Open a second terminal. Leave your Vite dev server running in the first one. You're going to have two long-running programs now, one per terminal, and that's normal for full-stack work.
 
 Start your backend however your project starts it. When it boots, it almost always prints the address and port it's listening on. Read that line and note the address.
 

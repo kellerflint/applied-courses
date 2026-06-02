@@ -118,7 +118,7 @@
       background: #2563eb;
       box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.18);
       opacity: 0;
-      transition: left 0.6s linear, top 0.6s linear, background 0.2s, opacity 0.2s;
+      transition: left 1.2s linear, top 1.2s linear, background 0.3s, opacity 0.3s;
       z-index: 5;
     }
     .packet.response { background: #16a34a; box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.18); }
@@ -229,7 +229,7 @@
   async function movePacket(toPercent, fromTop) {
     packet.style.top = (fromTop ?? 50) + '%';
     packet.style.left = toPercent + '%';
-    await wait(650);
+    await wait(1300);
   }
 
   proxy.addEventListener('change', () => {
@@ -239,7 +239,7 @@
   async function runWithProxy() {
     logLines([
       { cls: 'req',  text: 'Browser → Vite (:5173):  GET /api/videos' },
-      { cls: 'hint', text: 'Same origin as the page, so the browser sends it happily.' },
+      { cls: 'hint', text: 'Same origin as the page, so the browser sends it.' },
     ]);
     packet.style.opacity = '1';
     nBrowser.classList.add('active');
@@ -265,7 +265,7 @@
     await movePacket(POS.frontend);
     await movePacket(POS.browser);
     packet.style.opacity = '0';
-    await wait(300);
+    await wait(600);
     nBrowser.classList.remove('active');
     nFrontend.classList.remove('active');
     nBackend.classList.remove('active');
@@ -316,7 +316,7 @@
   sendBtn.addEventListener('click', async () => {
     sendBtn.disabled = true;
     resetVisuals();
-    await wait(150);
+    await wait(300);
     if (proxy.checked) {
       await runWithProxy();
     } else {

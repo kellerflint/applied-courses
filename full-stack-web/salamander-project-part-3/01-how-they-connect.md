@@ -32,23 +32,13 @@ That round trip is the same whether the server is across the world or on your ow
 
 Here's the catch that trips everyone up. The browser has a security rule called the **same-origin policy**. A page loaded from `http://localhost:5173` is allowed to make requests back to `localhost:5173` freely. But when that page tries to `fetch` from `http://localhost:3000`, the browser sees a *different origin* (different port counts as different) and gets suspicious. By default it blocks your code from reading the response and logs a **CORS error** in the console.
 
-It's worth being precise about what "blocks" means, because it's subtler than it sounds. For a normal GET, the browser still **sends** the request and your backend still **answers** it normally. The block happens on the way back in. When the response arrives, the browser checks whether the backend included a header granting this origin permission to read it. If that header is missing, the browser throws the response away before your code can touch it. The backend isn't the one saying no. It answered fine and has no idea anything is wrong. The browser is the one blocking, on the response's way back, because only the backend can authorize who reads its data and this time it didn't.
-
-CORS (Cross-Origin Resource Sharing) is the browser protecting users. Without it, any website you visited could quietly read data from your bank's API using your logged-in session. The rule exists for good reasons. It's just inconvenient during development when you genuinely do want your own two programs to talk.
+CORS (Cross-Origin Resource Sharing) is the browser protecting users. Without it, any website you visited could read data from your bank's API using your logged-in session. The rule exists for good reasons. It's just inconvenient during development when you genuinely do want your own two programs to talk.
 
 There are two normal ways to get past it, and you'll pick one on the next page:
 
-- **A dev proxy.** You tell Vite "any request to `/api` should be quietly forwarded to the backend." The browser only ever sees requests going to `localhost:5173`, so it never complains.
-- **CORS headers.** You configure the backend to add a header that says "requests from other origins are allowed." This works too, but it has a sharp edge for this project that we'll explain.
-
-Don't worry about choosing yet. First, play with the picture below until the request flow feels obvious.
-
-{% activity "client-server-http.html", "Client, Server, and the Proxy", "560px" %}
+- **A dev proxy.** You tell Vite "any request to `/api` should be forwarded to the backend." The browser only ever sees requests going to `localhost:5173`, so it never complains.
+- **CORS headers.** You configure the backend to add a header that says "requests from other origins are allowed." This can work too.
 
 > **With your partner:** Using the activity, send a request with the proxy **off** first. Where does it fail, and why? Now turn the proxy **on** and send it again. What changed about where the browser thinks the request is going? Explain the difference to each other before moving on.
 
-## Why this matters for your canvas
-
-There's a specific reason the proxy is the right call for *this* project. In Part 2 you read pixels out of the thumbnail with `getImageData` to build the binarized view. The browser will only let you read pixels from an image that came from the **same origin** as your page. If your thumbnail loads from `http://localhost:3000` (a different origin), the canvas becomes "tainted" and `getImageData` throws a security error. Your tuning feature would break the moment you switched off mock data.
-
-Routing the thumbnail through the proxy keeps it same-origin, so the canvas work you already did keeps running untouched. Keep this in your back pocket; it's the kind of bug that costs an hour if you don't know the cause.
+{% activity "client-server-http.html", "Client, Server, and the Proxy", "560px" %}
