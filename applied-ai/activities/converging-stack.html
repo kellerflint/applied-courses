@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Converging Stack</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    padding: 20px 16px 28px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  h2 {
+    font-size: 0.85rem; font-weight: 600; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    text-align: center; margin-bottom: 4px;
+  }
+  .sub {
+    font-size: 0.8rem; color: #64748b; text-align: center;
+    line-height: 1.5; margin-bottom: 18px; max-width: 560px;
+    margin-left: auto; margin-right: auto;
+  }
+
+  /* ---- Domain legend / tally ---- */
+  .domains {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 18px;
+  }
+  .domain {
+    border: 1px solid #1e293b; border-radius: 8px;
+    padding: 10px 8px; text-align: center;
+    background: #131722; transition: all 0.25s;
+    position: relative;
+  }
+  .domain .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin: 0 auto 6px; opacity: 0.45; transition: all 0.25s;
+  }
+  .domain .name {
+    font-size: 0.72rem; font-weight: 600; color: #cbd5e1;
+    line-height: 1.2;
+  }
+  .domain .role {
+    font-size: 0.6rem; color: #475569; margin-top: 2px;
+  }
+  .domain .count {
+    position: absolute; top: 6px; right: 8px;
+    font-size: 0.62rem; font-weight: 700; color: #475569;
+    transition: color 0.25s;
+  }
+  .domain.hot { transform: translateY(-2px); }
+  .domain.hot .dot { opacity: 1; transform: scale(1.3); }
+
+  .d-data.hot   { border-color: #1d4ed8; box-shadow: 0 0 0 1px #1d4ed8, 0 6px 16px -8px #1d4ed8; }
+  .d-ai.hot     { border-color: #7c3aed; box-shadow: 0 0 0 1px #7c3aed, 0 6px 16px -8px #7c3aed; }
+  .d-stack.hot  { border-color: #15803d; box-shadow: 0 0 0 1px #15803d, 0 6px 16px -8px #15803d; }
+  .d-cloud.hot  { border-color: #c2410c; box-shadow: 0 0 0 1px #c2410c, 0 6px 16px -8px #c2410c; }
+
+  .d-data  .dot { background: #60a5fa; }
+  .d-ai    .dot { background: #c084fc; }
+  .d-stack .dot { background: #4ade80; }
+  .d-cloud .dot { background: #fb923c; }
+
+  .d-data.touched  .count { color: #60a5fa; }
+  .d-ai.touched    .count { color: #c084fc; }
+  .d-stack.touched .count { color: #4ade80; }
+  .d-cloud.touched .count { color: #fb923c; }
+
+  /* ---- Task banner ---- */
+  .task {
+    background: #131722; border: 1px solid #1e293b;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 14px;
+    text-align: center;
+  }
+  .task .label {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #475569; font-weight: 600;
+  }
+  .task .what { font-size: 0.95rem; color: #e2e8f0; font-weight: 600; margin-top: 3px; }
+  .task .who { font-size: 0.74rem; color: #64748b; margin-top: 4px; }
+
+  /* ---- Steps ---- */
+  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (max-width: 440px) { .steps { grid-template-columns: 1fr; } }
+  .step {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 14px; border-radius: 8px;
+    background: #131722; border: 1px solid #1e293b;
+    opacity: 0.32; transition: all 0.35s;
+    transform: translateY(4px);
+  }
+  .step.shown { opacity: 1; transform: translateY(0); }
+  .step.active { box-shadow: 0 0 0 1px currentColor; }
+  .step .num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700;
+    background: #1e293b; color: #64748b; margin-top: 1px;
+  }
+  .step .body { flex: 1; min-width: 0; }
+  .step .title { font-size: 0.86rem; font-weight: 600; color: #e2e8f0; }
+  .step .desc { font-size: 0.76rem; color: #64748b; line-height: 1.45; margin-top: 2px; }
+  .tags { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.6rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag.data  { background: #14233f; color: #60a5fa; }
+  .tag.ai    { background: #241640; color: #c084fc; }
+  .tag.stack { background: #0f2a1a; color: #4ade80; }
+  .tag.cloud { background: #2e1a0d; color: #fb923c; }
+
+  /* color the active step's ring + number by its primary domain */
+  .step.p-data  { color: #60a5fa; } .step.active.p-data  .num { background: #1e3a5f; color: #60a5fa; }
+  .step.p-ai    { color: #c084fc; } .step.active.p-ai    .num { background: #2e1f5e; color: #c084fc; }
+  .step.p-stack { color: #4ade80; } .step.active.p-stack .num { background: #14321f; color: #4ade80; }
+  .step.p-cloud { color: #fb923c; } .step.active.p-cloud .num { background: #3a2010; color: #fb923c; }
+
+  .loop-note {
+    text-align: center; font-size: 0.72rem; color: #475569;
+    margin-top: 14px; opacity: 0; transition: opacity 0.5s;
+    line-height: 1.5;
+  }
+  .loop-note.shown { opacity: 1; }
+  .loop-note strong { color: #94a3b8; }
+
+  /* ---- Controls ---- */
+  .controls {
+    display: flex; gap: 10px; justify-content: center;
+    align-items: center; margin: 20px 0 4px;
+  }
+  button {
+    font-family: inherit; font-size: 0.82rem; font-weight: 600;
+    padding: 9px 20px; border-radius: 7px; cursor: pointer;
+    border: 1px solid #334155; background: #1e293b; color: #e2e8f0;
+    transition: all 0.15s;
+  }
+  button:hover { background: #334155; }
+  button.primary { background: #2563eb; border-color: #2563eb; }
+  button.primary:hover { background: #3b82f6; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .hint { font-size: 0.7rem; color: #334155; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h2>The Converging Stack</h2>
+  <p class="sub">
+    Data, AI, full stack, and cloud used to be four separate jobs on four separate teams.
+    Watch a single feature get built, and see how many of those worlds one engineer now works across.
+  </p>
+
+  <div class="task">
+    <div class="label">The ticket</div>
+    <div class="what">"Add a smart 'recommended for you' feed to our app."</div>
+    <div class="who">One platform engineer, working across the whole stack</div>
+  </div>
+
+  <div class="domains" id="domains">
+    <div class="domain d-data"  data-key="data">  <div class="count">0</div><div class="dot"></div><div class="name">Data</div><div class="role">Data engineer</div></div>
+    <div class="domain d-ai"    data-key="ai">    <div class="count">0</div><div class="dot"></div><div class="name">AI / Models</div><div class="role">ML engineer</div></div>
+    <div class="domain d-stack" data-key="stack"> <div class="count">0</div><div class="dot"></div><div class="name">Full Stack</div><div class="role">App developer</div></div>
+    <div class="domain d-cloud" data-key="cloud"> <div class="count">0</div><div class="dot"></div><div class="name">Cloud</div><div class="role">DevOps / SRE</div></div>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <div class="loop-note" id="loopNote">
+    <strong>One engineer, working across all four.</strong> Cleaning data, tuning a model,
+    building the UI, and running it in the cloud, then looping production data back to step 1.
+    The four old job titles are now four <em>layers of the same stack</em>.
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="play">▶ Play walkthrough</button>
+    <button id="reset" disabled>Reset</button>
+  </div>
+  <p class="hint">Click any revealed step to re-highlight which worlds it touches</p>
+
+</div>
+
+<script>
+const STEPS = [
+  { n:1, primary:"data",  title:"Pull &amp; clean the raw data",
+    desc:"Collect user activity logs, dedupe events, and shape them into a training dataset.",
+    tags:["data"] },
+  { n:2, primary:"data",  title:"Engineer features &amp; embeddings",
+    desc:"Turn behavior into vectors a model can use. Land it in a feature store.",
+    tags:["data","ai"] },
+  { n:3, primary:"ai",    title:"Pick &amp; tune the model",
+    desc:"Choose a ranking model or LLM, fine-tune it, and adjust the prompt and parameters.",
+    tags:["ai"] },
+  { n:4, primary:"ai",    title:"Evaluate &amp; track metrics",
+    desc:"Score quality on a held-out set, log experiments, and compare against a baseline.",
+    tags:["ai","cloud"] },
+  { n:5, primary:"stack", title:"Build the API endpoint",
+    desc:"Wrap the model behind a service route that the front end can call.",
+    tags:["stack"] },
+  { n:6, primary:"stack", title:"Build the UI",
+    desc:"Render the personalized feed in React, handle loading and empty states.",
+    tags:["stack"] },
+  { n:7, primary:"cloud", title:"Containerize &amp; deploy",
+    desc:"Package model + app, push to a managed inference endpoint, set autoscaling.",
+    tags:["cloud","ai"] },
+  { n:8, primary:"cloud", title:"Monitor &amp; loop back",
+    desc:"Watch latency, cost, and drift. Feed fresh production data back into step 1.",
+    tags:["cloud","data"] },
+];
+
+const stepsEl = document.getElementById("steps");
+const counts = { data:0, ai:0, stack:0, cloud:0 };
+
+STEPS.forEach((s, i) => {
+  const el = document.createElement("div");
+  el.className = `step p-${s.primary}`;
+  el.dataset.i = i;
+  el.innerHTML = `
+    <div class="num">${s.n}</div>
+    <div class="body">
+      <div class="title">${s.title}</div>
+      <div class="desc">${s.desc}</div>
+      <div class="tags">${s.tags.map(t=>`<span class="tag ${t}">${t==="ai"?"AI / Models":t==="stack"?"Full Stack":t}</span>`).join("")}</div>
+    </div>`;
+  el.addEventListener("click", () => { if (el.classList.contains("shown")) highlight(i); });
+  stepsEl.appendChild(el);
+});
+
+const domainEls = {};
+document.querySelectorAll(".domain").forEach(d => domainEls[d.dataset.key] = d);
+
+function highlight(i) {
+  document.querySelectorAll(".step.active").forEach(e => e.classList.remove("active"));
+  Object.values(domainEls).forEach(d => d.classList.remove("hot"));
+  const step = stepsEl.children[i];
+  step.classList.add("active");
+  STEPS[i].tags.forEach(t => domainEls[t].classList.add("hot"));
+}
+
+let timer = null;
+function reset() {
+  clearTimeout(timer); timer = null;
+  Object.keys(counts).forEach(k => counts[k] = 0);
+  Object.values(domainEls).forEach(d => {
+    d.classList.remove("hot","touched");
+    d.querySelector(".count").textContent = "0";
+  });
+  [...stepsEl.children].forEach(e => e.classList.remove("shown","active"));
+  document.getElementById("loopNote").classList.remove("shown");
+  document.getElementById("play").disabled = false;
+  document.getElementById("play").textContent = "▶ Play walkthrough";
+  document.getElementById("reset").disabled = true;
+}
+
+function playStep(i) {
+  if (i >= STEPS.length) {
+    Object.values(domainEls).forEach(d => d.classList.remove("hot"));
+    document.getElementById("loopNote").classList.add("shown");
+    document.getElementById("play").textContent = "✓ Shipped";
+    document.getElementById("reset").disabled = false;
+    return;
+  }
+  const step = stepsEl.children[i];
+  step.classList.add("shown");
+  highlight(i);
+  STEPS[i].tags.forEach(t => {
+    counts[t]++;
+    domainEls[t].classList.add("touched");
+    domainEls[t].querySelector(".count").textContent = counts[t];
+  });
+  timer = setTimeout(() => playStep(i + 1), 1150);
+}
+
+document.getElementById("play").addEventListener("click", () => {
+  reset();
+  document.getElementById("play").disabled = true;
+  document.getElementById("play").textContent = "Building…";
+  document.getElementById("reset").disabled = false;
+  timer = setTimeout(() => playStep(0), 250);
+});
+document.getElementById("reset").addEventListener("click", reset);
+</script>
+</body>
+</html>
