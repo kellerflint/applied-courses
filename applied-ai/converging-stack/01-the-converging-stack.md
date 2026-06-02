@@ -24,8 +24,8 @@ The demo below follows a single feature from ticket to production. Press play an
 
 {% activity "converging-stack.html", "The Converging Stack", "940px" %}
 
-> **With your partner:** Pick one step and talk through it. Which unit in this course gave you the skills for that step? You'll find that most of the steps map back to something you already practiced.
+> **With your partner:** Talk though each step. How would you go about handling it, at a high level? Where do your coursework and projects map to this stack? It can look intimidating, but most of these steps map back to something you've already practiced!
 
 ## Why this matters for you
 
-You don't need to be an expert in all four layers to be valuable. What helps is being comfortable moving between them, knowing enough to direct AI through each step, and being able to verify the result. That is exactly the way of working this course has been building toward, and it's what your final project asks you to put together.
+You don't need to be an expert in all four layers to be valuable. What helps is being comfortable moving between them, knowing enough to direct AI through each step, and being able to verify the result.
