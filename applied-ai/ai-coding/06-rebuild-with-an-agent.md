@@ -50,11 +50,12 @@ In practice:
 
 ## Submit
 
-Push your project to GitHub and submit to the Canvas assignment for this unit:
+Push your project to GitHub and post it to the Canvas discussion for this assignment.
 
-1. **A link to your repository.**
-2. **The spec you wrote (in the README)** in Step 1, so we can see the target you set.
-3. **A short reflection (in the README):** How did middle-ground control feel compared to the game session? Where did the agent need correcting at the architectural level, and how well did your tests actually hold up?
+In the post include:
+
+- **A link to your repository.** Include a README with the spec you wrote from step 1.
+- **A short reflection:** How did middle-ground control feel compared to the game session? Where did the agent need correcting at the architectural level, and how well did your tests actually hold up?
 
 ## Feedback
 
