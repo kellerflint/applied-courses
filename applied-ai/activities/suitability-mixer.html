@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suitability Mixer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f8fa;
+    color: #1f2328;
+    font-size: 14px;
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  /* Sliders */
+  .slider-block { display: flex; flex-direction: column; gap: 4px; }
+  .slider-block + .slider-block { margin-top: 14px; }
+
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .slider-name { font-size: 14px; font-weight: 600; }
+
+  .slider-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #0969da;
+    width: 36px;
+    text-align: right;
+  }
+
+  .slider-desc { font-size: 12px; color: #57606a; line-height: 1.4; }
+
+  input[type=range] {
+    width: 100%;
+    accent-color: #0969da;
+    cursor: pointer;
+    height: 4px;
+    margin-top: 4px;
+  }
+
+  /* Result panel */
+  .result {
+    border-radius: 10px;
+    padding: 18px 18px 20px;
+    color: #fff;
+    text-align: center;
+    transition: background 0.12s ease-out;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  }
+
+  .result-total {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.95;
+  }
+
+  .result-number {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    margin: 2px 0 8px;
+  }
+
+  .result-verdict { font-size: 16px; font-weight: 700; line-height: 1.25; }
+  .result-note { font-size: 13px; line-height: 1.45; margin-top: 6px; opacity: 0.97; }
+
+  /* Scale legend */
+  .scale {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, #2da44e, #d4a72c, #cf222e);
+    position: relative;
+    margin: 10px 0 4px;
+  }
+
+  .scale-marker {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 20px;
+    background: #1f2328;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    transform: translateX(-50%);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: left 0.12s ease-out;
+  }
+
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #57606a;
+  }
+
+  .insight {
+    background: #ddf4ff;
+    border: 1px solid #54aeff;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #0550ae;
+    line-height: 1.5;
+  }
+  .insight strong { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="card">
+    <div class="slider-block">
+      <div class="slider-head">
+        <span class="slider-name">Scope</span>
+        <span class="slider-value" id="val-scope">0.0</span>
+      </div>
+      <div class="slider-desc">How big the task is. Files, features, moving parts.</div>
+      <input type="range" id="scope" min="0" max="1" step="0.01" value="0.15">
+    </div>
+
+    <div class="slider-block">
+      <div class="slider-head">
+        <span class="slider-name">Complexity</span>
+        <span class="slider-value" id="val-complexity">0.0</span>
+      </div>
+      <div class="slider-desc">How hard the logic is. Tricky algorithms, subtle state, intricate edge cases.</div>
+      <input type="range" id="complexity" min="0" max="1" step="0.01" value="0.15">
+    </div>
+
+    <div class="slider-block">
+      <div class="slider-head">
+        <span class="slider-name">Novelty</span>
+        <span class="slider-value" id="val-novelty">0.0</span>
+      </div>
+      <div class="slider-desc">How unusual the task is. How little public code looks like it.</div>
+      <input type="range" id="novelty" min="0" max="1" step="0.01" value="0.15">
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-total">Total suitability score</div>
+    <div class="result-number" id="result-number">0.0</div>
+    <div class="result-verdict" id="result-verdict"></div>
+    <div class="result-note" id="result-note"></div>
+  </div>
+
+  <div class="card" style="padding-top: 12px;">
+    <div class="scale"><div class="scale-marker" id="marker"></div></div>
+    <div class="scale-labels">
+      <span>0 · pure green</span>
+      <span>1.5 · yellow</span>
+      <span>3 · pure red</span>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>How to read it:</strong> lower is better suited. Green means hand it off with confidence. Red means break it into chunks or do it yourself. There's no hard line, just where the task sits on the gradient.
+  </div>
+
+</div>
+
+<script>
+  const ids = ["scope", "complexity", "novelty"];
+  const sliders = {};
+  const valLabels = {};
+  ids.forEach(id => {
+    sliders[id] = document.getElementById(id);
+    valLabels[id] = document.getElementById("val-" + id);
+    sliders[id].addEventListener("input", update);
+  });
+
+  const resultEl = document.getElementById("result");
+  const numberEl = document.getElementById("result-number");
+  const verdictEl = document.getElementById("result-verdict");
+  const noteEl = document.getElementById("result-note");
+  const markerEl = document.getElementById("marker");
+
+  // Palette stops: green -> yellow -> red
+  const GREEN = [45, 164, 78];   // #2da44e
+  const YELLOW = [212, 167, 44]; // #d4a72c
+  const RED = [207, 34, 46];     // #cf222e
+
+  function lerp(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+
+  function colorForTotal(total) {
+    // total ranges 0..3, with 1.5 as the yellow midpoint
+    if (total <= 1.5) {
+      return lerp(GREEN, YELLOW, total / 1.5);
+    }
+    return lerp(YELLOW, RED, (total - 1.5) / 1.5);
+  }
+
+  function verdictForTotal(total) {
+    if (total < 1.0) {
+      return ["Strong fit", "Hand it off with confidence. The agent has plenty to lean on."];
+    }
+    if (total < 2.0) {
+      return ["Mixed fit", "Keep a hand on the wheel. Tighten your spec or chop the work up."];
+    }
+    return ["Poor fit", "Don't farm out the whole thing. Break it into smaller chunks first."];
+  }
+
+  function update() {
+    let total = 0;
+    ids.forEach(id => {
+      const v = parseFloat(sliders[id].value);
+      total += v;
+      valLabels[id].textContent = v.toFixed(2);
+    });
+
+    const [r, g, b] = colorForTotal(total);
+    resultEl.style.background = `rgb(${r}, ${g}, ${b})`;
+    numberEl.textContent = total.toFixed(2);
+
+    const [verdict, note] = verdictForTotal(total);
+    verdictEl.textContent = verdict;
+    noteEl.textContent = note;
+
+    markerEl.style.left = (total / 3 * 100) + "%";
+  }
+
+  update();
+</script>
+</body>
+</html>

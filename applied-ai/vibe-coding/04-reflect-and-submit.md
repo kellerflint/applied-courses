@@ -38,12 +38,6 @@ Submit to the Canvas discussion board for this assignment.
 - Post your write-up with the repo link and the embedded screenshot.
 - Reply substantively to at least one classmate's post.
 
-## Where this goes next
-
-This is the start of learning how to direct and manage an AI agent. Without being any better at the code itself, there are things we can do to give it a better shot at getting what we want. 
-
-There's also a lot more we can do when we actually know what we're talking about in languages and frameworks we have experience in. That's what we'll spend these next few weeks on.
-
 ## Feedback
 
 <div class="tally-embed-wrapper">

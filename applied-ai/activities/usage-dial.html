@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Convenience–Control Dial</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f8fa;
+    color: #1f2328;
+    font-size: 14px;
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .end-convenience { color: #1a7f37; }
+  .end-control { color: #0550ae; }
+
+  input[type=range] {
+    width: 100%;
+    accent-color: #0969da;
+    cursor: pointer;
+    height: 5px;
+    margin: 6px 0 2px;
+  }
+
+  .sub-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #57606a;
+  }
+
+  /* Levers */
+  .lever-block + .lever-block { margin-top: 12px; }
+
+  .lever-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .lever-name { font-size: 13px; font-weight: 600; }
+  .lever-tag { font-size: 12px; color: #57606a; }
+
+  .lever-track {
+    height: 14px;
+    background: #eaeef2;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .lever-fill {
+    height: 100%;
+    background: #0969da;
+    border-radius: 4px;
+    transition: width 0.1s ease-out;
+  }
+
+  .readout {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .readout h3 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .readout p { font-size: 13px; line-height: 1.5; }
+  .readout .cadence { font-size: 12px; margin-top: 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="card">
+    <div class="ends">
+      <span class="end-convenience">◀ Convenience</span>
+      <span class="end-control">Control ▶</span>
+    </div>
+    <input type="range" id="dial" min="0" max="100" step="1" value="20">
+    <div class="sub-ends">
+      <span>fast, easy, hand it off</span>
+      <span>specify, decompose, review</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #57606a; margin-bottom: 10px;">
+      What you spend to buy control
+    </div>
+
+    <div class="lever-block">
+      <div class="lever-head">
+        <span class="lever-name">Specification</span>
+        <span class="lever-tag" id="tag-spec"></span>
+      </div>
+      <div class="lever-track"><div class="lever-fill" id="fill-spec"></div></div>
+    </div>
+
+    <div class="lever-block">
+      <div class="lever-head">
+        <span class="lever-name">Decomposition</span>
+        <span class="lever-tag" id="tag-decomp"></span>
+      </div>
+      <div class="lever-track"><div class="lever-fill" id="fill-decomp"></div></div>
+    </div>
+
+    <div class="lever-block">
+      <div class="lever-head">
+        <span class="lever-name">Review cadence</span>
+        <span class="lever-tag" id="tag-loop"></span>
+      </div>
+      <div class="lever-track"><div class="lever-fill" id="fill-loop"></div></div>
+    </div>
+  </div>
+
+  <div class="readout" id="readout">
+    <h3 id="readout-title"></h3>
+    <p id="readout-text"></p>
+    <div class="cadence" id="readout-cadence"></div>
+  </div>
+
+</div>
+
+<script>
+  const dial = document.getElementById("dial");
+
+  const fillSpec = document.getElementById("fill-spec");
+  const fillDecomp = document.getElementById("fill-decomp");
+  const fillLoop = document.getElementById("fill-loop");
+  const tagSpec = document.getElementById("tag-spec");
+  const tagDecomp = document.getElementById("tag-decomp");
+  const tagLoop = document.getElementById("tag-loop");
+
+  const readout = document.getElementById("readout");
+  const title = document.getElementById("readout-title");
+  const text = document.getElementById("readout-text");
+  const cadence = document.getElementById("readout-cadence");
+
+  function tagFor(v) {
+    if (v < 25) return "minimal";
+    if (v < 50) return "light";
+    if (v < 75) return "deliberate";
+    return "heavy";
+  }
+
+  // Band definitions across the 0..100 dial
+  const BANDS = [
+    {
+      max: 25,
+      bg: "#f0fdf4", border: "#2da44e", color: "#1a7f37",
+      title: "Full convenience",
+      text: "Hand off the whole task and let it run. Right for small, throwaway, low-stakes work where a bug costs nothing.",
+      cadence: "Review cadence: read the output once, at the end."
+    },
+    {
+      max: 50,
+      bg: "#f6fbf7", border: "#74c490", color: "#1a7f37",
+      title: "Leaning convenient",
+      text: "Give a light spec and check in now and then. You're trading a little speed for a little reassurance.",
+      cadence: "Review cadence: glance at it every so often."
+    },
+    {
+      max: 75,
+      bg: "#f3f8fd", border: "#54aeff", color: "#0550ae",
+      title: "Leaning controlled",
+      text: "Write a clear spec, break the work into pieces, and review on a regular rhythm. Right when the work ships or grows.",
+      cadence: "Review cadence: check each piece as it lands."
+    },
+    {
+      max: 101,
+      bg: "#eff6ff", border: "#0969da", color: "#0550ae",
+      title: "Full control",
+      text: "Detailed spec, small chunks, and frequent review. Right for big, complex, or high-stakes work you can't afford to get wrong.",
+      cadence: "Review cadence: every 5 to 20 minutes."
+    }
+  ];
+
+  function update() {
+    const v = parseInt(dial.value, 10);
+
+    // Levers fill roughly with control, each with its own curve so they don't move in lockstep.
+    const spec = Math.min(100, v * 1.05);
+    const decomp = Math.min(100, Math.max(0, (v - 15) * 1.2));
+    const loop = Math.min(100, Math.max(0, (v - 5) * 1.1));
+
+    fillSpec.style.width = spec + "%";
+    fillDecomp.style.width = decomp + "%";
+    fillLoop.style.width = loop + "%";
+    tagSpec.textContent = tagFor(spec);
+    tagDecomp.textContent = tagFor(decomp);
+    tagLoop.textContent = tagFor(loop);
+
+    const band = BANDS.find(b => v < b.max);
+    readout.style.background = band.bg;
+    readout.style.borderColor = band.border;
+    title.style.color = band.color;
+    title.textContent = band.title;
+    text.textContent = band.text;
+    cadence.textContent = band.cadence;
+  }
+
+  dial.addEventListener("input", update);
+  update();
+</script>
+</body>
+</html>
